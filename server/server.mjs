@@ -2,6 +2,8 @@ import express from 'express'
 import dotenv from 'dotenv/config'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import nodemailer from 'nodemailer'
+import queries from './queries/queries.mjs'
 
 const app = express()
 
@@ -10,9 +12,109 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}`)
 })
 
-app.use(cors())
+//app.use(cors())
 app.use(express.json())
 
+app.post('/testAddOwner', async(req,res) => {
+  const result = await queries.addOwner(req.body.ownerData)
+  res.json({result})
+})
+
+app.post('/getOwnerId', async(req,res) => {
+  console.log(req.body.ownerData)
+  const result = await queries.getOwnerId(req.body.ownerData.email)
+  res.json({result})
+})
+
+app.post('/testAddPet', async(req,res) => {
+  console.log(req.body.ownerAndPetData)
+  const data = req.body.ownerAndPetData
+  const result = await queries.addPet(data)
+  res.json({result})
+})
+
+app.post('/testUpdateOwnerData', async(req,res) => {
+  const updatedData = req.body.updatedData
+  const result = await queries.updateOwner(updatedData)
+  res.json({result})
+})
+
+const companyEmail = `"Tully's Toots" <${process.env.APP_USERNAME}>`
+const companyEmailPassword = process.env.APP_PASSWORD
+console.log('Line 10 => ', companyEmail)
+console.log('Line 11 => ', companyEmailPassword)
+
+const transporter = nodemailer.createTransport({
+  service:"gmail",
+  auth: {
+    user: process.env.APP_USERNAME,
+    pass: companyEmailPassword,
+  },
+});
+
+const resetForm = (link) => {
+  return `
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>HTML Form</title>
+  </head>
+  <body>
+      <h1>Someone wants share their pet's activity with you!</h1>
+      <h2>If you are ready to accept, click the link below.</h2>
+      <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
+      <a href=${link} target="_blank">Show me the activity</a>
+  </body>
+`}
+
+app.post('/sendInvite', async(req, res) => {
+  const { sendingOwnerEmail, receivingOwnerEmail } = req.body
+  console.log('Line 43 => ', sendingOwnerEmail)
+  console.log('Line 44 => ', receivingOwnerEmail)
+  // 1. Find sending user ID from email
+  const sendingOwnerId = await queries.getOwnerId(receivingOwnerEmail);
+  const receivingOwnerId = await queries.getOwnerId(receivingOwnerEmail);
+
+  // Also, confirm if pet-owner links already exist
+
+  if(receivingOwnerId){
+    // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
+    const invitationSecret = process.env.INVITATION_SECRET
+    const invitationToken = jwt.sign({ sendingOwnerId, receivingOwnerId }, invitationSecret,{ expiresIn:'1d' })
+    // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+    await queries.addInvitationLink(sendingOwnerId, receivingOwnerId,invitationToken)
+    // 4. Create a link that contains this JWT in the URL.
+    const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+    // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+    const info = await transporter.sendMail({
+      from: user, // sender address
+      to: receivingOwnerEmail, // list of receivers
+      subject: "A Tully's Toots Member is Inviting You!", // Subject line
+      html: resetForm(addPetOwnerLink), // html body
+    });
+    console.log('Line 101 => ', info)
+  }else{
+    const invitationSecret = process.env.INVITATION_SECRET
+    const invitationToken = jwt.sign({ sendingOwnerId }, invitationSecret,{ expiresIn:'1d' })
+    // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+    await queries.addInvitationLink(sendingOwnerId, invitationToken)
+    // 4. Create a link that contains this JWT in the URL.
+    const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+    // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+    const info = await transporter.sendMail({
+      from: companyEmail, // sender address
+      to: receivingOwnerEmail, // list of receivers
+      subject: "A Tully's Toots Member is Inviting You!", // Subject line
+      html: resetForm(addPetOwnerLink), // html body
+    });
+    console.log('Line 101 => ', info)
+  } 
+  res.send('Link sent')
+})
+
+// BEGIN UN-COMMENTING ***BELOW*** THIS LINE
+// ------------------------------------------------
+/*
 // MIDDLEWARE for ACCOUNT HANDLING w AUTHORIZATION
 
 app.post('/login', async(req,res) => {
@@ -83,7 +185,7 @@ app.post('/resetRequest', async(req,res) => {
   const userId = await userQueries.getUserId(userEmail);
   if(userId){
     // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
-    const resetSecret = process.env.RESET_SECRETS
+    const resetSecret = process.env.RESET_SECRET
     const resetToken = jwt.sign({ userId }, resetSecret,{ expiresIn:'10m' })
     // 3. Store the userId,resetToken, AccessedAt='null' in a new row in the 'ResetRequest' table. Override existing resetToken.
     await userQueries.resetRequest(userId, resetToken)
@@ -210,26 +312,19 @@ app.post('/history', async(req,res) => {
   const result = await petQueries.getEarlierActivity(userId,petId,earliestDate)
   return res.json({ earlierActivity : result })
 })
+*/
+// ------------------------------------------------
+// BEGIN UN-COMMENTING ***ABOVE*** THIS LINE
 
-
+// IGNORE EVERYTHING BELOW THIS LINE
+//-----------------------------------
 // DATABASE QUERIES
 // QUERY Module to enter into DB ('petQueries')
-import { Pool } from 'pg'
-// Double-check .env variables to match postgres defaults
-const pool = new Pool()
-// Enter a new log of activity
-const newActivityText = `INSERT INTO table_name (date, time, urine, poo) VALUES (val1, val2, ...)`
-const newActivity = async(date,time,meridiem,urine,poo,petId) => {
-  const result = await pool.query(newLogText)
-}
-
-/*
-TABLE: activity
-DATE | TIME | URINE | POO | PET_ID | USER_ID
-TABLE: user
-EMAIL | PASSWORD | PET_ID | REFRESH_TOKEN
-TABLE: reset
-USER_ID | RESET_TOKEN | ACCESSED_AT
-TABLE: pet
-PET_ID | PET_NAME
-*/
+// import { Pool } from 'pg'
+// // Double-check .env variables to match postgres defaults
+// const pool = new Pool()
+// // Enter a new log of activity
+// const newActivityText = `INSERT INTO table_name (date, time, urine, poo) VALUES (val1, val2, ...)`
+// const newActivity = async(date,time,meridiem,urine,poo,petId) => {
+//   const result = await pool.query(newLogText)
+// }
