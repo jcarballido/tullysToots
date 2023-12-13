@@ -24,17 +24,20 @@ const addPetOwnerLink = async(ownerId,petId) => {
 const addInvitationLink = async(...args) => {
   if(args.length > 3){
     try{
-      const result = await pool.query(sqlText.insertIntoText('invitations'),[...args,'null'])
+      const result = await pool.query(sqlText.insertIntoText('invitations'),[...args,null])
       return result
     }catch(e){
       console.log('Error in queries.mjs, line 29',e)
+      return e
     }
   }else{
     try{
-      const result = await pool.query(sqlText.insertIntoText('invitations'),[args[0],'null',args[1],'null'])
+      console.log('Length less than 3 => ','args[0]: ',args[0],'args[1]: ',args[1])
+      const result = await pool.query(sqlText.insertIntoText('invitations'),[args[0],null,args[1],null])
       return result
     }catch(e){
       console.log('Error in queries.mjs, line 37',e)
+      return e
     }
   }
 }
@@ -129,6 +132,19 @@ const getPetActivityByOwner = async(ownerData) => {
 
 }
 
+const compareSavedInvitatonToken = async(invitationToken,sendingOwnerId) => {
+  const result = await pool.query(sqlText.getInvitationTokenComparisonText(), [sendingOwnerId,invitationToken])
+  return result.rows
+}
+
+const getLastAccessedTimestamp = async (invitationToken) => {
+  const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
+  if(!result.rows[0].accessed_at) return null
+  else{
+     return true
+  }
+}
+
 export default {
   addOwner,
   addPet,
@@ -138,6 +154,8 @@ export default {
   getOwnersPetIds,
   getActivity,
   getPetActivityByOwner,
+  getLastAccessedTimestamp,
+  compareSavedInvitatonToken,
   deactivatePetOwnerLink,
   updateOwner
 }

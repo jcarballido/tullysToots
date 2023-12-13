@@ -88,6 +88,24 @@ const getOwnersPetIdsText = () => {
   `
 }
 
+const getInvitationTokenComparisonText = () => {
+  return `
+    SELECT invitation_token
+    FROM invitations
+    WHERE sender_owner_id = $1 AND invitation_token = $2
+    RETURNING *
+  `
+}
+
+const getLastAccessedTimestampText = () => {
+  return `
+    SELECT accessed_at
+    FROM invitations
+    WHERE invitation_token = $1
+    RETURNING accessed_at
+  `
+}
+
 export default {
   insertIntoText,
   updateText,
@@ -95,7 +113,8 @@ export default {
   getActivityText,
   getOwnerText,
   getOwnersPetIdsText,
-  
+  getInvitationTokenComparisonText,
+  getLastAccessedTimestampText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
