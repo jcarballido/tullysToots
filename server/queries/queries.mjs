@@ -1,5 +1,6 @@
 import pg from 'pg'
 import sqlText from './sqlText.mjs'
+//mport dotenv from 'dotenv/config'
 
 const { Pool } = pg
 
@@ -22,9 +23,10 @@ const addPetOwnerLink = async(ownerId,petId) => {
 }
 
 const addInvitationLink = async(...args) => {
-  if(args.length > 3){
+  console.log('addInvitationLink arguemnts: ', args)
+  if(args.length > 2){
     try{
-      const result = await pool.query(sqlText.insertIntoText('invitations'),[...args,null])
+      const result = await pool.query(sqlText.insertIntoText('invitations'),args)
       return result
     }catch(e){
       console.log('Error in queries.mjs, line 29',e)
@@ -33,7 +35,7 @@ const addInvitationLink = async(...args) => {
   }else{
     try{
       console.log('Length less than 3 => ','args[0]: ',args[0],'args[1]: ',args[1])
-      const result = await pool.query(sqlText.insertIntoText('invitations'),[args[0],null,args[1],null])
+      const result = await pool.query(sqlText.insertIntoText('invitations'),[args[0],null,args[1]])
       return result
     }catch(e){
       console.log('Error in queries.mjs, line 37',e)
@@ -59,10 +61,11 @@ const addPet = async(ownerAndPetData) => {
 // "Query from table" operations
 const getOwnerId = async(email) => {
   //const email = ownerData.email
-  //console.log(email)
+  //console.log('Line 62 Queries',email)
   try{
     const result = await pool.query(sqlText.getOwnerText(),[email])
-  //console.log(result)
+    //console.log('Here\'s the SQL text: ',sqlText.getOwnerText())
+    //console.log(result)
     const ownerId = result.rows[0].owner_id
     // console.log(ownerId)
     return ownerId
@@ -98,9 +101,12 @@ const deactivatePetOwnerLink = async( ownerId,petId ) => {
 }
 
 const getOwnersPetIds = async(ownerId) => {
-  const result = await pool.query(sqlText.getOwnersPetIdsText, [ownerId])
+  console.log(ownerId)
+  const result = await pool.query(sqlText.getOwnersPetIdsText(), [ownerId])
+  console.log('Here\'s the SQL text: ',sqlText.getOwnersPetIdsText())
+  console.log('Result from fetching owners pet ids: ',result)
   const petIdsArr = result.rows.map(row => row.pet_id)
-  return petIdsArr
+  return petIdsArr || false
 }
 
 // ACTIVITY QUERIES
@@ -134,15 +140,19 @@ const getPetActivityByOwner = async(ownerData) => {
 
 const compareSavedInvitatonToken = async(invitationToken,sendingOwnerId) => {
   const result = await pool.query(sqlText.getInvitationTokenComparisonText(), [sendingOwnerId,invitationToken])
-  return result.rows
+  return result.rows[0].invitation_id
 }
 
 const getLastAccessedTimestamp = async (invitationToken) => {
   const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
-  if(!result.rows[0].accessed_at) return null
-  else{
-     return true
-  }
+  if(!result.rows[0].accessed_at) return true
+  else return false
+}
+
+const setInvitationAccessedAtTimestamp = async(invitationId) => {
+  const currTimestampUTC = new Date().toUTCString()
+  const result = await pool.query(sqlText.setInvitationAccessedAtTimestamp(),[ invitationId, currTimestampUTC])
+  return result.rows.length
 }
 
 export default {
@@ -157,6 +167,7 @@ export default {
   getLastAccessedTimestamp,
   compareSavedInvitatonToken,
   deactivatePetOwnerLink,
-  updateOwner
+  updateOwner,
+  setInvitationAccessedAtTimestamp
 }
 

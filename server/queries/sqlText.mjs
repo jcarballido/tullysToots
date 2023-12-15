@@ -6,8 +6,8 @@ const insertIntoText = (tableName) => {
   const petsColumns = ['pet_name']
   const petOwnersColumns = [ 'owner_id', 'pet_id','active']
   const resetTokensColumns = ['reset_token','owner_id','accessed_at']
-  const invitationsColumns = ['sender_owner_id','receiver_owner_id','invitation_token','accessed_at']
-
+  const invitationsColumns = ['sender_owner_id','receiver_owner_id','invitation_token']
+ 
   const text = (columnsArr) => {
     return `INSERT INTO ${tableName} (${columnsArr.join()})
     VALUES (${columnsArr.map( (_,index) => {return `$${index+1}`}).join()})
@@ -84,7 +84,7 @@ const getOwnerText = () => {
 const getOwnersPetIdsText = () => {
   return `
   SELECT pet_id FROM pet_owners
-  WHERE owner_id = $1 AND active = true
+  WHERE owner_id = $1
   `
 }
 

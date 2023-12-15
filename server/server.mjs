@@ -67,25 +67,113 @@ const resetForm = (link) => {
   </body>
 `}
 
+/* DELETE BEOW THIS LINE_____________________________
+// const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
+//   const result = requestedPetIds.every(id => linkedPetIds.includes(id))
+//   return result
+// }
+
+// const script = (async() => {
+//   // const invitationSecret = process.env.INVITATION_SECRET
+//   // const sendingOwnerId = await queries.getOwnerId('email5@gmail.com')
+//   // const receivingOwnerId = await queries.getOwnerId('email2@email.com')
+//   // console.log('Sender => ', sendingOwnerId)
+//   // console.log('Receiver => ',receivingOwnerId)
+//   // if(!sendingOwnerId) return console.log('We cannot find an account associated with your email')
+  
+//   //const verifiedLinkedPetIds = await queries.getOwnersPetIds( sendingOwnerId )
+//   // console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
+//   // const verifiedIdsExist = confirmIdsExist([11],verifiedLinkedPetIds)
+//   // if(!verifiedIdsExist) return console.log('Can\'t find a link to one or more of these pets')
+//   if(receivingOwnerId){
+//     const payload = {
+//       sendingOwnerId, 
+//       receivingOwnerId, 
+//       newPetIdsArray:[11,13]
+//     }
+//     // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
+   
+//     const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+//     // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+    
+//     try{
+//       await queries.addInvitationLink(sendingOwnerId,invitationToken)
+//       // 4. Create a link that contains this JWT in the URL.
+//       const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+//       // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+//       // const info = await transporter.sendMail({
+//       //   from: companyEmail, // sender address
+//       //   to: receivingOwnerEmail, // list of receivers
+//       //   subject: "A Tully's Toots Member is Inviting You!", // Subject line
+//       //   html: resetForm(addPetOwnerLink), // html body
+//       // });
+//       // console.log('Line 101 => ', info)
+//       return console.log('Link sent: ', addPetOwnerLink)
+//     }catch(e){
+//       return console.log(e)
+//     }
+//   }else{
+//     const payload = {
+//       sendingOwnerId, 
+//       newPetIdsArray:[11,13]
+//     }
+//     const invitationSecret = process.env.INVITATION_SECRET
+//     const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+//     // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+//     // NEED TO CHECK FOR ERRORS ADDING ROW IN SQL, EMAIL WILL SEND REGARDLESS
+//     try{
+//       await queries.addInvitationLink(sendingOwnerId, invitationToken)
+//       // 4. Create a link that contains this JWT in the URL.
+//       const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+//       // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+//       // const info = await transporter.sendMail({
+//       //   from: companyEmail, // sender address
+//       //   to: receivingOwnerEmail, // list of receivers
+//       //   subject: "A Tully's Toots Member is Inviting You!", // Subject line
+//       //   html: resetForm(addPetOwnerLink), // html body
+//       // });
+//       //console.log('Line 101 => ', info)
+//       return console.log('Link sent: ', addPetOwnerLink)
+//     }catch(e){
+//       return console.log(e)
+//     }
+//   }
+// })()
+DELETE ABOVE THIS LINE________________ */
+
 app.post('/sendInvite', async(req, res) => {
-  const { sendingOwnerEmail, receivingOwnerEmail } = req.body
-  console.log('Line 43 => ', sendingOwnerEmail)
-  console.log('Line 44 => ', receivingOwnerEmail)
-  // 1. Find sending user ID from email
+  const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
+    const result = requestedPetIds.every(id => linkedPetIds.includes(id))
+    return result
+  }
+  const { sendingOwnerEmail, receivingOwnerEmail, newPetIdsArray } = req.body
+  if(!(sendingOwnerEmail || newPetIdsArray)) return res.send('Invalid request')
   const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail);
+  if(!sendingOwnerId) return res.send('We cannot find an account associated with your email')
+  const verifiedLinkedPetIds = await queries.getOwnersPetIds( sendingOwnerId )
+  console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
+  const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
+  if(!verifiedIdsExist) return res.send('Can\'t find a link to one or more of these pets')
 
   const receivingOwnerId = await queries.getOwnerId(receivingOwnerEmail);
-
+  // console.log('Line 43 => ', sendingOwnerEmail)
+  // console.log('Line 44 => ', receivingOwnerEmail)
+  // 1. Find sending user ID from email
+  //const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail)
   // Also, confirm if pet-owner links already exist
-
+  const invitationSecret = process.env.INVITATION_SECRET
   if(receivingOwnerId){
+    const payload = {
+      sendingOwnerId, 
+      receivingOwnerId, 
+      newPetIdsArray
+    }
     // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
-    const invitationSecret = process.env.INVITATION_SECRET
-    const invitationToken = jwt.sign({ sendingOwnerId, receivingOwnerId }, invitationSecret,{ expiresIn:'1d' })
+    const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
     // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
     
     try{
-      const result = await queries.addInvitationLink(sendingOwnerId, receivingOwnerId,invitationToken)
+      await queries.addInvitationLink(sendingOwnerId, receivingOwnerId,invitationToken)
       // 4. Create a link that contains this JWT in the URL.
       const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
       // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
@@ -101,13 +189,16 @@ app.post('/sendInvite', async(req, res) => {
       return res.send(e)
     }
   }else{
-    const invitationSecret = process.env.INVITATION_SECRET
-    const invitationToken = jwt.sign({ sendingOwnerId }, invitationSecret,{ expiresIn:'1d' })
+    const payload = {
+      sendingOwnerId, 
+      newPetIdsArray
+    }
+    const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
     // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
-    console.log('sendingOwnerId: ',sendingOwnerId)
+    //console.log('sendingOwnerId: ',sendingOwnerId)
     // NEED TO CHECK FOR ERRORS ADDING ROW IN SQL, EMAIL WILL SEND REGARDLESS
     try{
-      const result = await queries.addInvitationLink(sendingOwnerId, invitationToken)
+      await queries.addInvitationLink(sendingOwnerId, invitationToken)
       // 4. Create a link that contains this JWT in the URL.
       const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
       // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
@@ -126,53 +217,88 @@ app.post('/sendInvite', async(req, res) => {
   
 })
 
-app.post('/acceptInvite', async(req,res) => {
-  // Get reset token from request body
+const exisitingUserHtmlContent = `
+  <html>
+    <head>
+      <title>Someone Shared a Link with You!</title>
+    </head>
+    <body>
+      <form action="http://localhost:3000/createAccountAndLink" method="post">
+    
+        <label for="inputValue">Enter a value:</label>
+        <input type="text" id="inputValue" name="inputValue" required>
+
+        <!-- Submit button -->
+        <button type="submit">Submit</button>
+      </form>
+    </body>
+  </html>
+`
+const newUserHtmlContent = `
+  <html>
+    <head>
+      <title></title>
+    </head>
+    <body>
+      <form action="http://localhost:3000/createAccountAndLink" method="post">
+    
+        <label for="inputValue">Enter a value:</label>
+        <input type="text" id="inputValue" name="inputValue" required>
+
+        <!-- Submit button -->
+        <button type="submit">Submit</button>
+      </form>
+    </body>
+  </html>
+`
+
+// app.post('/acceptInvite', async(req,res) => {
+//   // Get reset token from request body
+//   const invitationToken = req.query.invitationToken
+//   const invitationSecret = process.env.INVITATION_SECRET
+//   // Validate token to get the userID, ensuring the token is valid and not expired.
+//   const payload = jwt.verify(invitationToken, invitationSecret)
+//   if(payload instanceof Error){
+//     return res.json({error: new Error('Invalid link')})
+//   } 
+//   console.log('Token is valid; payload: ', payload)
+//   // Query the 'ResetRequest' table to confirm the 'AccessToken' has been accessed and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
+//   // If so, enter a timestamp under AccessedAt: column.
+//   const sendingOwnerId = payload.sendingOwnerId
+//   const receivingOwnerId = payload.receivingOwnerid
+//   const newPetsIdArray = payload.newPetIds
+  
+//   const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+//   if(!match){
+//     return res.json({error: new Error('Invite is invalid, token does not match saved token.')})
+//   }
+//   const mint = await queries.getLastAccessedTimestamp(invitationToken)
+//   console.log('Invitation token is mint? ',mint)
+//   if(!mint){
+//     return res.json({error: new Error('Link has been used')})
+//   }else{
+//     try{
+//       await queries.setInvitationAccessedAtTimestamp(match)
+//       // Set the content type to text/html
+//       res.setHeader('Content-Type', 'text/html');
+//       // Send the HTML as the response
+//       if(!receivingOwnerId){
+//         return res.send(newUserHtmlContent(newPetsIdArray))
+//       }else{
+//         return res.send(exisitingUserHtmlContent(newPetsIdArray))
+//       }
+//     }catch(e){
+//       console.log('Error setting Invite Link timestamp', e)
+//     }
+//   }
+// })
+
+app.get('/acceptInvite',(req,res) => {
   const invitationToken = req.query.invitationToken
   const invitationSecret = process.env.INVITATION_SECRET
   // Validate token to get the userID, ensuring the token is valid and not expired.
   const payload = jwt.verify(invitationToken, invitationSecret)
-  if(payload instanceof Error){
-    return res.json({error: new Error('Invalid link')})
-  } 
-  console.log('Token is valid; payload: ', payload)
-  // Query the 'ResetRequest' table to confirm the 'AccessToken' has been accessed and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
-  // If so, enter a timestamp under AccessedAt: column.
-  const sendingOwnerId = payload.sendingOwnerId
-  const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
-  if(!match){
-    return res.json({error: new Error('Invite is invalid')})
-  }
-  const mint = await queries.getLastAccessedTimestamp(invitationToken)
-  if(!mint){
-    return res.json({error: new Error('Link has been used')})
-  }else{
-    const htmlContent = `
-    <html>
-      <head>
-        <title>Reset Form</title>
-      </head>
-      <body>
-        <form action="http://localhost:3000/createAccountAndLink" method="post">
-      
-          <label for="inputValue">Enter a value:</label>
-          <input type="text" id="inputValue" name="inputValue" required>
-  
-          <!-- Submit button -->
-          <button type="submit">Submit</button>
-        </form>
-      </body>
-    </html>
-  `;
-  // Set the content type to text/html
-  res.setHeader('Content-Type', 'text/html');
-  // Send the HTML as the response
-  return res.send(htmlContent);
-  }
-  // return res.json({resetToken})
-  // Send an HTML form to the client for the user to reset their password.
-  
-
+  console.log('Invite Accepted, verified payload => ', payload)
 })
 // BEGIN UN-COMMENTING ***BELOW*** THIS LINE
 // ------------------------------------------------
