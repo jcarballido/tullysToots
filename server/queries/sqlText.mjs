@@ -93,7 +93,6 @@ const getInvitationTokenComparisonText = () => {
     SELECT invitation_token
     FROM invitations
     WHERE sender_owner_id = $1 AND invitation_token = $2
-    RETURNING *
   `
 }
 
@@ -102,7 +101,14 @@ const getLastAccessedTimestampText = () => {
     SELECT accessed_at
     FROM invitations
     WHERE invitation_token = $1
-    RETURNING accessed_at
+  `
+}
+
+const setInvitationAccessedAtTimestampText = () => {
+  return `
+    UPDATE invitations 
+    SET accessed_at = now() AT TIME ZONE 'UTC'
+    WHERE sender_owner_id = $1 AND invitation_token = $2  
   `
 }
 
@@ -114,7 +120,8 @@ export default {
   getOwnerText,
   getOwnersPetIdsText,
   getInvitationTokenComparisonText,
-  getLastAccessedTimestampText
+  getLastAccessedTimestampText,
+  setInvitationAccessedAtTimestampText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

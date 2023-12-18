@@ -139,8 +139,10 @@ const getPetActivityByOwner = async(ownerData) => {
 }
 
 const compareSavedInvitatonToken = async(invitationToken,sendingOwnerId) => {
+  console.log('Queries.mjs line 142, sendingOwnerId:', sendingOwnerId, 'invitationToken: ', invitationToken)
   const result = await pool.query(sqlText.getInvitationTokenComparisonText(), [sendingOwnerId,invitationToken])
-  return result.rows[0].invitation_id
+  console.log('Queries.mjs line 144, result:',result)
+  return result.rows.length
 }
 
 const getLastAccessedTimestamp = async (invitationToken) => {
@@ -148,11 +150,13 @@ const getLastAccessedTimestamp = async (invitationToken) => {
   if(!result.rows[0].accessed_at) return true
   else return false
 }
-
-const setInvitationAccessedAtTimestamp = async(invitationId) => {
-  const currTimestampUTC = new Date().toUTCString()
-  const result = await pool.query(sqlText.setInvitationAccessedAtTimestamp(),[ invitationId, currTimestampUTC])
-  return result.rows.length
+//setInvitationAccessedAtTimestamp
+const setInvitationAccessedAtTimestamp = async(invitationId, invitationToken) => {
+  // const currTimestampUTC = new Date().toUTCString()
+  // console.log('Current timestamp: ', currTimestampUTC)
+  const result = await pool.query(sqlText.setInvitationAccessedAtTimestampText(),[ invitationId, invitationToken ])
+  console.log('Queries, line 158: ', result)
+  return result.rowCount
 }
 
 export default {

@@ -41,8 +41,8 @@ app.post('/testUpdateOwnerData', async(req,res) => {
 
 const companyEmail = `"Tully's Toots" <${process.env.APP_USERNAME}>`
 const companyEmailPassword = process.env.APP_PASSWORD
-console.log('Line 10 => ', companyEmail)
-console.log('Line 11 => ', companyEmailPassword)
+console.log('Line 44, server.mjs => ', companyEmail)
+console.log('Line 45, server.mjs => ', companyEmailPassword)
 
 const transporter = nodemailer.createTransport({
   service:"gmail",
@@ -224,7 +224,7 @@ const exisitingUserHtmlContent = `
     </head>
     <body>
       <form action="http://localhost:3000/createAccountAndLink" method="post">
-    
+        <div>EXISTING USER<div>
         <label for="inputValue">Enter a value:</label>
         <input type="text" id="inputValue" name="inputValue" required>
 
@@ -241,7 +241,7 @@ const newUserHtmlContent = `
     </head>
     <body>
       <form action="http://localhost:3000/createAccountAndLink" method="post">
-    
+        <div>NEW USER<div>
         <label for="inputValue">Enter a value:</label>
         <input type="text" id="inputValue" name="inputValue" required>
 
@@ -252,64 +252,74 @@ const newUserHtmlContent = `
   </html>
 `
 
-// app.post('/acceptInvite', async(req,res) => {
-//   // Get reset token from request body
-//   const invitationToken = req.query.invitationToken
-//   const invitationSecret = process.env.INVITATION_SECRET
-//   // Validate token to get the userID, ensuring the token is valid and not expired.
-//   const payload = jwt.verify(invitationToken, invitationSecret)
-//   if(payload instanceof Error){
-//     return res.json({error: new Error('Invalid link')})
-//   } 
-//   console.log('Token is valid; payload: ', payload)
-//   // Query the 'ResetRequest' table to confirm the 'AccessToken' has been accessed and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
-//   // If so, enter a timestamp under AccessedAt: column.
-//   const sendingOwnerId = payload.sendingOwnerId
-//   const receivingOwnerId = payload.receivingOwnerid
-//   const newPetsIdArray = payload.newPetIds
-  
-//   const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
-//   if(!match){
-//     return res.json({error: new Error('Invite is invalid, token does not match saved token.')})
-//   }
-//   const mint = await queries.getLastAccessedTimestamp(invitationToken)
-//   console.log('Invitation token is mint? ',mint)
-//   if(!mint){
-//     return res.json({error: new Error('Link has been used')})
-//   }else{
-//     try{
-//       await queries.setInvitationAccessedAtTimestamp(match)
-//       // Set the content type to text/html
-//       res.setHeader('Content-Type', 'text/html');
-//       // Send the HTML as the response
-//       if(!receivingOwnerId){
-//         return res.send(newUserHtmlContent(newPetsIdArray))
-//       }else{
-//         return res.send(exisitingUserHtmlContent(newPetsIdArray))
-//       }
-//     }catch(e){
-//       console.log('Error setting Invite Link timestamp', e)
-//     }
-//   }
-// })
-
-app.get('/acceptInvite',(req,res) => {
+app.get('/acceptInvite', async(req,res) => {
+  // Check if link has been accessed before.
   const invitationToken = req.query.invitationToken
   const invitationSecret = process.env.INVITATION_SECRET
-  // Validate token to get the userID, ensuring the token is valid and not expired.
-  const payload = jwt.verify(invitationToken, invitationSecret)
-  console.log('Invite Accepted, verified payload => ', payload)
+  const mint = await queries.getLastAccessedTimestamp(invitationToken)
+  console.log('Invitation token is mint? ',mint)
+  // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
+  if(!mint) return res.json({error: new Error('Link has been used')})
+  // CHECK IF INVITED USER IS NEW OR REGISTERED
+  const expectedReceivingOwnerId = await query.getOwnerIdFromInvite(invitationToken)
+  if(!expectedReceivingOwnerId){
+    // Redirect to sign-UP page along with invitation token
+    return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+  }else{
+    // Check the client attempting to accept the invite matches with the intended invite recipient
+    const payload = jwt.verify(invitationToken, invitationSecret)
+    // Return error: Either expired token or tampered with
+    if(payload instanceof Error){
+      return res.json({error: new Error('Invalid link')})
+    }
+    console.log('Token is valid; payload: ', payload)
+  // EXTRACT THE 'RECEIVING OWNER ID'
+  // const receivingOwnerId = payload.receivingOwnerId
+  // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
+    const accessToken = req.headers['authorization']
+    if(!accessToken){
+      // Redirect to sign-IN page along with invitation token
+      return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+    }
+    const accessTokenSecret = process.env.ACCESS_SECRET
+    const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+    const clientOwnerId = accessTokenPayload.ownerId
+    if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  }
+  // const newPetsIdArray = payload.newPetIdsArray
+  // Check if there's a matching token from the respective sender.
+  // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+  // console.log('Match result:', match)
+  // If one does not exist, send error
+  // if(!match){
+  //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
+  // }
+  // Check if this token has been used prior.
+  try{
+    const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+    if(!result) return res.send('server, line 301 => Error adding timestamp')
+    // Set the content type to text/html
+    // res.setHeader('Content-Type', 'text/html');
+    // // Send the HTML as the response
+    // if(!receivingOwnerId){
+    //   return res.send(newUserHtmlContent)
+    // }else{
+    //   return res.send(exisitingUserHtmlContent)
+    // }
+  }catch(e){
+    console.log('Error setting Invite Link timestamp', e)
+  }
+
+  return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
-// BEGIN UN-COMMENTING ***BELOW*** THIS LINE
-// ------------------------------------------------
-/*
+
 // MIDDLEWARE for ACCOUNT HANDLING w AUTHORIZATION
 
-app.post('/login', async(req,res) => {
+app.post('/sign-in', async(req,res) => {
   // Extract email and password from req.body 
   const { email, password } = req.body
   // Confirm user is registered; NEED TO CREATE UserQueries SERVICE
-  const user = await userQueries.authorizeUser(email,password)
+  const user = await queries.authorizeUser(email,password)
   // If exists:
   // Check password
   const passwordMatch = bcrypt.compare(password, user.password)
@@ -322,9 +332,17 @@ app.post('/login', async(req,res) => {
   const refreshToken = jwt.sign({user:user.email}, refreshSecret, { expiresIn:'10d'})
   // Set refresh token cookie
   const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 10 // ms/s * s/min * min/hr * hrs/day * num. days
-  res.cookie('refreshToken',refreshToken, { maxAge: refreshTokenMaxAge, httpOnly:true})
-  // Send access token 
-  return res.json({ accessToken })
+  res.cookie('refreshToken',refreshToken,{ maxAge: 1000 * 60 * 60 * 24 * 10, httpOnly:true})
+  const invitationToken = req.query.invitationToken
+  if(invitationToken){
+    const receivingOwnerId = await queries.getOwnerId(email)
+    const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
+    // Send access token
+    return res.json({accessToken,invitationToken})
+  }else{
+    // Send access token
+    return res.json({accessToken})
+  }
 })
 
 app.post('/sign-up', async(req,res) => {
@@ -332,7 +350,7 @@ app.post('/sign-up', async(req,res) => {
   const { email, password } = req.body
   // Validate
   // Confirm email is unique
-  const userExists = await userQueries.userExists(email)
+  const userExists = await queries.userExists(email)
   // If userExists returns false...
   // Create refresh token...
   const refreshSecret = process.env.REFRESH_SECRET
@@ -344,13 +362,24 @@ app.post('/sign-up', async(req,res) => {
   const saltRounds = 5
   bcrypt.hash(password, saltRounds, async(err,enc) => {
     //store user in DB
-    const result = await userQueries.saveUser(email,enc,refreshToken)
+    const result = await queries.saveUser(email,enc,refreshToken)
   })
-  // Set refresh token cookie
   res.cookie('refreshToken',refreshToken,{ maxAge: 1000 * 60 * 60 * 24 * 10, httpOnly:true})
-  // Send access token
-  return res.json('accessToken', accessToken)
+  const invitationToken = req.query.invitationToken
+  if(invitationToken){
+    const receivingOwnerId = await queries.getOwnerId(email)
+    const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
+    // Send access and invitation token
+    return res.json({accessToken,invitationToken})
+  }else{
+    // Send access token
+    return res.json({accessToken})
+  }
 })
+
+// BEGIN UN-COMMENTING ***BELOW*** THIS LINE
+// ------------------------------------------------
+/*
 
 const resetForm = (link) => {
   return `
@@ -503,6 +532,9 @@ app.post('/history', async(req,res) => {
 */
 // ------------------------------------------------
 // BEGIN UN-COMMENTING ***ABOVE*** THIS LINE
+
+
+
 
 // IGNORE EVERYTHING BELOW THIS LINE
 //-----------------------------------
