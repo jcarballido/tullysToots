@@ -162,10 +162,11 @@ app.post('/sendInvite', async(req, res) => {
   //const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail)
   // Also, confirm if pet-owner links already exist
   const invitationSecret = process.env.INVITATION_SECRET
+  /*
   if(receivingOwnerId){
     const payload = {
       sendingOwnerId, 
-      receivingOwnerId, 
+      //receivingOwnerId, 
       newPetIdsArray
     }
     // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
@@ -188,33 +189,33 @@ app.post('/sendInvite', async(req, res) => {
     }catch(e){
       return res.send(e)
     }
-  }else{
-    const payload = {
-      sendingOwnerId, 
-      newPetIdsArray
-    }
-    const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
-    // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
-    //console.log('sendingOwnerId: ',sendingOwnerId)
-    // NEED TO CHECK FOR ERRORS ADDING ROW IN SQL, EMAIL WILL SEND REGARDLESS
-    try{
-      await queries.addInvitationLink(sendingOwnerId, invitationToken)
-      // 4. Create a link that contains this JWT in the URL.
-      const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
-      // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
-      const info = await transporter.sendMail({
-        from: companyEmail, // sender address
-        to: receivingOwnerEmail, // list of receivers
-        subject: "A Tully's Toots Member is Inviting You!", // Subject line
-        html: resetForm(addPetOwnerLink), // html body
-      });
-      console.log('Line 101 => ', info)
-      return res.send('Link sent')
-    }catch(e){
-      return res.send(e)
-    }
-  } 
-  
+  }
+  */
+  // else{
+  const payload = {
+    sendingOwnerId, 
+    newPetIdsArray
+  }
+  const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+  // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+  //console.log('sendingOwnerId: ',sendingOwnerId)
+  // NEED TO CHECK FOR ERRORS ADDING ROW IN SQL, EMAIL WILL SEND REGARDLESS
+  try{
+    await queries.addInvitationLink(sendingOwnerId, receivingOwnerId, invitationToken)
+    // 4. Create a link that contains this JWT in the URL.
+    const addPetOwnerLink = `http://localhost:3000/invite?invitationToken=${invitationToken}`
+    // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+    const info = await transporter.sendMail({
+      from: companyEmail, // sender address
+      to: receivingOwnerEmail, // list of receivers
+      subject: "A Tully's Toots Member is Inviting You!", // Subject line
+      html: resetForm(addPetOwnerLink), // html body
+    });
+    console.log('Line 101 => ', info)
+    return res.send('Link sent')
+  }catch(e){
+    return res.send(e)
+  }
 })
 
 const exisitingUserHtmlContent = `
@@ -252,7 +253,7 @@ const newUserHtmlContent = `
   </html>
 `
 
-app.get('/acceptInvite', async(req,res) => {
+app.get('/invitation', async(req,res) => {
   // Check if link has been accessed before.
   const invitationToken = req.query.invitationToken
   const invitationSecret = process.env.INVITATION_SECRET
@@ -311,6 +312,14 @@ app.get('/acceptInvite', async(req,res) => {
   }
 
   return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
+})
+
+app.post('/acceptInvite', async(req,res) => {
+  const invitationToken = req.query.invitationToken
+  const invitationSecret = process.env.INVITATION_SECRET
+  const payload = jwt.verify(invitationToken, invitationSecret)
+  const newPetIdsArray = payload.newPetIdsArray
+
 })
 
 // MIDDLEWARE for ACCOUNT HANDLING w AUTHORIZATION
