@@ -104,6 +104,17 @@ const getLastAccessedTimestampText = () => {
   `
 }
 
+const getInvitedOwnerIdFromInviteText = `
+  SELECT receiver_owner_id
+  FROM invitations
+  WHERE invitation_token = $1
+`
+const getPasswordHashText = `
+  SELECT password_hash
+  FROM owners
+  WHERE owner_id = $1
+`
+
 const setInvitationAccessedAtTimestampText = () => {
   return `
     UPDATE invitations 
@@ -121,6 +132,8 @@ export default {
   getOwnersPetIdsText,
   getInvitationTokenComparisonText,
   getLastAccessedTimestampText,
+  getInvitedOwnerIdFromInviteText,
+  getPasswordHashText,
   setInvitationAccessedAtTimestampText
 }
 

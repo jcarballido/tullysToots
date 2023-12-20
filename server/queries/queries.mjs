@@ -22,6 +22,12 @@ const addPetOwnerLink = async(ownerId,petId) => {
   return result
 }
 
+const getPasswordHash = async(ownerId) => {
+  const result = await pool.query(sqlText.getHashedPasswordText,[ownerId])
+  const passwordHash = result.rows[0].password_hash
+  return passwordHash
+}
+
 const addInvitationLink = async(...args) => {
   console.log('addInvitationLink arguemnts: ', args)
   if(args.length > 2){
@@ -109,6 +115,12 @@ const getOwnersPetIds = async(ownerId) => {
   return petIdsArr || false
 }
 
+const getInvitedOwnerIdFromInvite = async (inviteToken) => {
+  const result = await pool.query(sqlText.getInvitedOwnerIdFromInviteText, [inviteToken])
+  const recipientOwnerId = result.rows[0].receiver_owner_id
+  return recipientOwnerId 
+}
+
 // ACTIVITY QUERIES
 // Recent activity (7 days)
 const getActivity = async(ownerPetIdsArray,referenceDate,daysBeforeAndAfter) => {
@@ -164,7 +176,9 @@ export default {
   addPet,
   addInvitationLink,
   addPetOwnerLink,
+  getHashedPassword,
   getOwnerId,
+  getInvitedOwnerIdFromInvite,
   getOwnersPetIds,
   getActivity,
   getPetActivityByOwner,

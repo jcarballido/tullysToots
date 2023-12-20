@@ -262,7 +262,7 @@ app.get('/invitation', async(req,res) => {
   // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
   if(!mint) return res.json({error: new Error('Link has been used')})
   // CHECK IF INVITED USER IS NEW OR REGISTERED
-  const expectedReceivingOwnerId = await query.getOwnerIdFromInvite(invitationToken)
+  const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
   if(!expectedReceivingOwnerId){
     // Redirect to sign-UP page along with invitation token
     return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
@@ -327,30 +327,41 @@ app.post('/acceptInvite', async(req,res) => {
 app.post('/sign-in', async(req,res) => {
   // Extract email and password from req.body 
   const { email, password } = req.body
-  // Confirm user is registered; NEED TO CREATE UserQueries SERVICE
-  const user = await queries.authorizeUser(email,password)
-  // If exists:
+  // Confirm user is registered; NEED TO CREATE UserQueries SERVICE\
+  const ownerId = await queries.getOwnerId(email)
+  if(!ownerId) return res.send('User does not exist')
+  const passwordHash = await queries.getPasswordHash(ownerId)
+  //const user = await queries.authorizeUser(email,password)
   // Check password
-  const passwordMatch = bcrypt.compare(password, user.password)
+  const passwordMatch = bcrypt.compare(password, passwordHash)
   // If passwords match:
-  const accessSecret = process.env.ACCESS_SECRET
-  const refreshSecret = process.env.REFRESH_SECRET
-  // Create access token
-  const accessToken = jwt.sign({ user: user.email }, accessSecret, {expiresIn: '15m'})
-  // Create refresh token 
-  const refreshToken = jwt.sign({user:user.email}, refreshSecret, { expiresIn:'10d'})
-  // Set refresh token cookie
-  const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 10 // ms/s * s/min * min/hr * hrs/day * num. days
-  res.cookie('refreshToken',refreshToken,{ maxAge: 1000 * 60 * 60 * 24 * 10, httpOnly:true})
-  const invitationToken = req.query.invitationToken
-  if(invitationToken){
-    const receivingOwnerId = await queries.getOwnerId(email)
-    const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
-    // Send access token
-    return res.json({accessToken,invitationToken})
+  if(passwordMatch){
+    const accessSecret = process.env.ACCESS_SECRET
+    const refreshSecret = process.env.REFRESH_SECRET
+    // Create access token
+    const accessToken = jwt.sign({ owner: ownerId }, accessSecret, {expiresIn: '15m'})
+    // Create refresh token 
+    const refreshToken = jwt.sign({ owner: ownerId }, refreshSecret, { expiresIn:'14d'})
+    // Set refresh token cookie
+    const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14 // ms/s * s/min * min/hr * hrs/day * num. days
+    res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+    const invitationToken = req.query.invitationToken
+    if(invitationToken){
+      // ************************FIX LINE BELOW*************************
+      const receivingOwnerId = await queries.getOwnerId(email)
+      try{
+        const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
+        // Send access token
+        return res.json({accessToken,invitationToken})
+      }catch(e){
+        return res.send('ERROR: Could not use invitation token')
+      }
+    }else{
+      // Send access token
+      return res.json({accessToken})
+    }
   }else{
-    // Send access token
-    return res.json({accessToken})
+    return res.send('ERROR: Wrong credentials')
   }
 })
 
