@@ -8,17 +8,17 @@ const pool = new Pool()
 
 // OWNER QUERIES
 // 'Insert into table' operations...
-const addOwner = async(ownerData) => {
-  const { email, passwordHash, refreshToken } = ownerData
-  // Single query
-  const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken])
-  return result
-}
+// const addOwner = async(ownerData) => {
+//   const { email, passwordHash, refreshToken } = ownerData
+//   // Single query
+//   const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken])
+//   return result
+// }
 
-const addPetOwnerLink = async(ownerId,petId) => {
-  const seeText = sqlText.insertIntoText('pet_owners')
-  console.log(seeText)
-  const result = await pool.query(sqlText.insertIntoText('pet_owners'),[ownerId,petId,true])
+const addPetOwnerLink = async(ownerId,petIdsArray) => {
+  //const seeText = sqlText.insertIntoText('pet_owners')
+  //console.log(seeText)
+  const result = await pool.query(sqlText.insertIntoText('pet_owners',petIdsArray),[ownerId,true,...petIdsArray])
   return result
 }
 
@@ -50,18 +50,25 @@ const addInvitationLink = async(...args) => {
   }
 }
 
-const addPet = async(ownerAndPetData) => {
-  const ownerEmail = ownerAndPetData.email
-  console.log(ownerEmail)
-  const ownerId = await getOwnerId(ownerEmail)
-  console.log(ownerId)
-  const petName = ownerAndPetData.petName
+// Need to break up adding pet to 'pets' table and creating owner link.
+const addPet = async(name,dob,sex) => {
+  //const ownerEmail = ownerAndPetData.email
+  // console.log(ownerEmail)
+  // const ownerId = await getOwnerId(ownerEmail)
+  // console.log(ownerId)
+  // const petName = ownerAndPetData.petName
   //console.log(petName)
-  const result = await pool.query(sqlText.insertIntoText('pets'),[ petName ])
-  const petId = result.rows[0].pet_id
-  console.log('This is the result from inserting pet name => ', petId)
-  return await addPetOwnerLink(ownerId,petId)
-  return 'check console log'
+  try{
+    const result = await pool.query(sqlText.insertIntoText('pets'),[ name,dob,sex ])
+    const petId = result.rows[0].pet_id
+    return petId
+  }catch(e){
+    return null
+  }
+  
+  // console.log('This is the result from inserting pet name => ', petId)
+  //return await addPetOwnerLink(ownerId,petId)
+  // return 'check console log'
 }
 
 // "Query from table" operations
@@ -78,6 +85,23 @@ const getOwnerId = async(email) => {
   }catch(e){
     return null
   }
+}
+
+const getPetId = async(petName,dob,sex) => {
+  try{
+    const result = await pool.query(sqlText.getPetIdText, [petName,dob,sex] )
+    //console.log('Here\'s the SQL text: ',sqlText.getOwnerText())
+    //console.log(result)
+    const petId = result.rows[0].pet_id
+    // console.log(ownerId)
+    return petId
+  }catch(e){
+    return null
+  }
+}
+
+const getInvitationId = async(invitationToken) => {
+  const result = await query.pool(sqlText.getInvitationTokenText, [ invitationToken ])
 }
  
 // 'Update' operations
@@ -107,10 +131,10 @@ const deactivatePetOwnerLink = async( ownerId,petId ) => {
 }
 
 const getOwnersPetIds = async(ownerId) => {
-  console.log(ownerId)
+  // console.log(ownerId)
   const result = await pool.query(sqlText.getOwnersPetIdsText(), [ownerId])
-  console.log('Here\'s the SQL text: ',sqlText.getOwnersPetIdsText())
-  console.log('Result from fetching owners pet ids: ',result)
+  // console.log('Here\'s the SQL text: ',sqlText.getOwnersPetIdsText())
+  // console.log('Result from fetching owners pet ids: ',result)
   const petIdsArr = result.rows.map(row => row.pet_id)
   return petIdsArr || false
 }
@@ -150,11 +174,25 @@ const getPetActivityByOwner = async(ownerData) => {
 
 }
 
-const compareSavedInvitatonToken = async(invitationToken,sendingOwnerId) => {
-  console.log('Queries.mjs line 142, sendingOwnerId:', sendingOwnerId, 'invitationToken: ', invitationToken)
-  const result = await pool.query(sqlText.getInvitationTokenComparisonText(), [sendingOwnerId,invitationToken])
-  console.log('Queries.mjs line 144, result:',result)
-  return result.rows.length
+// const compareSavedInvitatonToken = async(invitationToken,sendingOwnerId) => {
+//   console.log('Queries.mjs line 142, sendingOwnerId:', sendingOwnerId, 'invitationToken: ', invitationToken)
+//   const result = await pool.query(sqlText.getInvitationTokenComparisonText(), [sendingOwnerId,invitationToken])
+//   console.log('Queries.mjs line 144, result:',result)
+//   return result.rows.length
+// }
+
+// const getLastAccessedTimestamp = async (invitationToken) => {
+//   const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
+//   if(!result.rows[0].accessed_at) return true
+//   else return false
+// }
+//setInvitationAccessedAtTimestamp
+const setInvitationAccessedAtTimestamp = async(invitationToken) => {
+  // const currTimestampUTC = new Date().toUTCString()
+  // console.log('Current timestamp: ', currTimestampUTC)
+  const result = await pool.query(sqlText.setInvitationAccessedAtTimestampText(),[ invitationToken ])
+  //console.log('Queries, line 158: ', result)
+  return result.rowCount
 }
 
 const getLastAccessedTimestamp = async (invitationToken) => {
@@ -162,30 +200,36 @@ const getLastAccessedTimestamp = async (invitationToken) => {
   if(!result.rows[0].accessed_at) return true
   else return false
 }
-//setInvitationAccessedAtTimestamp
-const setInvitationAccessedAtTimestamp = async(invitationId, invitationToken) => {
-  // const currTimestampUTC = new Date().toUTCString()
-  // console.log('Current timestamp: ', currTimestampUTC)
-  const result = await pool.query(sqlText.setInvitationAccessedAtTimestampText(),[ invitationId, invitationToken ])
-  console.log('Queries, line 158: ', result)
-  return result.rowCount
+
+const addOwner = async(ownerData) => {
+  const { email, passwordHash, refreshToken } = ownerData
+  // Single query
+  const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken])
+  const ownerId = result.rows[0].owner_id
+  return ownerId
+}
+const addReceivingOwnerIdToInvitation = async(ownerId,invitationToken) => {
+  const result = await pool.query(sqlText.updateInvitationToken,[ownerId,invitationToken])
+  return result
 }
 
 export default {
-  addOwner,
   addPet,
   addInvitationLink,
   addPetOwnerLink,
-  getHashedPassword,
+  getPasswordHash,
   getOwnerId,
+  getPetId,
   getInvitedOwnerIdFromInvite,
   getOwnersPetIds,
   getActivity,
   getPetActivityByOwner,
   getLastAccessedTimestamp,
-  compareSavedInvitatonToken,
+  getInvitationId,
   deactivatePetOwnerLink,
   updateOwner,
-  setInvitationAccessedAtTimestamp
+  setInvitationAccessedAtTimestamp,
+  addOwner,
+  addReceivingOwnerIdToInvitation
 }
 

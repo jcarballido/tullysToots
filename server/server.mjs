@@ -203,7 +203,7 @@ app.post('/sendInvite', async(req, res) => {
   try{
     await queries.addInvitationLink(sendingOwnerId, receivingOwnerId, invitationToken)
     // 4. Create a link that contains this JWT in the URL.
-    const addPetOwnerLink = `http://localhost:3000/invite?invitationToken=${invitationToken}`
+    const addPetOwnerLink = `http://localhost:3000/invitation?invitationToken=${invitationToken}`
     // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
     const info = await transporter.sendMail({
       from: companyEmail, // sender address
@@ -218,45 +218,14 @@ app.post('/sendInvite', async(req, res) => {
   }
 })
 
-const exisitingUserHtmlContent = `
-  <html>
-    <head>
-      <title>Someone Shared a Link with You!</title>
-    </head>
-    <body>
-      <form action="http://localhost:3000/createAccountAndLink" method="post">
-        <div>EXISTING USER<div>
-        <label for="inputValue">Enter a value:</label>
-        <input type="text" id="inputValue" name="inputValue" required>
 
-        <!-- Submit button -->
-        <button type="submit">Submit</button>
-      </form>
-    </body>
-  </html>
-`
-const newUserHtmlContent = `
-  <html>
-    <head>
-      <title></title>
-    </head>
-    <body>
-      <form action="http://localhost:3000/createAccountAndLink" method="post">
-        <div>NEW USER<div>
-        <label for="inputValue">Enter a value:</label>
-        <input type="text" id="inputValue" name="inputValue" required>
-
-        <!-- Submit button -->
-        <button type="submit">Submit</button>
-      </form>
-    </body>
-  </html>
-`
 
 app.get('/invitation', async(req,res) => {
   // Check if link has been accessed before.
   const invitationToken = req.query.invitationToken
   const invitationSecret = process.env.INVITATION_SECRET
+  const inviteExists = await queries.getInvitationId(invitationToken)
+  if(!inviteExists) return res.send('This invite does not exist')
   const mint = await queries.getLastAccessedTimestamp(invitationToken)
   console.log('Invitation token is mint? ',mint)
   // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
@@ -264,28 +233,28 @@ app.get('/invitation', async(req,res) => {
   // CHECK IF INVITED USER IS NEW OR REGISTERED
   const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
   if(!expectedReceivingOwnerId){
-    // Redirect to sign-UP page along with invitation token
-    return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+      // Redirect to sign-UP page along with invitation token
+      return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
   }else{
-    // Check the client attempting to accept the invite matches with the intended invite recipient
-    const payload = jwt.verify(invitationToken, invitationSecret)
-    // Return error: Either expired token or tampered with
-    if(payload instanceof Error){
+      // Check the client attempting to accept the invite matches with the intended invite recipient
+      const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
+      // Return error: Either expired token or tampered with
+      if(invitationTokenPayload instanceof Error){
       return res.json({error: new Error('Invalid link')})
-    }
-    console.log('Token is valid; payload: ', payload)
+      }
+      console.log('Token is valid; payload: ', invitationTokenPayload)
   // EXTRACT THE 'RECEIVING OWNER ID'
   // const receivingOwnerId = payload.receivingOwnerId
   // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
-    const accessToken = req.headers['authorization']
-    if(!accessToken){
+      const accessToken = req.headers['authorization']
+      if(!accessToken){
       // Redirect to sign-IN page along with invitation token
       return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
-    }
-    const accessTokenSecret = process.env.ACCESS_SECRET
-    const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
-    const clientOwnerId = accessTokenPayload.ownerId
-    if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+      }
+      const accessTokenSecret = process.env.ACCESS_SECRET
+      const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+      const clientOwnerId = accessTokenPayload.ownerId
+      if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
   }
   // const newPetsIdArray = payload.newPetIdsArray
   // Check if there's a matching token from the respective sender.
@@ -297,29 +266,108 @@ app.get('/invitation', async(req,res) => {
   // }
   // Check if this token has been used prior.
   try{
-    const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
-    if(!result) return res.send('server, line 301 => Error adding timestamp')
-    // Set the content type to text/html
-    // res.setHeader('Content-Type', 'text/html');
-    // // Send the HTML as the response
-    // if(!receivingOwnerId){
-    //   return res.send(newUserHtmlContent)
-    // }else{
-    //   return res.send(exisitingUserHtmlContent)
-    // }
+      const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+      // if(!result) return res.send('server, line 301 => Error adding timestamp')
+      // Set the content type to text/html
+      // res.setHeader('Content-Type', 'text/html');
+      // // Send the HTML as the response
+      // if(!receivingOwnerId){
+      //   return res.send(newUserHtmlContent)
+      // }else{
+      //   return res.send(exisitingUserHtmlContent)
+      // }
   }catch(e){
-    console.log('Error setting Invite Link timestamp', e)
+      console.log('Error setting Invite Link timestamp', e)
   }
 
   return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
+  // Check if link has been accessed before.
+  // const invitationToken = req.query.invitationToken
+  // const invitationSecret = process.env.INVITATION_SECRET
+  // const mint = await queries.getLastAccessedTimestamp(invitationToken)
+  // console.log('Invitation token is mint? ',mint)
+  // // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
+  // if(!mint) return res.json({error: new Error('Link has been used')})
+  // // CHECK IF INVITED USER IS NEW OR REGISTERED
+  // const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
+  // if(!expectedReceivingOwnerId){
+  //   // Redirect to sign-UP page along with invitation token
+  //   return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+  // }else{
+  //   // Check the client attempting to accept the invite matches with the intended invite recipient
+  //   const payload = jwt.verify(invitationToken, invitationSecret)
+  //   // Return error: Either expired token or tampered with
+  //   if(payload instanceof Error){
+  //     return res.json({error: new Error('Invalid link')})
+  //   }
+  //   console.log('Token is valid; payload: ', payload)
+  // // EXTRACT THE 'RECEIVING OWNER ID'
+  // // const receivingOwnerId = payload.receivingOwnerId
+  // // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
+  //   const accessToken = req.headers['authorization']
+  //   if(!accessToken){
+  //     // Redirect to sign-IN page along with invitation token
+  //     return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+  //   }
+  //   const accessTokenSecret = process.env.ACCESS_SECRET
+  //   const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+  //   const clientOwnerId = accessTokenPayload.ownerId
+  //   if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  // }
+  // // const newPetsIdArray = payload.newPetIdsArray
+  // // Check if there's a matching token from the respective sender.
+  // // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+  // // console.log('Match result:', match)
+  // // If one does not exist, send error
+  // // if(!match){
+  // //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
+  // // }
+  // // Check if this token has been used prior.
+  // try{
+  //   const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+  //   if(!result) return res.send('server, line 301 => Error adding timestamp')
+  //   // Set the content type to text/html
+  //   // res.setHeader('Content-Type', 'text/html');
+  //   // // Send the HTML as the response
+  //   // if(!receivingOwnerId){
+  //   //   return res.send(newUserHtmlContent)
+  //   // }else{
+  //   //   return res.send(exisitingUserHtmlContent)
+  //   // }
+  // }catch(e){
+  //   console.log('Error setting Invite Link timestamp', e)
+  // }
+
+  // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
 
 app.post('/acceptInvite', async(req,res) => {
   const invitationToken = req.query.invitationToken
   const invitationSecret = process.env.INVITATION_SECRET
-  const payload = jwt.verify(invitationToken, invitationSecret)
-  const newPetIdsArray = payload.newPetIdsArray
-
+  const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
+  // Return error: Either expired token or tampered with
+  if(invitationTokenPayload instanceof Error) return res.json({error: new Error('Invalid link')})
+  // Confirm user is a registered owner that is logged in
+  const accessToken = req.headers['authorization']
+  // Decode access token for the client's owner ID
+  const accessSecret = process.env.ACCESS_SECRET
+  const accessTokenPayload = jwt.verify(accessToken,accessSecret)
+  if(accessTokenPayload instanceof Error) return res.json({error: new Error('Invalid access token')})
+  const clientOwnerId = accessTokenPayload.owner
+  const expectedReceivingOwnerId = await queries.getInvitedOwnerIdFromInvite(invitationToken)
+  // Confirm the clinet attempting to use the invitation token matches with the invitation's target recepient.
+  if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  // Expecting to receive the specific pet IDs the invite recepient is claiming.
+  const petIdsArray = req.body.petsClaimed
+  // EX: [12,9]
+  // Add new row(s) to pet_owners table, linking the owner to the pets in petIdsArray
+  try{
+		await queries.setInvitationAccessedAtTimestamp(invitationToken)
+    const result = await queries.addPetOwnerLink(ownerId,petIdsArray)
+  }catch(e){
+     return res.send('ERROR: Could not link pets to owner')
+  }
+  return res.send('Successfully added pets')
 })
 
 // MIDDLEWARE for ACCOUNT HANDLING w AUTHORIZATION
@@ -347,14 +395,13 @@ app.post('/sign-in', async(req,res) => {
     res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
     const invitationToken = req.query.invitationToken
     if(invitationToken){
-      // ************************FIX LINE BELOW*************************
-      const receivingOwnerId = await queries.getOwnerId(email)
+      //const result = await query.addReceivingOwnerIdToInvitation(ownerId)
       try{
-        const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
-        // Send access token
+        const result = await query.addReceivingOwnerIdToInvitation(ownerId)
+        // Send access token and invitation token
         return res.json({accessToken,invitationToken})
       }catch(e){
-        return res.send('ERROR: Could not use invitation token')
+        return res.send('ERROR: Could not add recipient to invitation token')
       }
     }else{
       // Send access token
@@ -370,25 +417,36 @@ app.post('/sign-up', async(req,res) => {
   const { email, password } = req.body
   // Validate
   // Confirm email is unique
-  const userExists = await queries.userExists(email)
+  const ownerId = await queries.getOwnerId(email)
   // If userExists returns false...
+  if(ownerId) return res.send('ERROR: Email already exists. Please sign in or request a password reset')
   // Create refresh token...
   const refreshSecret = process.env.REFRESH_SECRET
-  const refreshToken = jwt.sign({user:email}, refreshSecret, { expiresIn:'10d' })
+  const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
   // Create access token 
   const accessSecret = process.env.ACCESS_SECRET
-  const accessToken = jwt.sign({ user:email }, accessSecret, { expiresIn:'15m' })
+  const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
   // Hash raw password
   const saltRounds = 5
-  bcrypt.hash(password, saltRounds, async(err,enc) => {
+  bcrypt.hash(password, saltRounds, async(err,passwordHash) => {
     //store user in DB
-    const result = await queries.saveUser(email,enc,refreshToken)
+    try{
+      await queries.addOwner(email,passwordHash,refreshToken)
+    }catch(e){
+      return res.send('ERROR: Could not save info')
+    }
+    if(err) return res.send(err)
   })
-  res.cookie('refreshToken',refreshToken,{ maxAge: 1000 * 60 * 60 * 24 * 10, httpOnly:true})
+  const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
+  res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
   const invitationToken = req.query.invitationToken
   if(invitationToken){
-    const receivingOwnerId = await queries.getOwnerId(email)
-    const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
+    // const receivingOwnerId = await queries.getOwnerId(email)
+    try{
+      const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
+    }catch(e){
+      console.log('Error updating invitation token with new receiving owner id')
+    }
     // Send access and invitation token
     return res.json({accessToken,invitationToken})
   }else{
@@ -396,9 +454,87 @@ app.post('/sign-up', async(req,res) => {
     return res.json({accessToken})
   }
 })
+// IGNORE EVERYTHING BELOW THIS LINE
+//-----------------------------------
+// const exisitingUserHtmlContent = `
+//   <html>
+//     <head>
+//       <title>Someone Shared a Link with You!</title>
+//     </head>
+//     <body>
+//       <form action="http://localhost:3000/createAccountAndLink" method="post">
+//         <div>EXISTING USER<div>
+//         <label for="inputValue">Enter a value:</label>
+//         <input type="text" id="inputValue" name="inputValue" required>
 
-// BEGIN UN-COMMENTING ***BELOW*** THIS LINE
-// ------------------------------------------------
+//         <!-- Submit button -->
+//         <button type="submit">Submit</button>
+//       </form>
+//     </body>
+//   </html>
+// `
+// const newUserHtmlContent = `
+//   <html>
+//     <head>
+//       <title></title>
+//     </head>
+//     <body>
+//       <form action="http://localhost:3000/createAccountAndLink" method="post">
+//         <div>NEW USER<div>
+//         <label for="inputValue">Enter a value:</label>
+//         <input type="text" id="inputValue" name="inputValue" required>
+
+//         <!-- Submit button -->
+//         <button type="submit">Submit</button>
+//       </form>
+//     </body>
+//   </html>
+// `
+// const getLastAccessedTimestamp = async (invitationToken) => {
+//   const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
+//   if(!result.rows[0].accessed_at) return true
+//   else return false
+// }
+
+// const addOwner = async(email,paswordHash,refreshToken) => {
+//   // Single query
+//   const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken])
+//   return result
+// }
+
+// app.post('/sign-up', async(req,res) => {
+//   // Extract email and password from req.body
+//   const { email, password } = req.body
+//   // Validate
+//   // Confirm email is unique
+//   const userExists = await queries.userExists(email)
+//   // If userExists returns false...
+//   // Create refresh token...
+//   const refreshSecret = process.env.REFRESH_SECRET
+//   const refreshToken = jwt.sign({user:email}, refreshSecret, { expiresIn:'10d' })
+//   // Create access token 
+//   const accessSecret = process.env.ACCESS_SECRET
+//   const accessToken = jwt.sign({ user:email }, accessSecret, { expiresIn:'15m' })
+//   // Hash raw password
+//   const saltRounds = 5
+//   bcrypt.hash(password, saltRounds, async(err,enc) => {
+//     //store user in DB
+//     const result = await queries.saveUser(email,enc,refreshToken)
+//   })
+//   res.cookie('refreshToken',refreshToken,{ maxAge: 1000 * 60 * 60 * 24 * 10, httpOnly:true})
+//   const invitationToken = req.query.invitationToken
+//   if(invitationToken){
+//     const receivingOwnerId = await queries.getOwnerId(email)
+//     const result = await query.addReceivingOwnerIdToInvitation(receivingOwnerId)
+//     // Send access and invitation token
+//     return res.json({accessToken,invitationToken})
+//   }else{
+//     // Send access token
+//     return res.json({accessToken})
+//   }
+// })
+
+
 /*
 
 const resetForm = (link) => {
@@ -556,8 +692,7 @@ app.post('/history', async(req,res) => {
 
 
 
-// IGNORE EVERYTHING BELOW THIS LINE
-//-----------------------------------
+
 // DATABASE QUERIES
 // QUERY Module to enter into DB ('petQueries')
 // import { Pool } from 'pg'

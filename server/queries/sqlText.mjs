@@ -1,33 +1,48 @@
 const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
 
-const insertIntoText = (tableName) => {
+const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
   const ownersColumns = ['email','password_hash','refresh_token']
-  const petsColumns = ['pet_name']
+  const petsColumns = ['pet_name','dob','sex']
   const petOwnersColumns = [ 'owner_id', 'pet_id','active']
   const resetTokensColumns = ['reset_token','owner_id','accessed_at']
   const invitationsColumns = ['sender_owner_id','receiver_owner_id','invitation_token']
  
-  const text = (columnsArr) => {
+  const singleEntryText = (columnsArr) => {
     return `INSERT INTO ${tableName} (${columnsArr.join()})
     VALUES (${columnsArr.map( (_,index) => {return `$${index+1}`}).join()})
     RETURNING *
     `
   }
+  // const multipleEntryText = (columnsArr,newValuesArr) => {
+  //     const valuesTextArray = newValuesArr.map( (val,index) => return `($1,$${index+3},$2)`)
+  //     return `INSERT INTO ${tableName} (${columnsArr.join()})
+  //     VALUES ${valuesTextArray.join()}
+  //     RETURNING *
+  //     `
+  //   }
+
+  const multipleEntryText = (columnsArr) => {
+      const valuesTextArray = newValuesArr.map( (_,index) => {return `($1,$${index+3},$2)`})
+      return `
+      INSERT INTO ${tableName} (${columnsArr.join()}) 
+      VALUES ${valuesTextArray.join()} 
+      RETURNING *`
+  }
 
   switch(tableName){
     case 'activities':
-      return text(activityColumns)
+      return singleEntryText(activityColumns)
     case 'owners':
-      return text(ownersColumns)
+      return singleEntryText(ownersColumns)
     case 'pets':
-      return text(petsColumns)
+      return singleEntryText(petsColumns)
     case 'pet_owners':
-      return text(petOwnersColumns)
+      return multipleEntryText(petOwnersColumns)
     case 'reset_tokens':
-      return text(resetTokensColumns)
+      return singleEntryText(resetTokensColumns)
     case 'invitations':
-      return text(invitationsColumns)
+      return singleEntryText(invitationsColumns)
   }
 
 }
@@ -81,6 +96,12 @@ const getOwnerText = () => {
   `
 }
 
+const getPetIdText = `
+  SELECT pet_id
+  FROM pets
+  WHERE pet_name = $1 AND dob = $2 AND sex = $3;
+`
+
 const getOwnersPetIdsText = () => {
   return `
   SELECT pet_id FROM pet_owners
@@ -114,14 +135,20 @@ const getPasswordHashText = `
   FROM owners
   WHERE owner_id = $1
 `
+// const getInvitationTokenText
 
 const setInvitationAccessedAtTimestampText = () => {
   return `
     UPDATE invitations 
     SET accessed_at = now() AT TIME ZONE 'UTC'
-    WHERE sender_owner_id = $1 AND invitation_token = $2  
+    WHERE invitation_token = $1  
   `
 }
+const updateInvitationToken = `
+    UPDATE invitations
+    SET receiving_owner_id = $1
+    WHERE invitation_token = $2
+`
 
 export default {
   insertIntoText,
@@ -129,12 +156,15 @@ export default {
   deactivatePetOwnerLinkText,
   getActivityText,
   getOwnerText,
+  getPetIdText,
   getOwnersPetIdsText,
   getInvitationTokenComparisonText,
   getLastAccessedTimestampText,
   getInvitedOwnerIdFromInviteText,
   getPasswordHashText,
-  setInvitationAccessedAtTimestampText
+  getInvitationTokenText,
+  setInvitationAccessedAtTimestampText,
+  updateInvitationToken
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
