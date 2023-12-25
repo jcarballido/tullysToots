@@ -51,7 +51,7 @@ const addInvitationLink = async(...args) => {
 }
 
 // Need to break up adding pet to 'pets' table and creating owner link.
-const addPet = async(name,dob,sex) => {
+const addPet = async(petName,dob,sex) => {
   //const ownerEmail = ownerAndPetData.email
   // console.log(ownerEmail)
   // const ownerId = await getOwnerId(ownerEmail)
@@ -59,11 +59,11 @@ const addPet = async(name,dob,sex) => {
   // const petName = ownerAndPetData.petName
   //console.log(petName)
   try{
-    const result = await pool.query(sqlText.insertIntoText('pets'),[ name,dob,sex ])
+    const result = await pool.query(sqlText.insertIntoText('pets'),[ petName,dob,sex ])
     const petId = result.rows[0].pet_id
     return petId
   }catch(e){
-    return null
+    return e
   }
   
   // console.log('This is the result from inserting pet name => ', petId)
@@ -96,7 +96,7 @@ const getPetId = async(petName,dob,sex) => {
     // console.log(ownerId)
     return petId
   }catch(e){
-    return null
+    return e
   }
 }
 
@@ -124,10 +124,30 @@ const updateOwner = async(updatedData) => {
   return result
 }
 
+const updatePet = async(updatedData) => {
+  const petId = updatedData.petId
+  // const email = updatedData.email
+  const [ ...fields ] = updatedData.fields
+  // console.log('Fields => ',fields)
+  const [ ...newValues ] = updatedData.newValues
+  //console.log('newValues => ',newValues)
+
+  // Two queries:
+  // 1. Get petId
+  //const resultOwner = await pool.query(sqlText.getOwnerText(),[email])
+  //const ownerId = resultOwner.rows[0].owner_id
+  //console.log('ownerId =>', ownerId)
+  //2. Pass in owner ID that needs updating
+  //console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
+  const result = await pool.query(sqlText.updateText('pets',fields,'pet_id'),[...newValues,petId])
+  // console.log(result)
+  return result
+}
+
 // 'Remove' operations
 const deactivatePetOwnerLink = async( ownerId,petId ) => {
   const result = await pool.query(sqlText.deactivatePetOwnerLinkText([ownerId,petId]))
-  return result.rows[0]
+  return result
 }
 
 const getOwnersPetIds = async(ownerId) => {
@@ -136,7 +156,14 @@ const getOwnersPetIds = async(ownerId) => {
   // console.log('Here\'s the SQL text: ',sqlText.getOwnersPetIdsText())
   // console.log('Result from fetching owners pet ids: ',result)
   const petIdsArr = result.rows.map(row => row.pet_id)
-  return petIdsArr || false
+  const filteredPetIdsArray = petIdsArr.filter( petId => !petId)
+  return filteredPetIdsArray
+}
+
+const getActivePetLinks = async(petId) => {
+  const result = await pool.query(sqlText.getPetLinks,[petId])
+  const activeLinksArray = result.rows.filter( row => row.active == true)
+  return activeLinksArray
 }
 
 const getInvitedOwnerIdFromInvite = async (inviteToken) => {
@@ -222,12 +249,14 @@ export default {
   getPetId,
   getInvitedOwnerIdFromInvite,
   getOwnersPetIds,
+  getActivePetLinks,
   getActivity,
   getPetActivityByOwner,
   getLastAccessedTimestamp,
   getInvitationId,
   deactivatePetOwnerLink,
   updateOwner,
+  updatePet,
   setInvitationAccessedAtTimestamp,
   addOwner,
   addReceivingOwnerIdToInvitation

@@ -1,4 +1,4 @@
-import express, { Router } from 'express'
+import express from 'express'
 import queries from '../queries/queries.mjs'
 
 const router = express.Router()
@@ -161,7 +161,7 @@ router.post('/resetPasswordConfirmation', (req,res) => {
   res.send(`Received value: ${newPassword}`)
 })
 
-// NEW GAME PLAN: When attempting to add pets, only add new pets. If a pet already exists and has an active link, let user now they need an invite.
+// NEW GAME PLAN: When attempting to add pets, only add new pets. If a pet already exists and has an active link, let user know they need an invite.
 router.post('/addPets', async(req,res) => {
   // Confirm owner ID from accessToken exists
   const ownerId = req.ownerId
@@ -173,14 +173,14 @@ router.post('/addPets', async(req,res) => {
   try{
     petDataArray.forEach( async(petData) => {
       let petId = await queries.getPetId(...petData)
-      if(petId == null){
+      if(!petId){
         petId = await queries.addPet(...petData)
         const result = await queries.addPetOwnerLink(ownerId,[petId])
         processedPetDataArray.push(petId)
       }else{
         // Check if pet has an active link with any owner. If not, create link between owner and pet. If so, send err message where user requires invite.
-        const result = await queries.checkExistingPetOwnerLink(petId)
-        const activeLinkExists = result.rows[0].active
+        const activeLinksArray = await queries.getActivePetLinks(petId)
+        const activeLinkExists = activeLinksArray.length > 1
         if(activeLinkExists) excludedPetIdArray.push(petId)
         else {
           await queries.addPetOwnerLink(ownerId,[petId])
@@ -194,3 +194,249 @@ router.post('/addPets', async(req,res) => {
   }
 
 })
+
+router.post('/updatePet', async(req,res) => {
+  const ownerId = req.ownerId
+  const updatedData = req.body.updatedData
+  if (!ownerId) return res.send('User is not logged in or does not have an account')
+  const result = await queries.updatePet(updatedData)
+  if(result.rowCount) return res.send('Successfully updated pet data')
+  else return res.send('Error adding pet data')
+})
+
+router.post('/breakOwnerLink', async(req,res) => {
+  const ownerId = req.ownerId
+  const petId = req.petId
+  const result = await queries.deactivatePetOwnerLink(ownerId,petId)
+  if(result.rowCount) return res.send('Successfully removed link')
+  else return res.send('Error supressing link')
+})
+
+router.post('/sendInvite', async(req, res) => {
+  const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
+    const result = requestedPetIds.every(id => linkedPetIds.includes(id))
+    return result
+  }
+  const { sendingOwnerEmail, receivingOwnerEmail, newPetIdsArray } = req.body
+  if(!(sendingOwnerEmail || newPetIdsArray)) return res.send('Invalid request')
+  const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail);
+  if(!sendingOwnerId) return res.send('We cannot find an account associated with your email')
+  const verifiedLinkedPetIds = await queries.getOwnersPetIds( sendingOwnerId )
+  console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
+  const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
+  if(!verifiedIdsExist) return res.send('Can\'t find a link to one or more of these pets')
+
+  const receivingOwnerId = await queries.getOwnerId(receivingOwnerEmail);
+  // console.log('Line 43 => ', sendingOwnerEmail)
+  // console.log('Line 44 => ', receivingOwnerEmail)
+  // 1. Find sending user ID from email
+  //const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail)
+  // Also, confirm if pet-owner links already exist
+  const invitationSecret = process.env.INVITATION_SECRET
+  /*
+  if(receivingOwnerId){
+    const payload = {
+      sendingOwnerId, 
+      //receivingOwnerId, 
+      newPetIdsArray
+    }
+    // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
+    const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+    // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+    
+    try{
+      await queries.addInvitationLink(sendingOwnerId, receivingOwnerId,invitationToken)
+      // 4. Create a link that contains this JWT in the URL.
+      const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+      // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+      const info = await transporter.sendMail({
+        from: companyEmail, // sender address
+        to: receivingOwnerEmail, // list of receivers
+        subject: "A Tully's Toots Member is Inviting You!", // Subject line
+        html: resetForm(addPetOwnerLink), // html body
+      });
+      console.log('Line 101 => ', info)
+      return res.send('Link sent')
+    }catch(e){
+      return res.send(e)
+    }
+  }
+  */
+  // else{
+  const payload = {
+    sendingOwnerId, 
+    newPetIdsArray
+  }
+  const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+  // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
+  //console.log('sendingOwnerId: ',sendingOwnerId)
+  // NEED TO CHECK FOR ERRORS ADDING ROW IN SQL, EMAIL WILL SEND REGARDLESS
+  try{
+    await queries.addInvitationLink(sendingOwnerId, receivingOwnerId, invitationToken)
+    // 4. Create a link that contains this JWT in the URL.
+    const addPetOwnerLink = `http://localhost:3000/invitation?invitationToken=${invitationToken}`
+    // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+    const info = await transporter.sendMail({
+      from: companyEmail, // sender address
+      to: receivingOwnerEmail, // list of receivers
+      subject: "A Tully's Toots Member is Inviting You!", // Subject line
+      html: resetForm(addPetOwnerLink), // html body
+    });
+    console.log('Line 101 => ', info)
+    return res.send('Link sent')
+  }catch(e){
+    return res.send(e)
+  }
+})
+
+router.get('/invitation', async(req,res) => {
+  // Check if link has been accessed before.
+  const invitationToken = req.query.invitationToken
+  const invitationSecret = process.env.INVITATION_SECRET
+  const inviteExists = await queries.getInvitationId(invitationToken)
+  if(!inviteExists) return res.send('This invite does not exist')
+  const mint = await queries.getLastAccessedTimestamp(invitationToken)
+  console.log('Invitation token is mint? ',mint)
+  // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
+  if(!mint) return res.json({error: new Error('Link has been used')})
+  // CHECK IF INVITED USER IS NEW OR REGISTERED
+  const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
+  if(!expectedReceivingOwnerId){
+      // Redirect to sign-UP page along with invitation token
+      return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+  }else{
+      // Check the client attempting to accept the invite matches with the intended invite recipient
+      const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
+      // Return error: Either expired token or tampered with
+      if(invitationTokenPayload instanceof Error){
+      return res.json({error: new Error('Invalid link')})
+      }
+      console.log('Token is valid; payload: ', invitationTokenPayload)
+  // EXTRACT THE 'RECEIVING OWNER ID'
+  // const receivingOwnerId = payload.receivingOwnerId
+  // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
+      const accessToken = req.headers['authorization']
+      if(!accessToken){
+      // Redirect to sign-IN page along with invitation token
+      return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+      }
+      const accessTokenSecret = process.env.ACCESS_SECRET
+      const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+      const clientOwnerId = accessTokenPayload.ownerId
+      if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  }
+  // const newPetsIdArray = payload.newPetIdsArray
+  // Check if there's a matching token from the respective sender.
+  // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+  // console.log('Match result:', match)
+  // If one does not exist, send error
+  // if(!match){
+  //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
+  // }
+  // Check if this token has been used prior.
+  try{
+      const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+      // if(!result) return res.send('server, line 301 => Error adding timestamp')
+      // Set the content type to text/html
+      // res.setHeader('Content-Type', 'text/html');
+      // // Send the HTML as the response
+      // if(!receivingOwnerId){
+      //   return res.send(newUserHtmlContent)
+      // }else{
+      //   return res.send(exisitingUserHtmlContent)
+      // }
+  }catch(e){
+      console.log('Error setting Invite Link timestamp', e)
+  }
+
+  return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
+  // Check if link has been accessed before.
+  // const invitationToken = req.query.invitationToken
+  // const invitationSecret = process.env.INVITATION_SECRET
+  // const mint = await queries.getLastAccessedTimestamp(invitationToken)
+  // console.log('Invitation token is mint? ',mint)
+  // // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
+  // if(!mint) return res.json({error: new Error('Link has been used')})
+  // // CHECK IF INVITED USER IS NEW OR REGISTERED
+  // const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
+  // if(!expectedReceivingOwnerId){
+  //   // Redirect to sign-UP page along with invitation token
+  //   return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+  // }else{
+  //   // Check the client attempting to accept the invite matches with the intended invite recipient
+  //   const payload = jwt.verify(invitationToken, invitationSecret)
+  //   // Return error: Either expired token or tampered with
+  //   if(payload instanceof Error){
+  //     return res.json({error: new Error('Invalid link')})
+  //   }
+  //   console.log('Token is valid; payload: ', payload)
+  // // EXTRACT THE 'RECEIVING OWNER ID'
+  // // const receivingOwnerId = payload.receivingOwnerId
+  // // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
+  //   const accessToken = req.headers['authorization']
+  //   if(!accessToken){
+  //     // Redirect to sign-IN page along with invitation token
+  //     return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+  //   }
+  //   const accessTokenSecret = process.env.ACCESS_SECRET
+  //   const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+  //   const clientOwnerId = accessTokenPayload.ownerId
+  //   if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  // }
+  // // const newPetsIdArray = payload.newPetIdsArray
+  // // Check if there's a matching token from the respective sender.
+  // // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+  // // console.log('Match result:', match)
+  // // If one does not exist, send error
+  // // if(!match){
+  // //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
+  // // }
+  // // Check if this token has been used prior.
+  // try{
+  //   const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+  //   if(!result) return res.send('server, line 301 => Error adding timestamp')
+  //   // Set the content type to text/html
+  //   // res.setHeader('Content-Type', 'text/html');
+  //   // // Send the HTML as the response
+  //   // if(!receivingOwnerId){
+  //   //   return res.send(newUserHtmlContent)
+  //   // }else{
+  //   //   return res.send(exisitingUserHtmlContent)
+  //   // }
+  // }catch(e){
+  //   console.log('Error setting Invite Link timestamp', e)
+  // }
+
+  // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
+})
+
+router.post('/acceptInvite', async(req,res) => {
+  const invitationToken = req.query.invitationToken
+  const invitationSecret = process.env.INVITATION_SECRET
+  const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
+  // Return error: Either expired token or tampered with
+  if(invitationTokenPayload instanceof Error) return res.json({error: new Error('Invalid link')})
+  // Confirm user is a registered owner that is logged in
+  const accessToken = req.headers['authorization']
+  // Decode access token for the client's owner ID
+  const accessSecret = process.env.ACCESS_SECRET
+  const accessTokenPayload = jwt.verify(accessToken,accessSecret)
+  if(accessTokenPayload instanceof Error) return res.json({error: new Error('Invalid access token')})
+  const clientOwnerId = accessTokenPayload.owner
+  const expectedReceivingOwnerId = await queries.getInvitedOwnerIdFromInvite(invitationToken)
+  // Confirm the clinet attempting to use the invitation token matches with the invitation's target recepient.
+  if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  // Expecting to receive the specific pet IDs the invite recepient is claiming.
+  const petIdsArray = req.body.petsClaimed
+  // EX: [12,9]
+  // Add new row(s) to pet_owners table, linking the owner to the pets in petIdsArray
+  try{
+		await queries.setInvitationAccessedAtTimestamp(invitationToken)
+    const result = await queries.addPetOwnerLink(ownerId,petIdsArray)
+  }catch(e){
+     return res.send('ERROR: Could not link pets to owner')
+  }
+  return res.send('Successfully added pets')
+})
+
+export default router
