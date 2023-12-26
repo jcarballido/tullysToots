@@ -2,3 +2,4 @@ node_modules
 sql
 rest
 .env
+archivedCode.mjs

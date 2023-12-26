@@ -22,8 +22,14 @@ const addPetOwnerLink = async(ownerId,petIdsArray) => {
   return result
 }
 
+const addActivity = async(petId, ownerId, timestampWithoutTZ, pee, poo) => {
+  const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestampWithoutTZ, pee, poo])
+  const resultId = result.rows[0].activity_id
+  return resultId
+}
+
 const getPasswordHash = async(ownerId) => {
-  const result = await pool.query(sqlText.getHashedPasswordText,[ownerId])
+  const result = await pool.query(sqlText.getPasswordHashText,[ownerId])
   const passwordHash = result.rows[0].password_hash
   return passwordHash
 }
@@ -144,6 +150,17 @@ const updatePet = async(updatedData) => {
   return result
 }
 
+const updateActivity = async(updatedActivityArray, petId) => {
+  const activityId = updatedActivityArray.petId
+  // const email = updatedData.email
+  const [ ...fields ] = updatedActivityArray.fields
+  // console.log('Fields => ',fields)
+  const [ ...newValues ] = updatedActivityArray.newValues
+  const result = await pool.query(sqlText.updateText('activites',fields, 'activity_id'),[...newValues, activityId])
+  if(!result.rowCount) return result.send('ERROR: Did not update activity')
+  return result.send('Successfully updated activity')
+}
+
 // 'Remove' operations
 const deactivatePetOwnerLink = async( ownerId,petId ) => {
   const result = await pool.query(sqlText.deactivatePetOwnerLinkText([ownerId,petId]))
@@ -174,13 +191,21 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 
 // ACTIVITY QUERIES
 // Recent activity (7 days)
-const getActivity = async(ownerPetIdsArray,referenceDate,daysBeforeAndAfter) => {
-  const activityArray = ownerPetIdsArray.map( async(petId) => {
-    // Example referenceDate format: 'YYYY-MM-DD'
-    const result = await pool.query(sqlText.getActivityText(), [ petId, referenceDate, daysBeforeAndAfter ])
-    return result.rows
+const getActivity = async(ownerId,targetDate) => {
+  // Get all active links to pets from ownerID and return pet IDs.
+  const petIdsArray = await getOwnersPetIds(ownerId)
+  // Get activity for each petID on the target date, and 7 days before and 7 days after
+  const daysBeforeAndAfter = 7
+  const petActivity =  petIdsArray.map( async(petId) => {
+    const result = await pool.query(sqlText.getActivityText(), [ petId, targetDate, daysBeforeAndAfter ])
+    return { petId: result.rows }
   })
-  return activityArray
+  return petActivity
+  // const activityArray = ownerPetIdsArray.map( async(petId) => {
+  //   const result = await pool.query(sqlText.getActivityText(), [ petId, referenceDate, daysBeforeAndAfter ])
+  //   return result.rows
+  // })
+  // return activityArray
 }
 
 const getPetActivityByOwner = async(ownerData) => {
@@ -244,6 +269,7 @@ export default {
   addPet,
   addInvitationLink,
   addPetOwnerLink,
+  addActivity,
   getPasswordHash,
   getOwnerId,
   getPetId,
@@ -257,8 +283,10 @@ export default {
   deactivatePetOwnerLink,
   updateOwner,
   updatePet,
+  updateActivity,
   setInvitationAccessedAtTimestamp,
   addOwner,
-  addReceivingOwnerIdToInvitation
+  addReceivingOwnerIdToInvitation,
+  
 }
 

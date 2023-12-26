@@ -1,4 +1,4 @@
-const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
+const activityColumns = ['pet_id','entered_by','set_on_at','pee','poo']
 
 const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
@@ -22,7 +22,7 @@ const insertIntoText = (tableName,newValuesArr) => {
   //     `
   //   }
 
-  const multipleEntryText = (columnsArr) => {
+  const multiplePetOwnersEntryText = (columnsArr) => {
       const valuesTextArray = newValuesArr.map( (_,index) => {return `($1,$${index+3},$2)`})
       return `
       INSERT INTO ${tableName} (${columnsArr.join()}) 
@@ -38,7 +38,7 @@ const insertIntoText = (tableName,newValuesArr) => {
     case 'pets':
       return singleEntryText(petsColumns)
     case 'pet_owners':
-      return multipleEntryText(petOwnersColumns)
+      return multiplePetOwnersEntryText(petOwnersColumns)
     case 'reset_tokens':
       return singleEntryText(resetTokensColumns)
     case 'invitations':
@@ -55,7 +55,7 @@ const updateText = (tableName, fieldsArr, identifier) => {
     const capitalLetterLookahead = /(?=[A-Z])/
     const splitString = camelCase.split(capitalLetterLookahead)
     const snakeCaseString = splitString.join('_').toLowerCase()
-    console.log('SNake case string => ', snakeCaseString)
+    console.log('Snake case string => ', snakeCaseString)
     return snakeCaseString
   }
 
@@ -66,6 +66,7 @@ const updateText = (tableName, fieldsArr, identifier) => {
     `UPDATE ${tableName}
     SET ${fieldsArrayConvertedToSnakeCase.map( (field,index) => {return `${field}=$${index+1}`})} 
     WHERE ${identifier}=$${fieldsArr.length + 1}
+    RETURNING *
     `
   )
 }
@@ -105,7 +106,7 @@ const getPetIdText = `
 const getOwnersPetIdsText = () => {
   return `
   SELECT pet_id FROM pet_owners
-  WHERE owner_id = $1
+  WHERE owner_id = $1 AND active = true
   `
 }
 
