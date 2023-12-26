@@ -2,7 +2,6 @@ import express from 'express'
 import dotenv from 'dotenv/config'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import nodemailer from 'nodemailer'
 import queries from './queries/queries.mjs'
 
 const app = express()

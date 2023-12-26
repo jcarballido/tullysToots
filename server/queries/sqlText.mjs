@@ -97,6 +97,12 @@ const getOwnerText = () => {
   `
 }
 
+const getEmail = `
+  SELECT email 
+  FROM owners
+  WHERE emal = $1
+`
+
 const getPetIdText = `
   SELECT pet_id
   FROM pets
@@ -145,6 +151,13 @@ const setInvitationAccessedAtTimestampText = () => {
     WHERE invitation_token = $1  
   `
 }
+const setResetAccessedAtTimestampText = `
+  UPDATE reset_tokens 
+  SET accessed_at = now() AT TIME ZONE 'UTC'
+  WHERE reset_token = $1 
+  RETURNING *
+`
+
 const updateInvitationToken = `
     UPDATE invitations
     SET receiving_owner_id = $1
@@ -157,6 +170,7 @@ export default {
   deactivatePetOwnerLinkText,
   getActivityText,
   getOwnerText,
+  getEmail,
   getPetIdText,
   getOwnersPetIdsText,
   getInvitationTokenComparisonText,
@@ -165,6 +179,7 @@ export default {
   getPasswordHashText,
   getInvitationTokenText,
   setInvitationAccessedAtTimestampText,
+  setResetAccessedAtTimestampText,
   updateInvitationToken
 }
 

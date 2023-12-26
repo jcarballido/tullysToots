@@ -93,6 +93,11 @@ const getOwnerId = async(email) => {
   }
 }
 
+const getEmail = async(ownerId) => {
+  const result = await query.pool(sqlText.getEmail, [ ownerId ])
+  return result.rows[0].email
+}
+
 const getPetId = async(petName,dob,sex) => {
   try{
     const result = await pool.query(sqlText.getPetIdText, [petName,dob,sex] )
@@ -112,7 +117,7 @@ const getInvitationId = async(invitationToken) => {
  
 // 'Update' operations
 const updateOwner = async(updatedData) => {
-  const email = updatedData.email
+  const identifier = updatedData.email || updatedData.ownerId
   const [ ...fields ] = updatedData.fields
   console.log('Fields => ',fields)
   const [ ...newValues ] = updatedData.newValues
@@ -120,7 +125,7 @@ const updateOwner = async(updatedData) => {
 
   // Two queries:
   // 1. Get ownerId
-  const resultOwner = await pool.query(sqlText.getOwnerText(),[email])
+  const resultOwner = await pool.query(sqlText.getOwnerText(),[ identifier ])
   const ownerId = resultOwner.rows[0].owner_id
   console.log('ownerId =>', ownerId)
   //2. Pass in owner ID that needs updating
@@ -247,6 +252,19 @@ const setInvitationAccessedAtTimestamp = async(invitationToken) => {
   return result.rowCount
 }
 
+const setResetAccessedAtTimestamp = async(resetToken) => {
+  try{
+    // const currTimestampUTC = new Date().toUTCString()
+    // console.log('Current timestamp: ', currTimestampUTC)
+    const result = await pool.query(sqlText.setResetAccessedAtTimestampText,[ resetToken ])
+    //console.log('Queries, line 158: ', result)
+    return result.rows[0].accessed_at
+  }catch(e){
+    return e
+  }
+  
+}
+
 const getLastAccessedTimestamp = async (invitationToken) => {
   const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
   if(!result.rows[0].accessed_at) return true
@@ -272,6 +290,7 @@ export default {
   addActivity,
   getPasswordHash,
   getOwnerId,
+  getEmail,
   getPetId,
   getInvitedOwnerIdFromInvite,
   getOwnersPetIds,
@@ -285,6 +304,7 @@ export default {
   updatePet,
   updateActivity,
   setInvitationAccessedAtTimestamp,
+  setResetAccessedAtTimestamp,
   addOwner,
   addReceivingOwnerIdToInvitation,
   

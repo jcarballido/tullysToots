@@ -1,9 +1,24 @@
 import express from 'express'
 import queries from '../queries/queries.mjs'
+import nodemailer from 'nodemailer'
+import { verify } from 'jsonwebtoken'
 
 const router = express.Router()
 
-// *** NEED EMAIL TRNASPORTER ***
+const companyEmail = `"Tully's Toots" <${process.env.APP_USERNAME}>`
+const companyEmailPassword = process.env.APP_PASSWORD
+console.log('Line 44, server.mjs => ', companyEmail)
+console.log('Line 45, server.mjs => ', companyEmailPassword)
+
+const transporter = nodemailer.createTransport({
+  service:"gmail",
+  auth: {
+    user: process.env.APP_USERNAME,
+    pass: companyEmailPassword,
+  },
+});
+
+
 
 router.post('/sign-up', async(req,res) => {
   // Extract email and password from req.body
@@ -87,78 +102,106 @@ router.post('/sign-in', async(req,res) => {
     return res.send('ERROR: Wrong credentials')
   }
 })
-// *** REQUIRES REWRITE ***
+
 router.get('/resetRequest', async(req,res) => {
-  //const { userEmail } = req.body
-  // Query DB to confirm email exists
-  // ...
-  // If email DOES NOT exist:
-  // console.log('User email does not exist')
-  // return
-  // If email DOES exist:
-  // 1. Collect the userID from the user email query
-  const userId = 1;
-  // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
-  
-  const resetToken = sign({ userId }, tokenSecret,{ expiresIn:'10m' })
-  // 3. Store the userId,resetToken, AccessedAt='null' in a new row in the 'ResetRequest' table. Override existing resetToken.
-  // const result = queryServices.resetRequest(userId, resetToken)
-  // 4. Create a link that contains this JWT in the URL.
+  const ownerId = req.ownerId
+  // Get email associated with owner ID
+  const ownerEmail = await queries.getEmail(ownerId)
+  // 1. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
+  const resetSecret = process.env.RESET_SECRET
+  const resetToken = sign({ ownerId }, resetSecret,{ expiresIn:'10m' })
+  // 2. Store the userId,resetToken, AccessedAt='null' in a new row in the 'ResetRequest' table. Override existing resetToken.
+  // const result = queryServices.resetRequest(userId, resetToken).
+  // 3. Create a link that contains this JWT in the URL.
   const resetLink = `http://localhost:3000/resetPassword?resetToken=${resetToken}`
-  // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
+  // 4. Send this link via an email to the user's registered email (confirmed in Line 25)
+  const resetPasswordEmailTemplate = (link) => {
+    return `
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Password Form</title>
+    </head>
+    <body>
+        <h1>Password Reset Link</h1>
+        <h3>This is a one-time link. It will expire after clicking it or 10 minutes from now.<h3>
+        <h3>PLease contact our support team if you did not make this request.<h3>
+        <a href=${link} target="_blank">Click here to reset password</a>
+    </body>
+  `}
   const info = await transporter.sendMail({
-    from: user, // sender address
-    to: "carballidoj92@gmail.com", // list of receivers
+    from: `${ companyEmail }`, // sender address
+    to: `${ ownerEmail }`, // list of receivers
     subject: "Tully's Toots Password Reset", // Subject line
-    //text: "Hello world?", // plain text body
-    html: resetForm(resetLink), // html body
+    html: resetPasswordEmailTemplate(resetLink), // html body
   });
 
   console.log("Message sent: %s", info.messageId);
   res.send('Email with reset link to requesting customer')
 
 })
-// *** REQUIRES REWRITE ***
+
 router.get('/resetPassword', async(req,res) => {
   // Get reset token from request body
   const resetToken = req.query.resetToken
   // Validate token to get the userID, ensuring the token is valid and not expired.
-  const token = verify(resetToken, tokenSecret)
-  console.log('Token is valid: ', token)
+  const resetTokenPayload = verify(resetToken, tokenSecret)
+  if(resetTokenPayload instanceof Error){
+    return res.json({error: new Error('Invalid link')})
+  }
   // Query the 'ResetRequest' table to confirm the the 'AccessToken' is null and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
+  const match = await queries.getResetTokenInfo(resetTokenPayload)
+  if(!match) return res.send('ERROR: Reset token does not exist in database.')
+  if(match.rows[0].accessed_at) return res.send('ERROR: Reset request has already been accessed')
+  const accessedAt = await queries.setResetAccessedAtTimestamp(resetToken)
+  if( accessedAt instanceof Error) return res.send('ERROR: Did not set an accessed_at timestamp after reset token lookup.')
   // If so, enter a timestamp under AccessedAt: column. 
   // Send an HTML form to the client for the user to reset their password.
-  const htmlContent = `
-    <html>
-      <head>
-        <title>Reset Form</title>
-      </head>
-      <body>
-        <form action="http://localhost:3000/resetPasswordConfirmation" method="post">
+  // const resetPasswordTemplate = `
+  //   <html>
+  //     <head>
+  //       <title>Reset Form</title>
+  //     </head>
+  //     <body>
+  //       <form action="http://localhost:3000/resetPasswordConfirmation" method="post">
       
-          <label for="inputValue">Enter a value:</label>
-          <input type="text" id="inputValue" name="inputValue" required>
+  //         <label for="inputValue">Enter a value:</label>
+  //         <input type="text" id="inputValue" name="inputValue" required>
   
-          <!-- Submit button -->
-          <button type="submit">Submit</button>
-        </form>
-      </body>
-    </html>
-  `;
-
-  // Set the content type to text/html
-  res.setHeader('Content-Type', 'text/html');
-
-  // Send the HTML as the response
-  res.send(htmlContent);
+  //         <!-- Submit button -->
+  //         <button type="submit">Submit</button>
+  //       </form>
+  //     </body>
+  //   </html>
+  // `;
+  // Redirect to password reset frontend page
+  res.redirect(`http://localhost:3001/resetPassword?resetToken=${resetToken}`)
 })
-// *** REQUIRES REWRITE ***
+
 router.post('/resetPasswordConfirmation', (req,res) => {
+  const resetToken = req.query.resetToken
+  const resetSecret = process.env.RESET_SECRET
+  const resetTokenPayload = verify(resetToken, resetSecret)
+  const ownerId = resetTokenPayload.ownerId
   // Get new password from request body
   const newPassword = req.body.inputValue
-  console.log(req.body)
   // Update password in db 
-  res.send(`Received value: ${newPassword}`)
+  const saltRounds = 5
+  bcrypt.hash(newPassword, saltRounds, async(err,passwordHash) => {
+    //store user in DB
+    try{
+      const updatedOwnerData = {
+        ownerId:ownerId,
+        fields:'passwordHash',
+        newValues:passwordHash
+      }
+      await queries.updateOwner(updatedOwnerData)
+    }catch(e){
+      return res.send('ERROR: Could not save info to db')
+    }
+    if(err) return res.send(err)
+  })
+  res.send('Successfully saved new password')
 })
 
 // NEW GAME PLAN: When attempting to add pets, only add new pets. If a pet already exists and has an active link, let user know they need an invite.
