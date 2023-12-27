@@ -124,6 +124,12 @@ const getInvitationTokenComparisonText = () => {
   `
 }
 
+const getRefreshTokenText = `
+  SELECT refresh_token
+  FROM owners
+  WHERE owner_id = $1
+`
+
 const getLastAccessedTimestampText = () => {
   return `
     SELECT accessed_at
@@ -157,6 +163,12 @@ const setResetAccessedAtTimestampText = `
   WHERE reset_token = $1 
   RETURNING *
 `
+const setNewRefreshTokenText = `
+  UPDATE owners
+  SET refresh_token = $1
+  WHERE ownerId = $2
+  RETURNING *
+`
 
 const updateInvitationToken = `
     UPDATE invitations
@@ -177,9 +189,11 @@ export default {
   getLastAccessedTimestampText,
   getInvitedOwnerIdFromInviteText,
   getPasswordHashText,
-  getInvitationTokenText,
+  getInvitationTokenComparisonText,
+  getRefreshTokenText,
   setInvitationAccessedAtTimestampText,
   setResetAccessedAtTimestampText,
+  setNewRefreshTokenText,
   updateInvitationToken
 }
 

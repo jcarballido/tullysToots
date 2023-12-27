@@ -3,6 +3,8 @@ import dotenv from 'dotenv/config'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import queries from './queries/queries.mjs'
+import accountRouter from './routes/accountRouter.mjs'
+import activityRouter from './routes/activityRouter.mjs'
 
 const app = express()
 
@@ -14,6 +16,11 @@ app.listen(port, () => {
 //app.use(cors())
 app.use(express.json())
 
+app.use('/account',accountRouter)
+app.use('/activity',activityRouter)
+
+/*
+*** DELETE CODE ABOVE THIS LINE ***
 app.post('/testAddOwner', async(req,res) => {
   const result = await queries.addOwner(req.body.ownerData)
   res.json({result})
@@ -283,3 +290,5 @@ app.post('/sign-up', async(req,res) => {
     return res.json({accessToken})
   }
 })
+*** DELETE CODE ABOVE THIS LINE ***
+*/

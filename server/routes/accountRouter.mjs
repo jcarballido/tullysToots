@@ -1,14 +1,14 @@
 import express from 'express'
 import queries from '../queries/queries.mjs'
 import nodemailer from 'nodemailer'
-import { verify } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
+import verifyAccessToken from '../middleware/verifyAccessToken.mjs'
+import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
 
 const router = express.Router()
 
 const companyEmail = `"Tully's Toots" <${process.env.APP_USERNAME}>`
 const companyEmailPassword = process.env.APP_PASSWORD
-console.log('Line 44, server.mjs => ', companyEmail)
-console.log('Line 45, server.mjs => ', companyEmailPassword)
 
 const transporter = nodemailer.createTransport({
   service:"gmail",
@@ -17,7 +17,6 @@ const transporter = nodemailer.createTransport({
     pass: companyEmailPassword,
   },
 });
-
 
 
 router.post('/sign-up', async(req,res) => {
@@ -78,9 +77,9 @@ router.post('/sign-in', async(req,res) => {
     const accessSecret = process.env.ACCESS_SECRET
     const refreshSecret = process.env.REFRESH_SECRET
     // Create access token
-    const accessToken = jwt.sign({ owner: ownerId }, accessSecret, {expiresIn: '15m'})
+    const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '15m'})
     // Create refresh token 
-    const refreshToken = jwt.sign({ owner: ownerId }, refreshSecret, { expiresIn:'14d'})
+    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d'})
     // Set refresh token cookie
     const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14 // ms/s * s/min * min/hr * hrs/day * num. days
     res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
@@ -102,6 +101,9 @@ router.post('/sign-in', async(req,res) => {
     return res.send('ERROR: Wrong credentials')
   }
 })
+
+router.use(verifyAccessToken)
+router.use(verifyRefreshToken)
 
 router.get('/resetRequest', async(req,res) => {
   const ownerId = req.ownerId

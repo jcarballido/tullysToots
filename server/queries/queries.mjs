@@ -93,6 +93,15 @@ const getOwnerId = async(email) => {
   }
 }
 
+const getRefreshToken = async(ownerId) => {
+  try{
+    const result = await pool.query(sqlText.getRefreshTokenText, [ ownerId ])
+    return result.rows[0].refresh_token
+  }catch(e){
+    return null
+  }
+}
+
 const getEmail = async(ownerId) => {
   const result = await query.pool(sqlText.getEmail, [ ownerId ])
   return result.rows[0].email
@@ -265,6 +274,15 @@ const setResetAccessedAtTimestamp = async(resetToken) => {
   
 }
 
+const setNewRefreshToken = async(newRefreshToken,ownerId) => {
+  try{
+    const result = await pool.query(sqlText.setNewRefreshTokenText, [ newRefreshToken,ownerId ])
+    return result.rowCount
+  }catch(e){
+    return null
+  }
+}
+
 const getLastAccessedTimestamp = async (invitationToken) => {
   const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
   if(!result.rows[0].accessed_at) return true
@@ -290,6 +308,7 @@ export default {
   addActivity,
   getPasswordHash,
   getOwnerId,
+  getRefreshToken,
   getEmail,
   getPetId,
   getInvitedOwnerIdFromInvite,
@@ -305,6 +324,7 @@ export default {
   updateActivity,
   setInvitationAccessedAtTimestamp,
   setResetAccessedAtTimestamp,
+  setNewRefreshToken,
   addOwner,
   addReceivingOwnerIdToInvitation,
   
