@@ -2,6 +2,7 @@ import express from 'express'
 import queries from '../queries/queries.mjs'
 import nodemailer from 'nodemailer'
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcrypt'
 import verifyAccessToken from '../middleware/verifyAccessToken.mjs'
 import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
 
@@ -37,31 +38,30 @@ router.post('/sign-up', async(req,res) => {
   const saltRounds = 5
   bcrypt.hash(password, saltRounds, async(err,passwordHash) => {
     //store user in DB
-    try{
-      await queries.addOwner(email,passwordHash,refreshToken)
-    }catch(e){
-      return res.send('ERROR: Could not save info')
+    const result = await queries.addOwner({ email,passwordHash,refreshToken } )
+    console.log(result)
+    // if(result == null) return res.send("Error: Failed to svae new sign-up.")
+    if(result == null || err) return res.send('Error saving new sign-up.')
+    const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
+    res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+    const invitationToken = req.query.invitationToken
+    if(invitationToken){
+      // const receivingOwnerId = await queries.getOwnerId(email)
+      try{
+        const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
+      }catch(e){
+        console.log('Error updating invitation token with new receiving owner id')
+      }
+      // Send access and invitation token
+      return res.json({accessToken,invitationToken})
+    }else{
+      // Send access token
+      return res.json({accessToken})
     }
-    if(err) return res.send(err)
   })
-  const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
-  res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
-  const invitationToken = req.query.invitationToken
-  if(invitationToken){
-    // const receivingOwnerId = await queries.getOwnerId(email)
-    try{
-      const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
-    }catch(e){
-      console.log('Error updating invitation token with new receiving owner id')
-    }
-    // Send access and invitation token
-    return res.json({accessToken,invitationToken})
-  }else{
-    // Send access token
-    return res.json({accessToken})
-  }
 })
 
+// *** NEED TO ADD CHECK THAT STOPS A LOGGED IN USER FROM SINGNING IN AGAIN***
 router.post('/sign-in', async(req,res) => {
   // Extract email and password from req.body 
   const { email, password } = req.body
@@ -71,9 +71,10 @@ router.post('/sign-in', async(req,res) => {
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
   // Check password
-  const passwordMatch = bcrypt.compare(password, passwordHash)
+  const passwordMatch = await bcrypt.compare(password, passwordHash)
+  console.log('Account Router Line 75:', passwordMatch)
   // If passwords match:
-  if(passwordMatch){
+  if(passwordMatch === true){
     const accessSecret = process.env.ACCESS_SECRET
     const refreshSecret = process.env.REFRESH_SECRET
     // Create access token

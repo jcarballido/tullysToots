@@ -290,11 +290,17 @@ const getLastAccessedTimestamp = async (invitationToken) => {
 }
 
 const addOwner = async(ownerData) => {
-  const { email, passwordHash, refreshToken } = ownerData
-  // Single query
-  const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken])
-  const ownerId = result.rows[0].owner_id
-  return ownerId
+  try{
+    const { email, passwordHash, refreshToken } = ownerData
+    // Single query
+    const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken])
+    const ownerId = result.rows[0].owner_id
+    return ownerId
+  }catch(e){
+    console.log('Line 300, Queries.mjs, addOwner Error:', e)
+    return null
+  }
+  
 }
 const addReceivingOwnerIdToInvitation = async(ownerId,invitationToken) => {
   const result = await pool.query(sqlText.updateInvitationToken,[ownerId,invitationToken])

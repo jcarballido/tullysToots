@@ -1,6 +1,6 @@
 import express from 'express'
 import dotenv from 'dotenv/config'
-import bcrypt from 'bcrypt'
+
 import jwt from 'jsonwebtoken'
 import queries from './queries/queries.mjs'
 import accountRouter from './routes/accountRouter.mjs'
