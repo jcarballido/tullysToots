@@ -7,7 +7,7 @@ import invalidSignatureError from '../errors/invalidSignatureError.mjs'
 
 
 const validateToken = (token,tokenType = 'access') => {
-  const secret = tokenType == 'refresh' ? process.env.REFRESH_TOKEN_SECRET:process.env.ACCESS_TOKEN_SECRET
+  const secret = tokenType == 'refresh' ? process.env.REFRESH_SECRET:process.env.ACCESS_SECRET
   try{
     const decodedJwt = jwt.verify(token,secret)
     return decodedJwt
@@ -17,7 +17,7 @@ const validateToken = (token,tokenType = 'access') => {
 }
 
 const checkExpiration = (token) => {
-  const payload = decode(token)
+  const payload = jwt.decode(token)
   return payload.exp < (Date.now() / 1000) // Date.now() must be converted to seconds 
 }
 
@@ -29,6 +29,7 @@ const verifyAccessToken = (req,res,next) => {
   const accessTokenValidation = validateToken(accessToken)
   // Check for an error after validation
   if(accessTokenValidation instanceof Error){
+    console.log('There is an error with this token. The error is: ', accessTokenValidation)
     // Determine if the access token is expired.
     const expiredAccessToken = checkExpiration(accessToken)
     // If the access token is expired, confirm existence of and valdiate the refresh token.
@@ -38,26 +39,34 @@ const verifyAccessToken = (req,res,next) => {
       if(!refreshToken){
         return res.status(401).json({error: new nullRefreshTokenError('Refresh token was not provided; Requires sign-in')}) // Handled by frontend
       }
+      console.log('The access token was expired. Checking to see if refresh token is valid...')
       const refreshTokenValidation = validateToken(refreshToken, 'refresh')
       // Return any error given after validation.
       if(refreshTokenValidation instanceof Error){
         const expiredRefreshToken = checkExpiration(refreshToken)
         if(expiredRefreshToken){
+          console.log('Refresh token was not valid; expired. Error returned to client.')
           return res.status(401).json({error: new Error('Refresh token is expired; Requires sign-in')}) // Handled by frontend
         }else{
+          console.log('Refresh token was not valid; tampered with. Error pushed to error handler in server.')
           return next(new invalidSignatureError('Invalid signature present on refresh token')) // Additional action required
         }
       }
       // Trigger the need for a new access token and refresh token.
+      
       req.refreshTokenVerification = true
       req.currentRefreshToken = refreshToken
       req.tokenPayload = refreshTokenValidation
+      console.log('The access token was expired. Will pass the following data to the refresh token middleware...')
+      console.log('refresh token verification: ', req.refreshTokenVerification)
+      console.log('current refresh token: ', req.currentRefreshToken)
+      console.log('refresh token payload: ', req.tokenPayload)
       return next()
     }else{
       return next(new invalidSignatureError('Invalid signature present on access token')) // Additional action required
     }
   }
-  console.log('An account request has been received and the access token was valid')
+  console.log('An account request has been received and the access token was valid. Here is the token payload:',accessTokenValidation)
   next()
 }
 export default verifyAccessToken

@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import verifyAccessToken from '../middleware/verifyAccessToken.mjs'
 import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
+import cookieParser from 'cookie-parser'
 
 const router = express.Router()
 
@@ -19,31 +20,40 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+router.use(cookieParser())
 
 router.post('/sign-up', async(req,res) => {
   // Extract email and password from req.body
-  const { email, password } = req.body
+  const { username, email, password } = req.body
   // Validate
   // Confirm email is unique
-  const ownerId = await queries.getOwnerId(email)
+  const uniqueCredentials = await queries.checkExistingCredentials(username,email)
   // If userExists returns false...
-  if(ownerId) return res.send('ERROR: Email already exists. Please sign in or request a password reset')
-  // Create refresh token...
-  const refreshSecret = process.env.REFRESH_SECRET
-  const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
-  // Create access token 
-  const accessSecret = process.env.ACCESS_SECRET
-  const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
+  if(uniqueCredentials == true) return res.send('ERROR: Email or username already exists. Please sign in or request a password reset')
+  
   // Hash raw password
   const saltRounds = 5
   bcrypt.hash(password, saltRounds, async(err,passwordHash) => {
+    // Temp refresh token
+    const refreshSecret = process.env.REFRESH_SECRET
+    const tempRefreshToken = jwt.sign({temp:Date.now()},refreshSecret)
     //store user in DB
-    const result = await queries.addOwner({ email,passwordHash,refreshToken } )
-    console.log(result)
+    const owner = await queries.addOwner({ email,passwordHash,refreshToken:`temp.${tempRefreshToken}`, username } )
+    const ownerId = owner.ownerId
+    //console.log(result)
     // if(result == null) return res.send("Error: Failed to svae new sign-up.")
-    if(result == null || err) return res.send('Error saving new sign-up.')
+    if(owner == null || err) return res.send('Error saving new sign-up.')
     const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
-    res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+    // Create refresh token...
+    
+    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
+    const updateResult = await queries.updateOwner({ownerId, fields:['refreshToken'], newValues:[refreshToken]})
+    if(updateResult instanceof Error) return res.send('ERROR: Could not update new owner with refresh token during sign-up.')
+    console.log('Result from attempting to update owner\'s refresh token: ', updateResult)
+    // Create access token 
+    const accessSecret = process.env.ACCESS_SECRET
+    const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
+    res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
     const invitationToken = req.query.invitationToken
     if(invitationToken){
       // const receivingOwnerId = await queries.getOwnerId(email)
@@ -53,20 +63,22 @@ router.post('/sign-up', async(req,res) => {
         console.log('Error updating invitation token with new receiving owner id')
       }
       // Send access and invitation token
-      return res.json({accessToken,invitationToken})
+      return res.json({accessToken,invitationToken,ownerId,username:owner.ownerUsername})
     }else{
       // Send access token
-      return res.json({accessToken})
+      return res.json({accessToken,ownerId,username:owner.ownerUsername})
     }
   })
 })
 
 // *** NEED TO ADD CHECK THAT STOPS A LOGGED IN USER FROM SINGNING IN AGAIN***
 router.post('/sign-in', async(req,res) => {
+  const refreshToken = req.cookies.jwt
+  if(refreshToken) return res.send('User is currently logged in')
   // Extract email and password from req.body 
-  const { email, password } = req.body
+  const { username, password } = req.body
   // Confirm user is registered; NEED TO CREATE UserQueries SERVICE\
-  const ownerId = await queries.getOwnerId(email)
+  const ownerId = await queries.getOwnerId(username)
   if(!ownerId) return res.send('User does not exist')
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
@@ -105,6 +117,15 @@ router.post('/sign-in', async(req,res) => {
 
 router.use(verifyAccessToken)
 router.use(verifyRefreshToken)
+
+// Error Handler to catch Token Verification Errors
+
+
+router.post('/test', (req,res) => {
+  console.log('New Access Token: ', req.newAccessToken)
+  console.log('New Refresh Token: ', req.newRefreshToken)
+  res.send({accessToken: req.newAccessToken, refreshToken:req.newRefreshToken})
+})
 
 router.get('/resetRequest', async(req,res) => {
   const ownerId = req.ownerId
@@ -483,6 +504,10 @@ router.post('/acceptInvite', async(req,res) => {
      return res.send('ERROR: Could not link pets to owner')
   }
   return res.send('Successfully added pets')
+})
+
+router.use((error,req,res,next) => {
+  console.log('Error handler received the following error: ', error)
 })
 
 export default router

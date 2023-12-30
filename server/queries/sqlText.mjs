@@ -2,7 +2,7 @@ const activityColumns = ['pet_id','entered_by','set_on_at','pee','poo']
 
 const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
-  const ownersColumns = ['email','password_hash','refresh_token']
+  const ownersColumns = ['email','password_hash','refresh_token','username']
   const petsColumns = ['pet_name','dob','sex']
   const petOwnersColumns = [ 'owner_id', 'pet_id','active']
   const resetTokensColumns = ['reset_token','owner_id','accessed_at']
@@ -89,11 +89,11 @@ const getActivityText = () => {
   `
 }
 
-const getOwnerText = () => {
+const getOwnerText = (identifierString) => {
   return`
     SELECT owner_id
     FROM owners
-    WHERE email = $1
+    WHERE ${identifierString} = $1
   `
 }
 
@@ -124,10 +124,15 @@ const getInvitationTokenComparisonText = () => {
   `
 }
 
-const getRefreshTokenText = `
+const getRefreshTokenFromOwnerIdText = `
   SELECT refresh_token
   FROM owners
   WHERE owner_id = $1
+`
+const getRefreshTokenFromUsernameText = `
+  SELECT refresh_token
+  FROM owners
+  WHERE username = $1
 `
 
 const getLastAccessedTimestampText = () => {
@@ -190,7 +195,8 @@ export default {
   getInvitedOwnerIdFromInviteText,
   getPasswordHashText,
   getInvitationTokenComparisonText,
-  getRefreshTokenText,
+  getRefreshTokenFromOwnerIdText,
+  getRefreshTokenFromUsernameText,
   setInvitationAccessedAtTimestampText,
   setResetAccessedAtTimestampText,
   setNewRefreshTokenText,
