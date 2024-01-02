@@ -26,10 +26,10 @@ const verifyAccessToken = (req,res,next) => {
   // Confirm access token exists. If not, send a custom error.
   if(!accessToken) return res.status(401).json({error:new nullAccessTokenError('Access token was not provided')}) // Handled by frontend
   // Validate the access token
-  const accessTokenValidation = validateToken(accessToken)
+  const accessTokenPayload = validateToken(accessToken)
   // Check for an error after validation
-  if(accessTokenValidation instanceof Error){
-    console.log('There is an error with this token. The error is: ', accessTokenValidation)
+  if(accessTokenPayload instanceof Error){
+    console.log('There is an error with this token. The error is: ', accessTokenPayload)
     // Determine if the access token is expired.
     const expiredAccessToken = checkExpiration(accessToken)
     // If the access token is expired, confirm existence of and valdiate the refresh token.
@@ -66,7 +66,11 @@ const verifyAccessToken = (req,res,next) => {
       return next(new invalidSignatureError('Invalid signature present on access token')) // Additional action required
     }
   }
-  console.log('An account request has been received and the access token was valid. Here is the token payload:',accessTokenValidation)
+  const ownerId = accessTokenPayload.ownerId
+  req.ownerId = ownerId
+  req.refreshTokenVerification = false
+  req.accessTokenPayload = accessTokenPayload
+  console.log('An account request has been received and the access token was valid. Here is the token payload:',accessTokenPayload)
   next()
 }
 export default verifyAccessToken

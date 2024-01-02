@@ -5,12 +5,14 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import verifyAccessToken from '../middleware/verifyAccessToken.mjs'
 import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
+import postProcessing from '../middleware/postProcessing.mjs'
 import cookieParser from 'cookie-parser'
 
 const router = express.Router()
 
 const companyEmail = `"Tully's Toots" <${process.env.APP_USERNAME}>`
 const companyEmailPassword = process.env.APP_PASSWORD
+
 
 const transporter = nodemailer.createTransport({
   service:"gmail",
@@ -23,6 +25,8 @@ const transporter = nodemailer.createTransport({
 router.use(cookieParser())
 
 router.post('/sign-up', async(req,res) => {
+  const refreshToken = req.cookies.jwt
+  if(refreshToken) return res.send('User is currently logged in')
   // Extract email and password from req.body
   const { username, email, password } = req.body
   // Validate
@@ -40,8 +44,6 @@ router.post('/sign-up', async(req,res) => {
     //store user in DB
     const owner = await queries.addOwner({ email,passwordHash,refreshToken:`temp.${tempRefreshToken}`, username } )
     const ownerId = owner.ownerId
-    //console.log(result)
-    // if(result == null) return res.send("Error: Failed to svae new sign-up.")
     if(owner == null || err) return res.send('Error saving new sign-up.')
     const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
     // Create refresh token...
@@ -71,14 +73,13 @@ router.post('/sign-up', async(req,res) => {
   })
 })
 
-// *** NEED TO ADD CHECK THAT STOPS A LOGGED IN USER FROM SINGNING IN AGAIN***
 router.post('/sign-in', async(req,res) => {
   const refreshToken = req.cookies.jwt
   if(refreshToken) return res.send('User is currently logged in')
   // Extract email and password from req.body 
   const { username, password } = req.body
   // Confirm user is registered; NEED TO CREATE UserQueries SERVICE\
-  const ownerId = await queries.getOwnerId(username)
+  const ownerId = await queries.getOwnerId('username',username)
   if(!ownerId) return res.send('User does not exist')
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
@@ -95,7 +96,12 @@ router.post('/sign-in', async(req,res) => {
     const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d'})
     // Set refresh token cookie
     const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14 // ms/s * s/min * min/hr * hrs/day * num. days
-    res.cookie('refreshToken',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+    res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+    const result = await queries.setNewRefreshToken(refreshToken,ownerId)
+    if(!result) {
+      console.log('Result from attempting to set new refresh token on sign-in')
+      return res.send('ERROR: Could not update refresh token on sign-in')
+    }
     const invitationToken = req.query.invitationToken
     if(invitationToken){
       //const result = await query.addReceivingOwnerIdToInvitation(ownerId)
@@ -115,22 +121,19 @@ router.post('/sign-in', async(req,res) => {
   }
 })
 
-router.use(verifyAccessToken)
-router.use(verifyRefreshToken)
-
-// Error Handler to catch Token Verification Errors
-
-
-router.post('/test', (req,res) => {
-  console.log('New Access Token: ', req.newAccessToken)
-  console.log('New Refresh Token: ', req.newRefreshToken)
-  res.send({accessToken: req.newAccessToken, refreshToken:req.newRefreshToken})
-})
-
+// Need to test with frontend
 router.get('/resetRequest', async(req,res) => {
-  const ownerId = req.ownerId
-  // Get email associated with owner ID
-  const ownerEmail = await queries.getEmail(ownerId)
+  // Expecting a registered email
+  const ownerEmail = req.body.email
+  // Check if email is saved.
+  const ownerId = await queries.getOwnerIdFromEmail(ownerEmail)
+  if(ownerId === null) {
+    console.log('Email requesting password reset does not exist')
+    return res.json({message:'Email with reset link sent to requesting customer if it exists in our records'})
+  }
+  // const ownerId = req.ownerId
+  // // Get email associated with owner ID
+  // const ownerEmail = await queries.getEmail(ownerId)
   // 1. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
   const resetSecret = process.env.RESET_SECRET
   const resetToken = sign({ ownerId }, resetSecret,{ expiresIn:'10m' })
@@ -161,12 +164,12 @@ router.get('/resetRequest', async(req,res) => {
   });
 
   console.log("Message sent: %s", info.messageId);
-  res.send('Email with reset link to requesting customer')
-
+  return res.json({message:'Email with reset link sent to requesting customer if it exists in our records'})
 })
 
+// Need to test with front end
 router.get('/resetPassword', async(req,res) => {
-  // Get reset token from request body
+  // Get reset token from request URL query
   const resetToken = req.query.resetToken
   // Validate token to get the userID, ensuring the token is valid and not expired.
   const resetTokenPayload = verify(resetToken, tokenSecret)
@@ -174,34 +177,17 @@ router.get('/resetPassword', async(req,res) => {
     return res.json({error: new Error('Invalid link')})
   }
   // Query the 'ResetRequest' table to confirm the the 'AccessToken' is null and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
-  const match = await queries.getResetTokenInfo(resetTokenPayload)
-  if(!match) return res.send('ERROR: Reset token does not exist in database.')
-  if(match.rows[0].accessed_at) return res.send('ERROR: Reset request has already been accessed')
+  const match = await queries.getResetToken(resetToken)
+  console.log('Result from checking if reset tokens match: ', match)
+  if(match instanceof Error) return res.json({error:'ERROR: Could not execute query for reset token'})
+  if(match.rowCount === 0) return res.json({error:'ERROR: Reset token does not exist in database.'})
+  if(match.rows[0].accessed_at) return res.json({error:'ERROR: Reset request has already been accessed'})
   const accessedAt = await queries.setResetAccessedAtTimestamp(resetToken)
-  if( accessedAt instanceof Error) return res.send('ERROR: Did not set an accessed_at timestamp after reset token lookup.')
-  // If so, enter a timestamp under AccessedAt: column. 
-  // Send an HTML form to the client for the user to reset their password.
-  // const resetPasswordTemplate = `
-  //   <html>
-  //     <head>
-  //       <title>Reset Form</title>
-  //     </head>
-  //     <body>
-  //       <form action="http://localhost:3000/resetPasswordConfirmation" method="post">
-      
-  //         <label for="inputValue">Enter a value:</label>
-  //         <input type="text" id="inputValue" name="inputValue" required>
-  
-  //         <!-- Submit button -->
-  //         <button type="submit">Submit</button>
-  //       </form>
-  //     </body>
-  //   </html>
-  // `;
-  // Redirect to password reset frontend page
-  res.redirect(`http://localhost:3001/resetPassword?resetToken=${resetToken}`)
+  if( accessedAt instanceof Error) return res.json({error:'ERROR: Did not set an accessed_at timestamp after reset token lookup.'})
+  return res.redirect(`http://localhost:3001/resetPassword?resetToken=${resetToken}`)
 })
 
+// Need to test with front end
 router.post('/resetPasswordConfirmation', (req,res) => {
   const resetToken = req.query.resetToken
   const resetSecret = process.env.RESET_SECRET
@@ -221,144 +207,17 @@ router.post('/resetPasswordConfirmation', (req,res) => {
       }
       await queries.updateOwner(updatedOwnerData)
     }catch(e){
-      return res.send('ERROR: Could not save info to db')
+      return res.json({error:'ERROR: Could not save info to db'})
     }
     if(err) return res.send(err)
   })
-  res.send('Successfully saved new password')
+  return res.json({message:'Successfully saved new password'})
 })
-
-// NEW GAME PLAN: When attempting to add pets, only add new pets. If a pet already exists and has an active link, let user know they need an invite.
-router.post('/addPets', async(req,res) => {
-  // Confirm owner ID from accessToken exists
-  const ownerId = req.ownerId
-  if (!ownerId) return res.send('User is not logged in or does not have an account')
-  // Expecting an object made with the following structure: {petData: [ [name1,dob1,sex1],[name2,dob2,sex2], ... ]}
-  const petDataArray = req.body.petData
-  const processedPetDataArray = []
-  const excludedPetIdArray = []
-  try{
-    petDataArray.forEach( async(petData) => {
-      let petId = await queries.getPetId(...petData)
-      if(!petId){
-        petId = await queries.addPet(...petData)
-        const result = await queries.addPetOwnerLink(ownerId,[petId])
-        processedPetDataArray.push(petId)
-      }else{
-        // Check if pet has an active link with any owner. If not, create link between owner and pet. If so, send err message where user requires invite.
-        const activeLinksArray = await queries.getActivePetLinks(petId)
-        const activeLinkExists = activeLinksArray.length > 1
-        if(activeLinkExists) excludedPetIdArray.push(petId)
-        else {
-          await queries.addPetOwnerLink(ownerId,[petId])
-          processedPetDataArray.push(petId)
-        }
-      }
-    })
-    return res.json({processedPetDataArray,excludedPetIdArray})
-  } catch(e){
-    return res.send(e)
-  }
-
-})
-
-router.post('/updatePet', async(req,res) => {
-  const ownerId = req.ownerId
-  const updatedData = req.body.updatedData
-  if (!ownerId) return res.send('User is not logged in or does not have an account')
-  const result = await queries.updatePet(updatedData)
-  if(result.rowCount) return res.send('Successfully updated pet data')
-  else return res.send('Error adding pet data')
-})
-
-router.post('/breakOwnerLink', async(req,res) => {
-  const ownerId = req.ownerId
-  const petId = req.petId
-  const result = await queries.deactivatePetOwnerLink(ownerId,petId)
-  if(result.rowCount) return res.send('Successfully removed link')
-  else return res.send('Error supressing link')
-})
-
-router.post('/sendInvite', async(req, res) => {
-  const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
-    const result = requestedPetIds.every(id => linkedPetIds.includes(id))
-    return result
-  }
-  const { sendingOwnerEmail, receivingOwnerEmail, newPetIdsArray } = req.body
-  if(!(sendingOwnerEmail || newPetIdsArray)) return res.send('Invalid request')
-  const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail);
-  if(!sendingOwnerId) return res.send('We cannot find an account associated with your email')
-  const verifiedLinkedPetIds = await queries.getOwnersPetIds( sendingOwnerId )
-  console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
-  const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
-  if(!verifiedIdsExist) return res.send('Can\'t find a link to one or more of these pets')
-
-  const receivingOwnerId = await queries.getOwnerId(receivingOwnerEmail);
-  // console.log('Line 43 => ', sendingOwnerEmail)
-  // console.log('Line 44 => ', receivingOwnerEmail)
-  // 1. Find sending user ID from email
-  //const sendingOwnerId = await queries.getOwnerId(sendingOwnerEmail)
-  // Also, confirm if pet-owner links already exist
-  const invitationSecret = process.env.INVITATION_SECRET
-  /*
-  if(receivingOwnerId){
-    const payload = {
-      sendingOwnerId, 
-      //receivingOwnerId, 
-      newPetIdsArray
-    }
-    // 2. Create a JWT where the payload is { userId: userID from query}, and the JWT is named 'resetToken', and an expiration of 10 minutes.
-    const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
-    // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
-    
-    try{
-      await queries.addInvitationLink(sendingOwnerId, receivingOwnerId,invitationToken)
-      // 4. Create a link that contains this JWT in the URL.
-      const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
-      // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
-      const info = await transporter.sendMail({
-        from: companyEmail, // sender address
-        to: receivingOwnerEmail, // list of receivers
-        subject: "A Tully's Toots Member is Inviting You!", // Subject line
-        html: resetForm(addPetOwnerLink), // html body
-      });
-      console.log('Line 101 => ', info)
-      return res.send('Link sent')
-    }catch(e){
-      return res.send(e)
-    }
-  }
-  */
-  // else{
-  const payload = {
-    sendingOwnerId, 
-    newPetIdsArray
-  }
-  const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
-  // 3. Store the sending owner_id, receiving owner_id, and invitation token in a new row in the 'invitation_requests' table. Override existing invitation_request.
-  //console.log('sendingOwnerId: ',sendingOwnerId)
-  // NEED TO CHECK FOR ERRORS ADDING ROW IN SQL, EMAIL WILL SEND REGARDLESS
-  try{
-    await queries.addInvitationLink(sendingOwnerId, receivingOwnerId, invitationToken)
-    // 4. Create a link that contains this JWT in the URL.
-    const addPetOwnerLink = `http://localhost:3000/invitation?invitationToken=${invitationToken}`
-    // 5. Send this link via an email to the user's registered email (confirmed in Line 25)
-    const info = await transporter.sendMail({
-      from: companyEmail, // sender address
-      to: receivingOwnerEmail, // list of receivers
-      subject: "A Tully's Toots Member is Inviting You!", // Subject line
-      html: resetForm(addPetOwnerLink), // html body
-    });
-    console.log('Line 101 => ', info)
-    return res.send('Link sent')
-  }catch(e){
-    return res.send(e)
-  }
-})
-
+// Need to test with front end
 router.get('/invitation', async(req,res) => {
   // Check if link has been accessed before.
   const invitationToken = req.query.invitationToken
+  if(!invitationToken) return res.send('ERROR: Invitation token not provided.')
   const invitationSecret = process.env.INVITATION_SECRET
   const inviteExists = await queries.getInvitationId(invitationToken)
   if(!inviteExists) return res.send('This invite does not exist')
@@ -477,34 +336,193 @@ router.get('/invitation', async(req,res) => {
   // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
 
-router.post('/acceptInvite', async(req,res) => {
+router.use(verifyAccessToken)
+router.use(verifyRefreshToken)
+
+// router.post('/test', (req,res) => {
+//   console.log('New Access Token: ', req.newAccessToken)
+//   console.log('New Refresh Token: ', req.newRefreshToken)
+//   res.send({accessToken: req.newAccessToken, refreshToken:req.newRefreshToken})
+// })
+
+// NEW GAME PLAN: When attempting to add pets, only add new pets. If a pet already exists and has an active link, let user know they need an invite.
+router.post('/addPets', async(req,res,next) => {
+  // Confirm owner ID from accessToken exists
+  const ownerId = req.ownerId
+  // if (!ownerId) return res.send('User is not logged in or does not have an account')
+  // Expecting an object made with the following structure: {petData: [ [name1,dob1,sex1],[name2,dob2,sex2], ... ]}
+  const petDataArray = req.body.petData
+  console.log('Incoming pet data array: ', petDataArray)
+  const processedPetDataArray = []
+  const excludedPetIdArray = []
+  try{
+    petDataArray.forEach( async(petData) => {
+      console.log('Line 360, pet data: ', ...petData)
+      let petId = await queries.getPetId(...petData)
+      console.log('petId retrieved from incoing pet Data: ', petId)
+      if(petId === null){
+        petId = await queries.addPet(...petData)
+        const result = await queries.addPetOwnerLink(ownerId,[petId])
+        processedPetDataArray.push(petId)
+        console.log('Result of adding new pet to processPetDataArray: ',processedPetDataArray)
+      }else{
+        // Check if pet has an active link with any owner. If not, create link between owner and pet. If so, send err message where user requires invite.
+        const activeLinksArray = await queries.getActivePetLinks(petId)
+        console.log('accountRouter, line 367, activeLinksArray: ', activeLinksArray)
+        const activeLinkExists = activeLinksArray.length > 1
+        if(activeLinkExists) excludedPetIdArray.push(petId)
+        else {
+          await queries.addPetOwnerLink(ownerId,[petId])
+          processedPetDataArray.push(petId)
+        }
+      }
+    })
+    console.log('Array of pet data outside the async fucntion: ',processedPetDataArray)
+    res.locals.data = {processedPetDataArray,excludedPetIdArray}
+    return next()
+  } catch(e){
+    res.locals.error = e
+    return next()
+  }
+})
+
+// Need to clean up, anyone with an access token can update any pet
+router.post('/updatePet', async(req,res,next) => {
+  const ownerId = req.ownerId
+  // if (!ownerId) return res.send('User is not logged in or does not have an account')
+  // Check the request object inlcudes all the correct keys
+  const updatedData = Object.keys(req.body.updatePetData)
+  const expectedKeys = ['petId','fields','newValues']
+  const validateUpdateData = expectedKeys.map( key => {
+    const test = updatedData.includes(key)
+  //console.log(test)
+    return test
+  })
+  if(validateUpdateData.includes(false)) res.json({error:'ERROR: Invalid update request'})
+  // Confirm pet IDs belong to owner making the request
+  const petId = updatedData.petId
+  const ownerLinkIsActive = await queries.checkOwnerLink(ownerId,petId)
+  if(!ownerLinkIsActive) return res.send('Account not registered with pet.')
+  const result = await queries.updatePet(updatedData)
+  if(result.rowCount) {
+    res.locals.message = 'Successfully updated pet data'
+    return next()
+  }else{
+    res.locals.error = 'Error adding pet data'
+    return next()
+  }
+})
+
+router.post('/breakOwnerLink', async(req,res,next) => {
+  const ownerId = req.ownerId
+  // if (!ownerId) return res.send('User is not logged in or does not have an account')
+  const petId = req.body.petId
+  const result = await queries.deactivatePetOwnerLink(ownerId,petId)
+  if(result.rowCount) {
+    res.locals.message = 'Successfully removed link'
+    return next()
+  }else{ 
+    res.locals.error = 'Error supressing link'
+    return next()
+  }
+})
+
+router.post('/sendInvite', async(req, res, next) => {
+  // Utility function
+  const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
+    const result = requestedPetIds.every(id => linkedPetIds.includes(id))
+    return result
+  }
+  const ownerId = req.ownerId
+  const { receivingOwnerEmail, newPetIdsArray } = req.body
+  if(!(receivingOwnerEmail && newPetIdsArray)) return res.locals.error = 'Invalid request'
+  const verifiedLinkedPetIds = await queries.getOwnersPetIds( ownerId )
+  console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
+  const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
+  if(!verifiedIdsExist) return res.locals.error = 'Can\'t find a link to one or more of these pets'
+  const receivingOwnerId = await queries.getOwnerId('email',receivingOwnerEmail);
+  const invitationSecret = process.env.INVITATION_SECRET
+  const invitationForm = (link) => {
+    return `
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>HTML Form</title>
+    </head>
+    <body>
+        <h1>Someone wants share their pet's activity with you!</h1>
+        <h2>If you are ready to accept, click the link below.</h2>
+        <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
+        <a href=${link} target="_blank">Show me the activity</a>
+    </body>
+  `}
+  const payload = {
+    ownerId, 
+    // receivingOwnerId, 
+    newPetIdsArray
+  }
+  const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+
+  if(receivingOwnerId){
+    try{
+      const result = await queries.addInvitationLink(ownerId, receivingOwnerId,invitationToken)
+      // 4. Create a link that contains this JWT in the URL.
+    }catch(e){
+      res.locals.error = e
+      return next()
+    }
+  }else{
+    try{
+      const result = await queries.addInvitationLink(ownerId, invitationToken)
+    }catch(e){
+      res.locals.error = e
+      return next()
+    }
+  }
+
+  const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+  try{
+    const info = await transporter.sendMail({
+      from: companyEmail, // sender address
+      to: receivingOwnerEmail, // list of receivers
+      subject: "A Tully's Toots Member is Inviting You!", // Subject line
+      html: invitationForm(addPetOwnerLink), // html body
+    });
+    console.log('Line 101 => ', info)
+    return res.locals.message = 'Link sent'
+  }catch(e){
+    res.locals.error = e
+    return next()
+  }
+})
+
+router.post('/acceptInvite', async(req,res,next) => {
   const invitationToken = req.query.invitationToken
+  if(!invitationToken) return res.locals.json({error:'ERROR: Missing invitation'})
   const invitationSecret = process.env.INVITATION_SECRET
   const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
   // Return error: Either expired token or tampered with
-  if(invitationTokenPayload instanceof Error) return res.json({error: new Error('Invalid link')})
-  // Confirm user is a registered owner that is logged in
-  const accessToken = req.headers['authorization']
-  // Decode access token for the client's owner ID
-  const accessSecret = process.env.ACCESS_SECRET
-  const accessTokenPayload = jwt.verify(accessToken,accessSecret)
-  if(accessTokenPayload instanceof Error) return res.json({error: new Error('Invalid access token')})
-  const clientOwnerId = accessTokenPayload.owner
+  if(invitationTokenPayload instanceof Error) return res.locals.error = new Error('Invalid link')
+
+  const ownerId = req.ownerId
   const expectedReceivingOwnerId = await queries.getInvitedOwnerIdFromInvite(invitationToken)
   // Confirm the clinet attempting to use the invitation token matches with the invitation's target recepient.
-  if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+  if(ownerId !== expectedReceivingOwnerId) return res.locals.error = 'Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.'
   // Expecting to receive the specific pet IDs the invite recepient is claiming.
   const petIdsArray = req.body.petsClaimed
-  // EX: [12,9]
-  // Add new row(s) to pet_owners table, linking the owner to the pets in petIdsArray
+
   try{
 		await queries.setInvitationAccessedAtTimestamp(invitationToken)
     const result = await queries.addPetOwnerLink(ownerId,petIdsArray)
   }catch(e){
-     return res.send('ERROR: Could not link pets to owner')
+    res.locals.json({error:'ERROR: Could not link pets to owner'})
+    return next()
   }
-  return res.send('Successfully added pets')
+  res.locals.json({message:'Successfully added pets'})
+  return next()
 })
+
+router.use(postProcessing)
 
 router.use((error,req,res,next) => {
   console.log('Error handler received the following error: ', error)

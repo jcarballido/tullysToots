@@ -35,12 +35,11 @@ const verifyRefreshToken = async (req,res,next) => {
     const result = await queries.setNewRefreshToken(newRefreshToken,ownerId)
     if(result == 0) return res.send('ERROR: Refresh token was not updated in database')
     const newAccessToken = jwt.sign({ ownerId }, process.env.ACCESS_SECRET, {expiresIn : '15m'})
-    req.newRefreshToken = newRefreshToken
-    req.newAccessToken = newAccessToken
+    res.locals.tokenData = { newRefreshToken, newAccessToken }
     console.log(`The new tokens were successfully created, they are are: access:${ newAccessToken }, refresh:${ newRefreshToken }`)
     return next()
   }
-  console.log('Access token was valid; Refresh token middleware was skipped.')
+  console.log('Access token was valid; Refresh token middleware was skipped. Owner ID retrieved form access token is: ', req.ownerId)
   return next()
 }
 

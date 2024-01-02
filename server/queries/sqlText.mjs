@@ -102,6 +102,11 @@ const getEmail = `
   FROM owners
   WHERE emal = $1
 `
+const getActivePetLinksText = `
+  SELECT *
+  FROM pet_owners
+  WHERE pet_id = $1
+`
 
 const getPetIdText = `
   SELECT pet_id
@@ -124,6 +129,16 @@ const getInvitationTokenComparisonText = () => {
   `
 }
 
+const getOwnerIdFromEmailText = `
+  SELECT owner_id
+  FROM owners
+  WHERE email = $1
+`
+const getResetTokenText = `
+  SELECT reset_token
+  FROM reset_tokens
+  WHERE reset_token = $1
+`
 const getRefreshTokenFromOwnerIdText = `
   SELECT refresh_token
   FROM owners
@@ -171,7 +186,7 @@ const setResetAccessedAtTimestampText = `
 const setNewRefreshTokenText = `
   UPDATE owners
   SET refresh_token = $1
-  WHERE ownerId = $2
+  WHERE owner_id = $2
   RETURNING *
 `
 
@@ -181,6 +196,12 @@ const updateInvitationToken = `
     WHERE invitation_token = $2
 `
 
+const checkOwnerLinkText = `
+  SELECT pet_id
+  FROM pet_owners
+  WHERE owner_id = $1 AND active = true
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -188,6 +209,7 @@ export default {
   getActivityText,
   getOwnerText,
   getEmail,
+  getActivePetLinksText,
   getPetIdText,
   getOwnersPetIdsText,
   getInvitationTokenComparisonText,
@@ -197,10 +219,13 @@ export default {
   getInvitationTokenComparisonText,
   getRefreshTokenFromOwnerIdText,
   getRefreshTokenFromUsernameText,
+  getOwnerIdFromEmailText,
+  getResetTokenText,
   setInvitationAccessedAtTimestampText,
   setResetAccessedAtTimestampText,
   setNewRefreshTokenText,
-  updateInvitationToken
+  updateInvitationToken,
+  checkOwnerLinkText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

@@ -93,20 +93,20 @@ const getOwnerId = async(identifierNameString, identifier) => {
   }
 }
 
-// const getOwnerIdFromEmail = async(email) => {
-//   //const email = ownerData.email
-//   //console.log('Line 62 Queries',email)
-//   try{
-//     const result = await pool.query(sqlText.getOwnerText(),[username])
-//     //console.log('Here\'s the SQL text: ',sqlText.getOwnerText())
-//     //console.log(result)
-//     const ownerId = result.rows[0].owner_id
-//     // console.log(ownerId)
-//     return ownerId
-//   }catch(e){
-//     return null
-//   }
-// }
+const getOwnerIdFromEmail = async(email) => {
+  //const email = ownerData.email
+  //console.log('Line 62 Queries',email)
+  try{
+    const result = await pool.query(sqlText.getOwnerIdFromEmailText(),[email])
+    //console.log('Here\'s the SQL text: ',sqlText.getOwnerText())
+    //console.log(result)
+    const ownerId = result.rows[0].owner_id
+    // console.log(ownerId)
+    return ownerId
+  }catch(e){
+    return null
+  }
+}
 
 const getRefreshToken = async(identifier) => {
   try{
@@ -124,6 +124,15 @@ const getRefreshToken = async(identifier) => {
   }
 }
 
+const getResetToken = async(resetToken) => {
+  try{
+    const result = await query.pool(sqlText.getResetTokenText,[ resetToken ])
+    return result
+  }catch(e){
+    return e
+  }
+}
+
 const getEmail = async(ownerId) => {
   const result = await query.pool(sqlText.getEmail, [ ownerId ])
   return result.rows[0].email
@@ -134,9 +143,12 @@ const getPetId = async(petName,dob,sex) => {
     const result = await pool.query(sqlText.getPetIdText, [petName,dob,sex] )
     //console.log('Here\'s the SQL text: ',sqlText.getOwnerText())
     //console.log(result)
-    const petId = result.rows[0].pet_id
-    // console.log(ownerId)
-    return petId
+    if(result.rowCount == 1){
+      const petId = result.rows[0].pet_id
+      return petId
+    }else{
+      return null
+    }
   }catch(e){
     return e
   }
@@ -161,9 +173,9 @@ const updateOwner = async(updatedData) => {
     // const ownerId = resultOwner.rows[0].owner_id
     console.log('ownerId =>', ownerId)
     //2. Pass in owner ID that needs updating
-    console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
-    const result = await pool.query(sqlText.updateText('owners',fields,'owner_id'),[...newValues,ownerId])
-    console.log(result)
+    // console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
+    const result = await pool.query(sqlText.updateText('owners',fields,'ownerId'),[...newValues,ownerId])
+    // console.log(result)
     return result
   }catch(e){
     return e
@@ -186,7 +198,7 @@ const updatePet = async(updatedData) => {
   //console.log('ownerId =>', ownerId)
   //2. Pass in owner ID that needs updating
   //console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
-  const result = await pool.query(sqlText.updateText('pets',fields,'pet_id'),[...newValues,petId])
+  const result = await pool.query(sqlText.updateText('pets',fields,'petId'),[...newValues,petId])
   // console.log(result)
   return result
 }
@@ -219,9 +231,14 @@ const getOwnersPetIds = async(ownerId) => {
 }
 
 const getActivePetLinks = async(petId) => {
-  const result = await pool.query(sqlText.getPetLinks,[petId])
-  const activeLinksArray = result.rows.filter( row => row.active == true)
-  return activeLinksArray
+  try{
+    const result = await pool.query(sqlText.getActivePetLinksText,[petId])
+    const activeLinksArray = result.rows.filter( row => row.active == true)
+    return activeLinksArray
+  }catch(e){
+    console.log('Error trying to get active pet links,line 236, error: ',e)
+  }
+  
 }
 
 const getInvitedOwnerIdFromInvite = async (inviteToken) => {
@@ -349,6 +366,17 @@ const checkExistingCredentials = async(username,email) => {
   return true
 }
 
+const checkOwnerLink = async(ownerId,petId) => {
+  try{
+    const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
+    console.log('Result from checking owner link: ',result)
+    const petIdArray = result.rows.map( row => row.pet_id) 
+    return petIdArray.includes(petId)
+  }catch(e){
+    return e
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -357,6 +385,7 @@ export default {
   getPasswordHash,
   getOwnerId,
   getRefreshToken,
+  getResetToken,
   getEmail,
   getPetId,
   getInvitedOwnerIdFromInvite,
@@ -366,6 +395,7 @@ export default {
   getPetActivityByOwner,
   getLastAccessedTimestamp,
   getInvitationId,
+  getOwnerIdFromEmail,
   deactivatePetOwnerLink,
   updateOwner,
   updatePet,
@@ -375,6 +405,7 @@ export default {
   setNewRefreshToken,
   addOwner,
   addReceivingOwnerIdToInvitation,
-  checkExistingCredentials
+  checkExistingCredentials,
+  checkOwnerLink
 }
 
