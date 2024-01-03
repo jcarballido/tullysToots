@@ -353,37 +353,51 @@ router.post('/addPets', async(req,res,next) => {
   // Expecting an object made with the following structure: {petData: [ [name1,dob1,sex1],[name2,dob2,sex2], ... ]}
   const petDataArray = req.body.petData
   console.log('Incoming pet data array: ', petDataArray)
-  const processedPetDataArray = []
-  const excludedPetIdArray = []
-  try{
-    petDataArray.forEach( async(petData) => {
-      console.log('Line 360, pet data: ', ...petData)
-      let petId = await queries.getPetId(...petData)
-      console.log('petId retrieved from incoing pet Data: ', petId)
-      if(petId === null){
-        petId = await queries.addPet(...petData)
-        const result = await queries.addPetOwnerLink(ownerId,[petId])
-        processedPetDataArray.push(petId)
-        console.log('Result of adding new pet to processPetDataArray: ',processedPetDataArray)
-      }else{
-        // Check if pet has an active link with any owner. If not, create link between owner and pet. If so, send err message where user requires invite.
-        const activeLinksArray = await queries.getActivePetLinks(petId)
-        console.log('accountRouter, line 367, activeLinksArray: ', activeLinksArray)
-        const activeLinkExists = activeLinksArray.length > 1
-        if(activeLinkExists) excludedPetIdArray.push(petId)
-        else {
-          await queries.addPetOwnerLink(ownerId,[petId])
-          processedPetDataArray.push(petId)
-        }
+  
+  const sortedIncomingPetData = async( arrayOfIncomingPets ) => {
+
+    const processedPetDataArray = []
+    const excludedPetIdArray = []
+
+    console.log('Array of newl added pet data before the async fucntion: ', processedPetDataArray)
+    console.log('Array of excluded pet data before the async fucntion: ', excludedPetIdArray)
+
+    for(const petArray of arrayOfIncomingPets){
+      try{
+          console.log('Line 367, pet data: ', ...petArray)
+          let petId = await queries.getPetId(...petArray)
+          console.log('petId retrieved from incoing pet Data: ', petId)
+          if(petId === null){
+            petId = await queries.addPet(...petArray)
+            const result = await queries.addPetOwnerLink(ownerId,[petId])
+            processedPetDataArray.push(petId)
+            console.log('Result of adding new pet to processPetDataArray during the for...of loop: ',processedPetDataArray)
+          }else{
+            // Check if pet has an active link with any owner. If not, create link between owner and pet. If so, send err message where user requires invite.
+            const activeLinksArray = await queries.getActivePetLinks(petId)
+            console.log('accountRouter, line 367, activeLinksArray: ', activeLinksArray)
+            const activeLinkExists = activeLinksArray.length >= 1
+            console.log(activeLinksArray, activeLinksArray.length)
+            if(activeLinkExists) excludedPetIdArray.push(petId)
+            else {
+              await queries.addPetOwnerLink(ownerId,[petId])
+              processedPetDataArray.push(petId)
+            }
+          }
+        //petDataArray.forEach( async(petData) => {
+        console.log('Array of pet data after the async fucntion: ',processedPetDataArray)
+        console.log('Array of excluded pet data before the async fucntion: ', excludedPetIdArray)
+        
+      } catch(e){
+        console.log('Error attempting to add pet: ',e)
+        excludedPetIdArray.push(petArray)
       }
-    })
-    console.log('Array of pet data outside the async fucntion: ',processedPetDataArray)
-    res.locals.data = {processedPetDataArray,excludedPetIdArray}
-    return next()
-  } catch(e){
-    res.locals.error = e
-    return next()
+    }
+    return { processedPetDataArray, excludedPetIdArray }
   }
+  const result = await sortedIncomingPetData(petDataArray)
+  res.locals.data = result
+  return next()
 })
 
 // Need to clean up, anyone with an access token can update any pet
