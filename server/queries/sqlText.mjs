@@ -61,21 +61,22 @@ const updateText = (tableName, fieldsArr, identifier) => {
 
   const fieldsArrayConvertedToSnakeCase = fieldsArr.map(field => { return camelCaseToSnakeCase(field) })
   console.log("feildsArrayConvertedToSnake =>",fieldsArrayConvertedToSnakeCase)
+  const identifierConvertedToSnakeCase = camelCaseToSnakeCase(identifier)
 
   return(
     `UPDATE ${tableName}
     SET ${fieldsArrayConvertedToSnakeCase.map( (field,index) => {return `${field}=$${index+1}`})} 
-    WHERE ${identifier}=$${fieldsArr.length + 1}
+    WHERE ${identifierConvertedToSnakeCase}=$${fieldsArr.length + 1}
     RETURNING *
     `
   )
 }
 
-const deactivatePetOwnerLinkText = (identifiersArr) => {
+const deactivatePetOwnerLinkText = () => {
   return `
     UPDATE pet_owners
     SET active=false
-    WHERE ${identifiersArr.map((id,index) => {return `${id}=${index+1}`}).join(' AND ')}
+    WHERE owner_id = $1 AND pet_id = $2
   `
 }
 

@@ -175,7 +175,7 @@ const updateOwner = async(updatedData) => {
     //2. Pass in owner ID that needs updating
     // console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
     const result = await pool.query(sqlText.updateText('owners',fields,'ownerId'),[...newValues,ownerId])
-    // console.log(result)
+    console.log("Result from attempting to update owner: ",result)
     return result
   }catch(e){
     return e
@@ -216,7 +216,7 @@ const updateActivity = async(updatedActivityArray, petId) => {
 
 // 'Remove' operations
 const deactivatePetOwnerLink = async( ownerId,petId ) => {
-  const result = await pool.query(sqlText.deactivatePetOwnerLinkText([ownerId,petId]))
+  const result = await pool.query(sqlText.deactivatePetOwnerLinkText(),[ownerId,petId])
   return result
 }
 
@@ -371,7 +371,9 @@ const checkOwnerLink = async(ownerId,petId) => {
     const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
     console.log('Result from checking owner link: ',result)
     const petIdArray = result.rows.map( row => row.pet_id) 
-    return petIdArray.includes(petId)
+    console.log('petIdArray result: ', petIdArray)
+    console.log(petIdArray.includes(Number(petId)))
+    return petIdArray.includes(Number(petId))
   }catch(e){
     return e
   }

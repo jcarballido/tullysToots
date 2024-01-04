@@ -33,7 +33,10 @@ const verifyRefreshToken = async (req,res,next) => {
     // Need to save a NEW refresh token and send back a new access token
     const newRefreshToken = jwt.sign({ ownerId }, process.env.REFRESH_SECRET, {expiresIn : '14d'})
     const result = await queries.setNewRefreshToken(newRefreshToken,ownerId)
-    if(result == 0) return res.send('ERROR: Refresh token was not updated in database')
+    if(result == 0) {
+      res.locals.error = 'ERROR: Refresh token was not updated in database'
+      return next()
+    }
     const newAccessToken = jwt.sign({ ownerId }, process.env.ACCESS_SECRET, {expiresIn : '15m'})
     res.locals.tokenData = { newRefreshToken, newAccessToken }
     console.log(`The new tokens were successfully created, they are are: access:${ newAccessToken }, refresh:${ newRefreshToken }`)

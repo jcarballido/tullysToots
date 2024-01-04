@@ -47,11 +47,10 @@ router.post('/sign-up', async(req,res) => {
     if(owner == null || err) return res.send('Error saving new sign-up.')
     const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
     // Create refresh token...
-    
     const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
     const updateResult = await queries.updateOwner({ownerId, fields:['refreshToken'], newValues:[refreshToken]})
-    if(updateResult instanceof Error) return res.send('ERROR: Could not update new owner with refresh token during sign-up.')
     console.log('Result from attempting to update owner\'s refresh token: ', updateResult)
+    if(updateResult instanceof Error) return res.send('ERROR: Could not update new owner with refresh token during sign-up.')
     // Create access token 
     const accessSecret = process.env.ACCESS_SECRET
     const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
@@ -400,7 +399,7 @@ router.post('/addPets', async(req,res,next) => {
   return next()
 })
 
-// Need to clean up, anyone with an access token can update any pet
+
 router.post('/updatePet', async(req,res,next) => {
   const ownerId = req.ownerId
   // if (!ownerId) return res.send('User is not logged in or does not have an account')
@@ -409,15 +408,22 @@ router.post('/updatePet', async(req,res,next) => {
   const expectedKeys = ['petId','fields','newValues']
   const validateUpdateData = expectedKeys.map( key => {
     const test = updatedData.includes(key)
-  //console.log(test)
     return test
   })
-  if(validateUpdateData.includes(false)) res.json({error:'ERROR: Invalid update request'})
+  if(validateUpdateData.includes(false)) {
+    res.locals.error = 'ERROR: Invalid update request'
+    return next()
+  }
   // Confirm pet IDs belong to owner making the request
-  const petId = updatedData.petId
+  const petId = req.body.updatePetData.petId
+  console.log('petId passed into route: ', petId)
   const ownerLinkIsActive = await queries.checkOwnerLink(ownerId,petId)
-  if(!ownerLinkIsActive) return res.send('Account not registered with pet.')
-  const result = await queries.updatePet(updatedData)
+  console.log('OwnerLinkIsActive result: ',ownerLinkIsActive)
+  if(!ownerLinkIsActive) {
+    res.locals.error = 'Account not registered with pet.'
+    return next()
+  }
+  const result = await queries.updatePet(req.body.updatePetData)
   if(result.rowCount) {
     res.locals.message = 'Successfully updated pet data'
     return next()
@@ -432,6 +438,7 @@ router.post('/breakOwnerLink', async(req,res,next) => {
   // if (!ownerId) return res.send('User is not logged in or does not have an account')
   const petId = req.body.petId
   const result = await queries.deactivatePetOwnerLink(ownerId,petId)
+  console.log('Result from querying "deactivePetOwnerLink": ', result)
   if(result.rowCount) {
     res.locals.message = 'Successfully removed link'
     return next()
@@ -440,7 +447,7 @@ router.post('/breakOwnerLink', async(req,res,next) => {
     return next()
   }
 })
-
+// Need to test with front end
 router.post('/sendInvite', async(req, res, next) => {
   // Utility function
   const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
@@ -509,7 +516,7 @@ router.post('/sendInvite', async(req, res, next) => {
     return next()
   }
 })
-
+// Need to test with front end
 router.post('/acceptInvite', async(req,res,next) => {
   const invitationToken = req.query.invitationToken
   if(!invitationToken) return res.locals.json({error:'ERROR: Missing invitation'})
