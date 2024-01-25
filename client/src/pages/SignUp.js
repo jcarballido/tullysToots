@@ -6,10 +6,14 @@ import SignUpForm from '../components/SignUpForm'
 const SignUp = () => {
   return(
     <CredentialsModal>
-        <div>
-            Welcome!
+        <div className='flex justify-center items-center my-4'>
+            WELCOME!
         </div>
         <SignUpForm />
+        <div className='flex justify-center items-center pr-1'>Already have an account?</div>
+          <button>
+              <a href='/login'>Sign in</a>
+          </button >
     </CredentialsModal>
   )
 }
