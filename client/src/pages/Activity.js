@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useContext } from 'react'
 // import Pet from '../components/PetProfile'
 import ActivityCarousel from '../components/ActivityCarousel'
+import AuthContext from '../context/AuthContext'
 
 const Activity = () => {
   
   // use React Router Data hook to fetch for activity
-  useEffect(()=>{
+  // useEffect(()=>{
 
-  },[ownerId])
+  // },[ownerId])
+
+  // console.log('Activity has mounted. Auth set to...', auth)
 
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center'>
