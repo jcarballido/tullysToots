@@ -2,13 +2,13 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   createBrowserRouter,
-  createRoutesFromElements,
   RouterProvider,
+  createRoutesFromElements,
   Route
 } from 'react-router-dom'
 import { Home as HomeLayout } from './layouts/Home.js'
 import { Dashboard as DashboardLayout } from './layouts/Dashboard.js';
-import Login from './pages/Login.js'
+import Login, { action as loginAction } from './pages/Login.js'
 import SignUp from './pages/SignUp.js'
 import Profile from './pages/Profile.js'
 import Activity from './pages/Activity.js'
@@ -26,8 +26,8 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
         <Route element={<HomeLayout />} >
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
+          <Route path='/' element={<Login />} action={loginAction} />
+          {/* <Route path="/login" element={<Login />} /> */}
           <Route path="/signup" element={<SignUp />} />
           <Route element={<RequireAuth />}>
             <Route path="/activity" element={<Activity />} />
@@ -49,5 +49,7 @@ const router = createBrowserRouter(
 )
 
 root.render(
-  <RouterProvider router={router}/>
+  <AuthProvider>
+    <RouterProvider router={router} />
+  </AuthProvider>
 )

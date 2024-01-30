@@ -1,4 +1,5 @@
 import React,{ useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 // Components import
 import CredentialsModal from '../components/CredentialsModal'
 import SignUpForm from '../components/SignUpForm'
@@ -6,11 +7,12 @@ import useAuth from '../hooks/useAuth'
 
 const SignUp = () => {
 
-  const { auth } = useAuth()
+  const { auth,setAuth } = useAuth()
 
-  useEffect( () => {
-    console.log('SignUp Auth result = ', auth)
-  }, [auth])
+  // Test automatic navigation 
+  useEffect(()=> {
+    
+    },[])
 
   return(
     <CredentialsModal>
@@ -20,7 +22,7 @@ const SignUp = () => {
         <SignUpForm />
         <div className='flex justify-center items-center pr-1'>Already have an account?</div>
           <button>
-              <a href='/login'>Sign in</a>
+              <Link to='/'>Sign in</Link>
           </button >
     </CredentialsModal>
   )
