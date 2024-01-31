@@ -10,7 +10,7 @@ const RequireAuth = () => {
 
 
   return(
-    auth.isLoggedIn
+    auth?.isLoggedIn
     ? <Outlet />
     : <Navigate to='/' state={{from: location}} replace />
   )

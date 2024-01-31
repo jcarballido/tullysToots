@@ -11,7 +11,7 @@ const TextInput = ({ inputName }) => {
   }
 
   return(
-      <label for={`${inputName.toLowerCase()}`} className='flex flex-col items-start mb-2 min-h-[44px]'>
+      <label htmlFor={`${inputName.toLowerCase()}`} className='flex flex-col items-start mb-2 min-h-[44px]'>
           {`${inputName}`}:
           <input id={`${inputName.toLowerCase()}`} name={`${inputName.toLowerCase()}`} type='text' onChange={handleInputChange} className='w-full text-black' value={value}/>
       </label>

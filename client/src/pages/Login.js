@@ -1,64 +1,85 @@
-import React, { useEffect, useState, useContext } from 'react'
-import AuthContext from '../context/AuthContext.js'
+import React, { useEffect, useState, useContext } from "react";
+import AuthContext from "../context/AuthContext.js";
 // Component imports
-import LoginForm from '../components/LoginForm.js'
-import CredentialsModal from '../components/CredentialsModal.js'
-import useAuth from '../hooks/useAuth.js'
-import { useNavigate, useOutletContext, Link,useActionData } from 'react-router-dom'
-import axios from 'axios'
+import LoginForm from "../components/LoginForm.js";
+import CredentialsModal from "../components/CredentialsModal.js";
+import useAuth from "../hooks/useAuth.js";
+import {
+  useNavigate,
+  useOutletContext,
+  Link,
+  useActionData,
+} from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
+  const { auth, setAuth } = useAuth();
+  const navigate = useNavigate();
+  const loginData = useActionData();
 
-  const {auth, setAuth} = useAuth()
-  const navigate = useNavigate()
-  const action = useActionData()
-  console.log('Action data from useActionData hook = ',action)
+  // Check for any errors
+  useEffect(() => {
+    if (loginData?.Error)
+      console.log("Error with login submission: ", loginData.Error);
+  });
 
+  // Update Context state to include accessToken
+  useEffect(() => {
+    console.log(
+      "Updating auth state if auth.AccessToken is true...",
+      loginData
+    );
+    loginData?.accessToken ? setAuth({ ...loginData }) : null;
+  }, [loginData]);
   // Check to see if user is currently logged in
   useEffect(() => {
-    // console.log('Action data from useActionData hook = ',action)
-    auth?.isLoggedIn? navigate('activity'): null
+    console.log("Checking if user is logged in...", auth?.isLoggedIn);
+    auth?.isLoggedIn ? navigate("activity") : null;
+  }, [auth]);
 
-    
-  }, [auth])
-
-  return(
+  return (
     <CredentialsModal>
-        <div className='flex justify-center items-center my-4'>
-            LOGIN
+      <div className="flex justify-center items-center my-4">LOGIN</div>
+      <LoginForm />
+      <div className="flex justify-center items-center my-4">
+        <div className="flex justify-center items-center mr-1">
+          New to Tully's Toots?
         </div>
-        <LoginForm />
-        <div className='flex justify-center items-center my-4'>
-          <div className='flex justify-center items-center mr-1'>New to Tully's Toots?</div>
-          <button className='min-w-[44px] min-h-[44px]'>
-              <Link to='/signup' className='flex justify-center items-center pl-1'>Create an account</Link>
-          </button >
-        </div>
+        <button className="min-w-[44px] min-h-[44px]">
+          <Link to="/signup" className="flex justify-center items-center pl-1">
+            Create an account
+          </Link>
+        </button>
+      </div>
     </CredentialsModal>
-  )
-}
+  );
+};
 
 export const action = async ({ request }) => {
+  // Parse request for username and password from fom submission
+  const formData = await request.formData();
+  const username = formData.get("username");
+  const password = formData.get("password");
+
   // Validate form
-  // ** Need **
-  // Parse request for username and password
-  const formData = await request.formData()
-  const credentials = { username: formData.get("username"), password: formData.get("password")}
+  if (username.length > 25) return { Error: "Username is too long" };
+  if (!username) return { Error: "Username cannot be empty" };
+  if (!password) return { Error: "Password cannot be empty" };
+
+  // Package credentials to send backend
+  const credentials = { username, password };
   // Send to backend for verification; Expect to get back an access token or an access token and an invitation token
-  // ** NEED: Save accessToken in localStorage (or some alternative), then have the context provider grab it and use it in your app.
-  let testData
-  const data = axios.post('http://localhost:3000/test', credentials)
-    .then(res => {
-      console.log(res)
-      testData = res.data
-     
+  const data = axios
+    .post("http://localhost:3000/account/sign-in", credentials)
+    .then((res) => {
+      return {...res.data, isLoggedIn: true}
     })
-    .catch(e => null)
-  
-  // Return the response and 
-  return null 
+    .catch((e) => {
+      console.log("Error signing in: ", e);
+      return null;
+    });
+  // Return the response
+  return data;
+};
 
-  
-} 
-
-export default Login
+export default Login;
