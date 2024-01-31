@@ -1,6 +1,6 @@
 import express from 'express'
 import dotenv from 'dotenv/config'
-
+import cors from 'cors'
 import jwt from 'jsonwebtoken'
 import queries from './queries/queries.mjs'
 import accountRouter from './routes/accountRouter.mjs'
@@ -13,7 +13,7 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}`)
 })
 
-//app.use(cors())
+app.use(cors())
 app.use(express.json())
 
 app.use('/account',accountRouter)

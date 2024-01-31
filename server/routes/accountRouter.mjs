@@ -77,7 +77,7 @@ router.post('/sign-in', async(req,res) => {
   if(refreshToken) return res.send('User is currently logged in')
   // Extract email and password from req.body 
   const { username, password } = req.body
-  // Confirm user is registered; NEED TO CREATE UserQueries SERVICE\
+  // Confirm user is registered; NEED TO CREATE UserQueries SERVICE
   const ownerId = await queries.getOwnerId('username',username)
   if(!ownerId) return res.send('User does not exist')
   const passwordHash = await queries.getPasswordHash(ownerId)
@@ -116,7 +116,7 @@ router.post('/sign-in', async(req,res) => {
       return res.json({accessToken})
     }
   }else{
-    return res.send('ERROR: Wrong credentials')
+    return res.json( {error: 'Wrong credentials'})
   }
 })
 
