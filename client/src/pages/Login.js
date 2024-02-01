@@ -60,12 +60,6 @@ export const action = async ({ request }) => {
   const formData = await request.formData();
   const username = formData.get("username");
   const password = formData.get("password");
-
-  // Validate form
-  if (username.length > 25) return { Error: "Username is too long" };
-  if (!username) return { Error: "Username cannot be empty" };
-  if (!password) return { Error: "Password cannot be empty" };
-
   // Package credentials to send backend
   const credentials = { username, password };
   // Send to backend for verification; Expect to get back an access token or an access token and an invitation token
@@ -78,7 +72,7 @@ export const action = async ({ request }) => {
       console.log("Error signing in: ", e);
       return null;
     });
-  // Return the response
+  // Return the auth object if credentials are valid or return null
   return data;
 };
 
