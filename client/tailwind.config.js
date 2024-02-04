@@ -10,6 +10,9 @@ module.exports = {
         },
         maxHeight: {
           '33':'33%'
+        },
+        colors: {
+          'accent-blue': '#40e0d0'
         }
       }
     },

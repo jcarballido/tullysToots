@@ -25,10 +25,6 @@ const Login = () => {
 
   // Update Context state to include accessToken
   useEffect(() => {
-    console.log(
-      "Updating auth state if auth.AccessToken is true...",
-      loginData
-    );
     loginData?.accessToken ? setAuth({ ...loginData }) : null;
   }, [loginData]);
   // Check to see if user is currently logged in
