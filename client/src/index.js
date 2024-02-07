@@ -8,8 +8,8 @@ import {
 } from 'react-router-dom'
 import { Home as HomeLayout } from './layouts/Home.js'
 import { Dashboard as DashboardLayout } from './layouts/Dashboard.js';
-import Login, { action as loginAction } from './pages/Login.js'
-import SignUp from './pages/SignUp.js'
+import Login, { action as loginAction, loader as loginLoader } from './pages/Login.js'
+import SignUp, { action as signUpAction } from './pages/SignUp.js'
 import Profile from './pages/Profile.js'
 import Activity from './pages/Activity.js'
 import Dashboard from './pages/Dashboard.js'
@@ -26,10 +26,10 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
         <Route element={<HomeLayout />} >
-          <Route path='/' element={<Login />} action={loginAction} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path='/' element={<Login />} action={ loginAction } loader={ loginLoader }/>
+          <Route path="signup" element={<SignUp />} action={ signUpAction } />
           <Route element={<RequireAuth />}>
-            <Route path="/activity" element={<Activity />} />
+            <Route path="activity" element={<Activity />} loader={null} />
           </Route> 
         </Route>
         <Route element={<RequireAuth />}>
@@ -38,7 +38,7 @@ const router = createBrowserRouter(
               <Route path="account" element={<Account />} />
               <Route path="invite" element={<Invite />} />
               <Route path="pets" element={<Pets />} >
-                <Route path="accept" element={<AcceptInvite />} />
+                <Route path="acceptInvite" element={<AcceptInvite />} />
               </Route>
             </Route> 
           </Route>

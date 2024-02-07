@@ -13,7 +13,7 @@ const SignUpForm = () => {
 
 
   return(
-    <Form className='flex flex-col w-full px-8 mb-4'>
+    <Form className='flex flex-col w-full px-8 mb-4' method='post' action='/signup'>
       <EmailInput setInvalidField={setInvalidEmail}/>
       <UsernameInput setInvalidField={ setInvalidUsername } />
       <PasswordInput setInvalidField={ setInvalidPassword } />

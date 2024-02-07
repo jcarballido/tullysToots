@@ -9,6 +9,8 @@ import {
   useOutletContext,
   Link,
   useActionData,
+  useLoaderData,
+  useLocation
 } from "react-router-dom";
 import axios from "axios";
 
@@ -16,18 +18,15 @@ const Login = () => {
   const { auth, setAuth } = useAuth();
   const navigate = useNavigate();
   const loginData = useActionData();
+  const location = useLocation()
+  const loaderData = useLoaderData()
 
-  // Check for any errors
-  useEffect(() => {
-    if (loginData?.Error)
-      console.log("Error with login submission: ", loginData.Error);
-  });
-
+  console.log('Login Page Loader Data is: ', loaderData)
   // Update Context state to include accessToken
   useEffect(() => {
     loginData?.accessToken ? setAuth({ ...loginData }) : null;
-  }, [loginData]);
-  // Check to see if user is currently logged in
+  }, [loginData])
+
   useEffect(() => {
     console.log("Checking if user is logged in...", auth?.isLoggedIn);
     auth?.isLoggedIn ? navigate("activity") : null;
@@ -59,17 +58,27 @@ export const action = async ({ request }) => {
   // Package credentials to send backend
   const credentials = { username, password };
   // Send to backend for verification; Expect to get back an access token or an access token and an invitation token
-  const data = axios
+  try{
+    const response = await axios
     .post("http://localhost:3000/account/sign-in", credentials)
-    .then((res) => {
-      return {...res.data, isLoggedIn: true}
-    })
-    .catch((e) => {
-      console.log("Error signing in: ", e);
-      return null;
-    });
-  // Return the auth object if credentials are valid or return null
-  return data;
+    const accessToken = response.accessToken
+    return { accessToken, isLoggedIn: true }
+  }catch(e){
+    console.log('Login action resulted in the following error: ',e)
+    return null
+  }
 };
+
+export const loader = () => {
+  const validRefreshToken = axios
+    .post('http://localhost:3000/checkRefreshToken')
+    .then( res => {
+      return res.data
+    }).catch( e => {
+      console.log('Loader request resulted in this error: ', e)
+      return false
+  })
+  return validRefreshToken
+}
 
 export default Login;
