@@ -10,7 +10,8 @@ import {
   Link,
   useActionData,
   useLoaderData,
-  useLocation
+  useLocation,
+  useSearchParams
 } from "react-router-dom";
 import axios from "axios";
 
@@ -20,17 +21,73 @@ const Login = () => {
   const loginData = useActionData();
   const location = useLocation()
   const loaderData = useLoaderData()
+  const [test, setTest] = useSearchParams()
 
-  console.log('Login Page Loader Data is: ', loaderData)
-  // Update Context state to include accessToken
-  useEffect(() => {
-    loginData?.accessToken ? setAuth({ ...loginData }) : null;
-  }, [loginData])
+  /*
+  Need to handle the following flow...
+  1. Page will render the first time with loader data available 'immediately'
+    loaderData will indicate if the user attempting to access the root page is a regsitered user and if their login session is ongoing.
+  2. useEffect will run after the initial render to assess loader data.
+    If no refresh token was sent to te server, user will need to either log in or sign up.
+    If refresh token was received, but no longer valid (expired), user will be left on the login page (with an invitation token in the URL).
+    If refresh token was received and is valid, user is redircted to the '/dashboard/acceptInvite' page.
+  */
 
   useEffect(() => {
-    console.log("Checking if user is logged in...", auth?.isLoggedIn);
-    auth?.isLoggedIn ? navigate("activity") : null;
-  }, [auth]);
+    /* if(loaderData ){
+      setAuth({accessToken:loaderData.accessToken,loaderData.isLoggedIn:true})
+    }
+    if(loginData){
+            setAuth({accessToken:loginData.accessToken,loginData.isLoggedIn:true})
+
+    }
+    */
+
+
+   
+   if(loaderData ){
+      setAuth({isLoggedIn:true})
+    }
+    if(loginData){
+      setAuth({isLoggedIn:true})
+
+    }
+    
+  }, [loaderData,loginData])
+
+  useEffect(() => {
+      // console.log("Checking if user is logged in...", auth?.isLoggedIn);
+      const search = test
+      const cheeks = test.get("cheeks")
+      console.log(cheeks)
+      auth?.isLoggedIn ? navigate("activity") : null;
+    }, [auth])
+
+  // useEffect(() => {
+  //   console.log('Testing to see if loaderData causes a re-render; loaderData useEffect ran.')
+  //   setAuth('loaderData was evaluated')
+  //   loaderData?.isLoggedIn
+  //     ? setAuth( prev => {return {...prev, accessToken: loaderData.accessToken, isLoggedIn: loaderData.isLoggedIn}})
+  //     : setAuth(loaderData)
+  // },[loaderData])
+  // // Update Context state to include accessToken
+  // useEffect(() => {
+  //   if (hasMounted) {
+  //     console.log('Effect ran after the first render!');
+  //     console.log('LoginData received; loginData useEffect ran')search.replace('?','').split()
+  //   } else {
+  //     // Update the state to indicate that the component has mounted
+  //     setHasMounted(true);
+  //   }
+    
+  //   loginData?.accessToken ? setAuth({ ...loginData }) : null;
+  // }, [hasMounted])
+
+  // useEffect(() => {
+  //   console.log('Auth useEffect ran')
+  //   // console.log("Checking if user is logged in...", auth?.isLoggedIn);
+  //   // auth?.isLoggedIn ? navigate("activity") : null;
+  // }, [auth]);
 
   return (
     <CredentialsModal>
@@ -51,34 +108,35 @@ const Login = () => {
 };
 
 export const action = async ({ request }) => {
-  // Parse request for username and password from fom submission
-  const formData = await request.formData();
-  const username = formData.get("username");
-  const password = formData.get("password");
-  // Package credentials to send backend
-  const credentials = { username, password };
-  // Send to backend for verification; Expect to get back an access token or an access token and an invitation token
-  try{
-    const response = await axios
-    .post("http://localhost:3000/account/sign-in", credentials)
-    const accessToken = response.accessToken
-    return { accessToken, isLoggedIn: true }
-  }catch(e){
-    console.log('Login action resulted in the following error: ',e)
-    return null
-  }
-};
+  return false
+  // // Parse request for username and password from fom submission
+  // const formData = await request.formData();
+  // const username = formData.get("username");
+  // const password = formData.get("password");
+  // // Package credentials to send backend
+  // const credentials = { username, password };
+  // // Send to backend for verification; Expect to get back an access token or an access token and an invitation token
+  // try{
+  //   return 'action function executed'
+  //   const response = await axios
+  //   .post("http://localhost:3000/account/sign-in", credentials)
+  //   const accessToken = response.accessToken
+  //   return { accessToken, isLoggedIn: true }
+  // }catch(e){
+}
 
 export const loader = () => {
-  const validRefreshToken = axios
-    .post('http://localhost:3000/checkRefreshToken')
-    .then( res => {
-      return res.data
-    }).catch( e => {
-      console.log('Loader request resulted in this error: ', e)
-      return false
-  })
-  return validRefreshToken
+  return false
+  // const activeLogin = axios
+  //   .post('http://localhost:3000/checkRefreshToken')
+  //   .then( res => {
+  //     const { validRefreshToken, accessToken, isLoggedIn } = res.data
+  //     return { validRefreshToken, accessToken, isLoggedIn }
+  //   }).catch( e => {
+  //     console.log('Loader request resulted in this error: ', e)
+  //     return false
+  // })
+  // return activeLogin
 }
 
 export default Login;
