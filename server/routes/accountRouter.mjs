@@ -24,16 +24,31 @@ const transporter = nodemailer.createTransport({
 
 router.use(cookieParser())
 
+router.get('/activityTest', (req,res) => {
+  const cook = req.cookies.jwt
+  console.log('Activity Page sent the following cookie: ', cook)
+  return res.status(200).send('Cookie check recieved')
+})
+
+router.get('/checkLoginSession', async(req,res) => {
+  const refreshToken = req.cookies.jwt
+  console.log('Refresh token recieved: ', refreshToken)
+  if( !refreshToken ) return res.status(401).json({ detail:'New session' })
+  const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
+  if( decodedJwt instanceof Error ) return res.status(401).json({ detail:'Session expired. Login required.' })
+  return res.status(200).json({ detail:'Live session' })
+})
+
 router.post('/sign-up', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.send('User is currently logged in')
+  if(refreshToken) return res.status(401).json({detail: 'User is currently logged in'})
   // Extract email and password from req.body
   const { username, email, password } = req.body
   // Validate
   // Confirm email is unique
   const uniqueCredentials = await queries.checkExistingCredentials(username,email)
   // If userExists returns false...
-  if(uniqueCredentials == true) return res.send('ERROR: Email or username already exists. Please sign in or request a password reset')
+  if(uniqueCredentials == true) return res.status(401).json({ detail: 'Email or username already exists. Please sign in or request a password reset'})
   
   // Hash raw password
   const saltRounds = 5
@@ -49,7 +64,7 @@ router.post('/sign-up', async(req,res) => {
     // Create refresh token...
     const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
     const updateResult = await queries.updateOwner({ownerId, fields:['refreshToken'], newValues:[refreshToken]})
-    console.log('Result from attempting to update owner\'s refresh token: ', updateResult)
+    // console.log('Result from attempting to update owner\'s refresh token: ', updateResult)
     if(updateResult instanceof Error) return res.send('ERROR: Could not update new owner with refresh token during sign-up.')
     // Create access token 
     const accessSecret = process.env.ACCESS_SECRET
@@ -57,29 +72,28 @@ router.post('/sign-up', async(req,res) => {
     res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
     const invitationToken = req.query.invitationToken
     if(invitationToken){
-      // const receivingOwnerId = await queries.getOwnerId(email)
       try{
         const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
       }catch(e){
         console.log('Error updating invitation token with new receiving owner id')
       }
       // Send access and invitation token
-      return res.json({accessToken,invitationToken,ownerId,username:owner.ownerUsername})
+      return res.status(200).json({ accessToken,invitationToken,ownerId,username:owner.ownerUsername })
     }else{
       // Send access token
-      return res.json({accessToken,ownerId,username:owner.ownerUsername})
+      return res.status(200).json({ accessToken, ownerId, username:owner.ownerUsername })
     }
   })
 })
 
 router.post('/sign-in', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.send('User is currently logged in')
+  if(refreshToken) return res.status(401).json({ detail :'User is currently logged in' })
   // Extract email and password from req.body 
   const { username, password } = req.body
   // Confirm user is registered; NEED TO CREATE UserQueries SERVICE
   const ownerId = await queries.getOwnerId('username',username)
-  if(!ownerId) return res.send('User does not exist')
+  if(!ownerId) return res.status(401).json({ detail:'User does not exist'})
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
   // Check password
@@ -116,7 +130,7 @@ router.post('/sign-in', async(req,res) => {
       return res.json({accessToken})
     }
   }else{
-    return res.json( {error: 'Wrong credentials'})
+    return res.json( {detail: 'Wrong credentials'})
   }
 })
 
@@ -227,28 +241,28 @@ router.get('/invitation', async(req,res) => {
   // CHECK IF INVITED USER IS NEW OR REGISTERED
   const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
   if(!expectedReceivingOwnerId){
-      // Redirect to sign-UP page along with invitation token
-      return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+    // Redirect to sign-UP page along with invitation token
+    return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
   }else{
-      // Check the client attempting to accept the invite matches with the intended invite recipient
-      const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
-      // Return error: Either expired token or tampered with
-      if(invitationTokenPayload instanceof Error){
-      return res.json({error: new Error('Invalid link')})
-      }
-      console.log('Token is valid; payload: ', invitationTokenPayload)
+    // Check the client attempting to accept the invite matches with the intended invite recipient
+    const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
+    // Return error: Either expired token or tampered with
+    if(invitationTokenPayload instanceof Error){
+    return res.json({error: new Error('Invalid link')})
+    }
+    console.log('Token is valid; payload: ', invitationTokenPayload)
   // EXTRACT THE 'RECEIVING OWNER ID'
   // const receivingOwnerId = payload.receivingOwnerId
   // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
-      const accessToken = req.headers['authorization']
-      if(!accessToken){
-      // Redirect to sign-IN page along with invitation token
-      return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
-      }
-      const accessTokenSecret = process.env.ACCESS_SECRET
-      const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
-      const clientOwnerId = accessTokenPayload.ownerId
-      if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+    const accessToken = req.headers['authorization']
+    if(!accessToken){
+    // Redirect to sign-IN page along with invitation token
+    return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+    }
+    const accessTokenSecret = process.env.ACCESS_SECRET
+    const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+    const clientOwnerId = accessTokenPayload.ownerId
+    if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
   }
   // const newPetsIdArray = payload.newPetIdsArray
   // Check if there's a matching token from the respective sender.
@@ -260,18 +274,18 @@ router.get('/invitation', async(req,res) => {
   // }
   // Check if this token has been used prior.
   try{
-      const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
-      // if(!result) return res.send('server, line 301 => Error adding timestamp')
-      // Set the content type to text/html
-      // res.setHeader('Content-Type', 'text/html');
-      // // Send the HTML as the response
-      // if(!receivingOwnerId){
-      //   return res.send(newUserHtmlContent)
-      // }else{
-      //   return res.send(exisitingUserHtmlContent)
-      // }
+    const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+    // if(!result) return res.send('server, line 301 => Error adding timestamp')
+    // Set the content type to text/html
+    // res.setHeader('Content-Type', 'text/html');
+    // // Send the HTML as the response
+    // if(!receivingOwnerId){
+    //   return res.send(newUserHtmlContent)
+    // }else{
+    //   return res.send(exisitingUserHtmlContent)
+    // }
   }catch(e){
-      console.log('Error setting Invite Link timestamp', e)
+    console.log('Error setting Invite Link timestamp', e)
   }
 
   return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
@@ -501,7 +515,7 @@ router.post('/sendInvite', async(req, res, next) => {
     }
   }
 
-  const addPetOwnerLink = `http://localhost:3000/acceptInvite?invitationToken=${invitationToken}`
+  const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
   try{
     const info = await transporter.sendMail({
       from: companyEmail, // sender address

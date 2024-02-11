@@ -19,7 +19,7 @@ const checkExpiration = (token) => {
 
 const verifyRefreshToken = async (req,res,next) => {
   const refreshTokenVerification = req.refreshTokenVerification
-  console.log('RefreshTokenVerification: ', refreshTokenVerification)
+  // console.log('RefreshTokenVerification: ', refreshTokenVerification)
   if(refreshTokenVerification){
     console.log('The access token was invalid, but the refresh token was still valid. A new refresh and acces token were attempted to be created.')
     const refreshToken = req.currentRefreshToken

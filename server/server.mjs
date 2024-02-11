@@ -13,8 +13,9 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}`)
 })
 
-app.use(cors())
+app.use(cors({ credentials: true, origin: 'http://localhost:3001'} ))
 app.use(express.json())
+
 
 app.use('/account',accountRouter)
 app.use('/activity',activityRouter)
