@@ -1,27 +1,28 @@
 import React, { useEffect, useState, useContext } from "react";
-import AuthContext from "../context/AuthContext.js";
 // Component imports
 import LoginForm from "../components/LoginForm.js";
 import CredentialsModal from "../components/CredentialsModal.js";
 import useAuth from "../hooks/useAuth.js";
 import {
   useNavigate,
-  useOutletContext,
   Link,
   useActionData,
   useLoaderData,
-  useLocation,
   useSearchParams
 } from "react-router-dom";
-import axios from "axios";
+import axios from '../api/axios.js'
+import ErrorMessage from "../components/ErrorMessage.js";
 
 const Login = () => {
   const { auth, setAuth } = useAuth();
   const navigate = useNavigate();
-  const loginData = useActionData();
-  const location = useLocation()
+  const actionData = useActionData();
   const loaderData = useLoaderData()
-  const [test, setTest] = useSearchParams()
+  const [searchParams, ...rest] = useSearchParams()
+  const invitationToken = searchParams.get("invite")
+  const [ error, setError ] = useState(null)
+  console.log('Invitation token from URL: ', invitationToken)
+  console.log('(Line 25) Login loader data: ', loaderData)
 
   /*
   Need to handle the following flow...
@@ -33,35 +34,30 @@ const Login = () => {
     If refresh token was received and is valid, user is redircted to the '/dashboard/acceptInvite' page.
   */
 
-  useEffect(() => {
-    /* if(loaderData ){
-      setAuth({accessToken:loaderData.accessToken,loaderData.isLoggedIn:true})
-    }
-    if(loginData){
-            setAuth({accessToken:loginData.accessToken,loginData.isLoggedIn:true})
-
-    }
-    */
-
-
-   
-   if(loaderData ){
-      setAuth({isLoggedIn:true})
-    }
-    if(loginData){
-      setAuth({isLoggedIn:true})
-
-    }
-    
-  }, [loaderData,loginData])
+    useEffect(() => {
+      if( loaderData.isLoggedIn ){
+        const { accessToken, isLoggedIn } = loaderData
+        setAuth({ accessToken,isLoggedIn })
+      }
+    }, [loaderData])
+  
+    useEffect(() => {
+      if( actionData?.isLoggedIn ){
+        const { accessToken, isLoggedIn } = actionData
+        setAuth({ accessToken, isLoggedIn })
+      } else if(actionData?.error) {
+        setError(actionData.error)
+      }
+    }, [actionData])
 
   useEffect(() => {
-      // console.log("Checking if user is logged in...", auth?.isLoggedIn);
-      const search = test
-      const cheeks = test.get("cheeks")
-      console.log(cheeks)
-      auth?.isLoggedIn ? navigate("activity") : null;
-    }, [auth])
+    auth?.isLoggedIn 
+      ? (invitationToken 
+          ? navigate(`/dashboard/acceptInvite?invite=${invitationToken}`)
+          : navigate('/activity')
+        ) 
+      : null;
+  }, [auth])
 
   // useEffect(() => {
   //   console.log('Testing to see if loaderData causes a re-render; loaderData useEffect ran.')
@@ -92,13 +88,13 @@ const Login = () => {
   return (
     <CredentialsModal>
       <div className="flex justify-center items-center my-4">LOGIN</div>
-      <LoginForm />
+      <LoginForm error={ error } setError={ setError } />
       <div className="flex justify-center items-center my-4">
         <div className="flex justify-center items-center mr-1">
           New to Tully's Toots?
         </div>
         <button className="min-w-[44px] min-h-[44px]">
-          <Link to="/signup" className="flex justify-center items-center pl-1">
+          <Link to={invitationToken? `/signup?invite=${invitationToken}`:'signup'} className="flex justify-center items-center pl-1">
             Create an account
           </Link>
         </button>
@@ -107,36 +103,39 @@ const Login = () => {
   );
 };
 
+//Need to handle response for wrong credentials
 export const action = async ({ request }) => {
-  return false
-  // // Parse request for username and password from fom submission
-  // const formData = await request.formData();
-  // const username = formData.get("username");
-  // const password = formData.get("password");
-  // // Package credentials to send backend
-  // const credentials = { username, password };
-  // // Send to backend for verification; Expect to get back an access token or an access token and an invitation token
-  // try{
-  //   return 'action function executed'
-  //   const response = await axios
-  //   .post("http://localhost:3000/account/sign-in", credentials)
-  //   const accessToken = response.accessToken
-  //   return { accessToken, isLoggedIn: true }
-  // }catch(e){
+  // Parse request for username and password from fom submission
+  const formData = await request.formData();
+  const username = formData.get("username");
+  const password = formData.get("password");
+  // Package credentials to send backend
+  const credentials = { username, password };
+  // Send to backend for verification; Expect to get back an access token
+  try{
+    const response = await axios
+    .post('/account/sign-in', credentials)
+    const accessToken = response.data.detail
+    return { accessToken, isLoggedIn: true }
+  }catch(e){
+    console.log('Login Attempt resulted in this error: ', e)
+    const error = e.response
+    return { isLoggedIn: false, error }
+  }
 }
 
 export const loader = () => {
-  return false
-  // const activeLogin = axios
-  //   .post('http://localhost:3000/checkRefreshToken')
-  //   .then( res => {
-  //     const { validRefreshToken, accessToken, isLoggedIn } = res.data
-  //     return { validRefreshToken, accessToken, isLoggedIn }
-  //   }).catch( e => {
-  //     console.log('Loader request resulted in this error: ', e)
-  //     return false
-  // })
-  // return activeLogin
+  const activeLogin = axios
+    .get('/account/checkLoginSession')
+    .then( res => {
+      const { accessToken } = res.data
+      return { accessToken, isLoggedIn:true }
+    }).catch( e => {
+      console.log('Loader request resulted in this error: ', e)
+      const error = e.response
+    return { isLoggedIn: false, error }
+  })
+  return activeLogin
 }
 
 export default Login;

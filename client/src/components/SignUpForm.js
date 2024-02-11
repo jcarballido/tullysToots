@@ -4,8 +4,9 @@ import { Form } from 'react-router-dom'
 import EmailInput from "./EmailInput"
 import PasswordInput from "./PasswordInput"
 import UsernameInput from "./UsernameInput"
+import ErrorMessage from "./ErrorMessage"
 
-const SignUpForm = () => {
+const SignUpForm = ({ error, setError }) => {
 
   const [ invalidEmail, setInvalidEmail ] = useState(true)
   const [ invalidUsername, setInvalidUsername ] = useState(true)
@@ -14,6 +15,7 @@ const SignUpForm = () => {
 
   return(
     <Form className='flex flex-col w-full px-8 mb-4' method='post' action='/signup'>
+      <ErrorMessage error={ error } setError={ setError } />
       <EmailInput setInvalidField={setInvalidEmail}/>
       <UsernameInput setInvalidField={ setInvalidUsername } />
       <PasswordInput setInvalidField={ setInvalidPassword } />
