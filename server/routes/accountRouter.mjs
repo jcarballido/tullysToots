@@ -24,6 +24,11 @@ const transporter = nodemailer.createTransport({
 
 router.use(cookieParser())
 
+router.get('/logout', (req,res) => {
+  res.clearCookie('jwt')
+  return res.send('Cleared?')
+})
+
 router.get('/activityTest', (req,res) => {
   const cook = req.cookies.jwt
   console.log('Activity Page sent the following cookie: ', cook)
