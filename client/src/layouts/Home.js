@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import '../tailwind.css';
 import Banner from '../components/Banner.js'
 import Footer from '../components/Footer.js'
+import AccountNavigation from '../components/AccountNavigation.js';
 import { AuthProvider } from '../context/AuthContext.js';
 
 // const TextInput = ({ inputName }) => {
@@ -47,11 +48,15 @@ import { AuthProvider } from '../context/AuthContext.js';
 // }
 // Root will serve as your app layout. Any components to be rendered inside of the root layout must be expressed as an 'Outlet' from the RR6.4 library
 export const Home = () => {
+
+  const [ slide,setSlide ] = useState(false)
+
   return(
     
       <div className='max-w-screen min-h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white overflow-x-hidden'>
-        <Banner />
+        <Banner setSlide={setSlide} />
         <AuthProvider>
+          <AccountNavigation slide={slide} setSlide={setSlide} />
           <Outlet />
         </AuthProvider>
         <Footer />

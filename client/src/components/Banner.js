@@ -1,11 +1,17 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-const Logo = () => {
+const Logo = ( {setSlide} ) => {
+
+  const handleOpen = (e) => {
+    e.preventDefault()
+    setSlide(true)
+  }
+
   return(
     <div className='w-full max-w-screen flex justify-between items-center pt-2 px-2'>
       <Link to='/' className='flex justify-center items-center text-[26px]'>Tullys Toots</Link>
-      <div className='flex justify-center items-center'>Profile</div>
+      <button className='flex justify-center items-center' onClick={handleOpen} >Profile</button>
     </div>
   )
 } 

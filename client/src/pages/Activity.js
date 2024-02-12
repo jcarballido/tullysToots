@@ -13,16 +13,13 @@ const Activity = () => {
 
   // console.log('Activity has mounted. Auth set to...', auth)
 
-  useEffect(
-    () => {
-      const test = axios  
-                  .get('/account/activityTest', { withCredentials:true })
-                  .then( res => {
-                    console.log(res)
-                  }).catch( e => console.log(e))
-    },
-    []
-  )
+  useEffect(() => {
+    const test = axios  
+      .get('/account/activityTest', { withCredentials:true })
+      .then( res => {
+        console.log(res)
+      }).catch( e => console.log(e))
+  },[])
 
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center'>
