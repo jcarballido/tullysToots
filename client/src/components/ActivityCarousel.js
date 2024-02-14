@@ -1,50 +1,5 @@
 import React, {  useState } from 'react'
 
-const Date = () => {
-  // capture the current timestamp, then parse it for the year(YYYY), month(MM), and day(DD)
-  const timestampNowSring = Date()
-  const timestampNowStringSplit = timestampNowSring.split(" ")
-  const [ day, month, date, year, ...rest ] = timestampNowStringSplit
-  const today = `${year}-${month}-${date}`
-  // capture the date from the 'active' card in the following format: YYYY-MM-DD
-  const referenceDate = 'YYYY-MM-DD'
-
-  return(
-    <div className='w-full border-2 border-red-800 flex justify-center items-center mb-4'>
-      <div className='max-w-max flex flex-col justify-start items-start text-base min-h-[44px]'>
-        <div className='flex justify-center items-center text-[10px]'>'Day'</div>
-        <div className='flex justify-center items-center'>
-          <div className='flex justify-center items-center'>'DD'</div>
-          <div className='flex justify-center items-center'>'Month'</div>
-        </div>
-        <div className='flex justify-center items-center text-[10px]'>'Year'</div>
-      </div>
-      {referenceDate? <div className='grow flex justify-center items-center'>'Today'</div>:null}
-    </div>
-  )
-}
-
-const Record = ({ act }) => {
-  return(
-    <div className='w-full flex justify-center items-center my-2'>
-      { act }
-    </div>
-  )
-}
-
-const Log = () => {
-  const activity = []
-  return(
-    <div className='w-full flex flex-col justify-center items-center mb-4'>
-      {
-        activity.length? (
-          activity.map( act => <Record act={act} />)
-        ):<div>No Activity</div>
-      }
-    </div>
-  )
-}
-
 const ActivityCard = () => {
   return(
     <div className='w-[90%] flex flex-col justify-center items-center'>
@@ -57,10 +12,11 @@ const ActivityCard = () => {
   )
 }
 
-const ActivityCarousel = () => {
+const ActivityCarousel = ({ activity }) => {
 
-  const totalCards = 14;
-  const [currentIndex, setCurrentIndex] = useState(Math.floor(totalCards / 2));
+  const daysOfActivity = 14;
+  const [currentIndex, setCurrentIndex] = useState(Math.floor(daysOfActivity / 2));
+  const focusedActivity
 
   const nextCard = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1));
@@ -89,7 +45,6 @@ const ActivityCarousel = () => {
                 className="flex-shrink-0 w-full h-48 border border-gray-400 text-black text-[24px] px-4"
               >
                 <div className='bg-red-300 h-full'>
-                  Card {index + 1}
                 </div>
               </div>
             ))}
@@ -136,3 +91,48 @@ const ActivityCarousel = () => {
 
 
 export default ActivityCarousel
+
+// const Date = () => {
+  //   // capture the current timestamp, then parse it for the year(YYYY), month(MM), and day(DD)
+  //   const timestampNowSring = Date()
+  //   const timestampNowStringSplit = timestampNowSring.split(" ")
+  //   const [ day, month, date, year, ...rest ] = timestampNowStringSplit
+  //   const today = `${year}-${month}-${date}`
+  //   // capture the date from the 'active' card in the following format: YYYY-MM-DD
+  //   const referenceDate = 'YYYY-MM-DD'
+  
+  //   return(
+  //     <div className='w-full border-2 border-red-800 flex justify-center items-center mb-4'>
+  //       <div className='max-w-max flex flex-col justify-start items-start text-base min-h-[44px]'>
+  //         <div className='flex justify-center items-center text-[10px]'>'Day'</div>
+  //         <div className='flex justify-center items-center'>
+  //           <div className='flex justify-center items-center'>'DD'</div>
+  //           <div className='flex justify-center items-center'>'Month'</div>
+  //         </div>
+  //         <div className='flex justify-center items-center text-[10px]'>'Year'</div>
+  //       </div>
+  //       {referenceDate? <div className='grow flex justify-center items-center'>'Today'</div>:null}
+  //     </div>
+  //   )
+  // }
+  
+  // const Record = ({ act }) => {
+  //   return(
+  //     <div className='w-full flex justify-center items-center my-2'>
+  //       { act }
+  //     </div>
+  //   )
+  // }
+  
+  // const Log = () => {
+  //   const activity = []
+  //   return(
+  //     <div className='w-full flex flex-col justify-center items-center mb-4'>
+  //       {
+  //         activity.length? (
+  //           activity.map( act => <Record act={act} />)
+  //         ):<div>No Activity</div>
+  //       }
+  //     </div>
+  //   )
+  // }
