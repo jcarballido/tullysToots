@@ -1,6 +1,7 @@
 import pg from 'pg'
 import sqlText from './sqlText.mjs'
 //mport dotenv from 'dotenv/config'
+import util from 'util'
 
 const { Pool } = pg
 
@@ -192,7 +193,7 @@ const updatePet = async(updatedData) => {
   //console.log('newValues => ',newValues)
 
   // Two queries:
-  // 1. Get petId
+  // 1. Get petIdcarballidoj92@gmail.com
   //const resultOwner = await pool.query(sqlText.getOwnerText(),[email])
   //const ownerId = resultOwner.rows[0].owner_id
   //console.log('ownerId =>', ownerId)
@@ -249,21 +250,49 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 
 // ACTIVITY QUERIES
 // Recent activity (7 days)
-const getActivity = async(ownerId,targetDate) => {
+const getActivity = async(ownerId, petId,targetDate) => {
   // Get all active links to pets from ownerID and return pet IDs.
-  const petIdsArray = await getOwnersPetIds(ownerId)
-  // Get activity for each petID on the target date, and 7 days before and 7 days after
-  const daysBeforeAndAfter = 7
-  const petActivity =  petIdsArray.map( async(petId) => {
-    const result = await pool.query(sqlText.getActivityText(), [ petId, targetDate, daysBeforeAndAfter ])
-    return { petId: result.rows }
+  // const petIdsArray = await getOwnersPetIds(ownerId)
+  // Get activity for each petID on the target date, and 7 days before and 7 days aftercarballidoj92@gmail.com
+  const timestampParser = (timestampNumber) => {
+    const convertedDate = new Date(timestampNumber)
+    const fullYear = convertedDate.getFullYear()
+    const month = convertedDate.getMonth()
+    const date = convertedDate.getDate()
+    return { fullYear,month,date }
+  }
+  const { fullYear,month,date } = timestampParser(targetDate)
+  const daysBeforeAndAfter = 3
+  const dateArray = []
+  for(let i = daysBeforeAndAfter * -1 ; i < daysBeforeAndAfter + 1; i++){
+    // Convert targetDate to Date Object
+    const referenceDate = new Date(targetDate)
+    // Set the new date; Returns Type: NUMBER
+    let newDate = referenceDate.setDate(referenceDate.getDate() + i)
+    dateArray.push(newDate)
+  }
+  // console.log(sqlText.getActivityText(3))
+  const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${month+1}-${date}`,`${daysBeforeAndAfter} days`])
+  // console.log('Queries console.log: ',util.inspect(result, { depth: null }));
+
+  // Result.rows returns an array of objects, holding a key-value pair of the column name and its corresponding value.
+  const data = result.rows
+  // Need to loop through the data, filter by date, and then group the activity based on the date.
+  // Then, return this data in the following format: [{date1(timestamp number):[ {activity1,...},{activity2,...}]},{date2(timestamp number):[ {activity1,...},{activity2,...}]},... ]
+  const formattedData = dateArray.map( dateAsTimestamp => {
+    const { fullYear, month, date } = timestampParser(dateAsTimestamp)
+    const filteredActivityArray = data.filter( activity => { 
+      const activityDate = new Date(activity.set_on_at)
+      return (
+        fullYear == activityDate.getFullYear() &&
+        month == activityDate.getMonth() &&
+        date == activityDate.getDate()
+      )
+    })
+    return { [`${fullYear}-${month + 1}-${date}`]:filteredActivityArray }
   })
-  return petActivity
-  // const activityArray = ownerPetIdsArray.map( async(petId) => {
-  //   const result = await pool.query(sqlText.getActivityText(), [ petId, referenceDate, daysBeforeAndAfter ])
-  //   return result.rows
-  // })
-  // return activityArray
+
+  return formattedData  
 }
 
 const getPetActivityByOwner = async(ownerData) => {

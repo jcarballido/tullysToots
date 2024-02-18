@@ -81,12 +81,12 @@ const deactivatePetOwnerLinkText = () => {
 }
 
 // Get Commands
-const getActivityText = () => {
+const getActivityText = (numDays) => {
   // referenceDate example: 'YYYY-MM-DD HH24:MM'
-  return`
+  return `
     SELECT ${activityColumns.join()}
     FROM activities
-    WHERE pet_id = $1 AND set_on_at > $2::timestamp - INTERVAL '$3 days' AND set_on_at < $2::timestamp + INTERVAL '$3 days'
+    WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $3::interval
   `
 }
 

@@ -1,13 +1,18 @@
 import express from 'express'
 import queries from '../queries/queries.mjs'
+import verifyAccessToken from '../middleware/verifyAccessToken.mjs'
+import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
+
+// router.use(verifyAccessToken)
+// router.use(verifyRefreshToken)
 
 const router = express.Router()
 
-router.post('/getActivity', async (req,res) => {
+router.post('/get', async (req,res) => {
   const ownerId = req.ownerId
-  const targetDate = req.body.requestedDate
+  const targetDate = req.body.referenceDate
   const activityArray = await queries.getActivity(ownerId,targetDate)
-  return res.json(activityArray)
+  return res.status(200).json(activityArray)
 })
 
 router.post('/addActivity', async(req,res) => {

@@ -7,6 +7,8 @@ import verifyAccessToken from '../middleware/verifyAccessToken.mjs'
 import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
 import postProcessing from '../middleware/postProcessing.mjs'
 import cookieParser from 'cookie-parser'
+import util from 'util'
+
 
 const router = express.Router()
 
@@ -23,6 +25,12 @@ const transporter = nodemailer.createTransport({
 });
 
 router.use(cookieParser())
+
+router.post('/testGetActivity', async(req,res) => {
+  const dataArray = await queries.getActivity('ownerId',25,1708235107924)
+  console.log('AccountRouter console.log: ',util.inspect(dataArray, { depth: null }));
+  res.status(200).json(dataArray)
+})
 
 router.get('/logout', (req,res) => {
   res.clearCookie('jwt')
