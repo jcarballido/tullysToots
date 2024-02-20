@@ -12,18 +12,27 @@ const ActivityCard = () => {
   )
 }
 
-const ActivityCarousel = ({ activity }) => {
+const ActivityCarousel = ({ activity, referenceDate, setReferenceDate }) => {
 
-  const daysOfActivity = 14;
+  // Data required: 
+  //  activity: [{date:{activityId:{data}},{date:{activityId:{data}},...}]
+  //  setReferenceDate; Will update the reference date to account for the current card being displayed.
+
+  const daysOfActivity = 15;
   const [currentIndex, setCurrentIndex] = useState(Math.floor(daysOfActivity / 2));
-  const focusedActivity
 
   const nextCard = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1));
+    const activeDate = activity[currentIndex].date
+    setReferenceDate(activeDate)
+    localStorage.setItem('refDate', JSON.stringify(activeDate))
   };
 
   const prevCard = () => {
     setCurrentIndex((prevIndex) => (prevIndex - 1));
+    const activeDate = activity[currentIndex].date
+    setReferenceDate(activeDate)
+    localStorage.setItem('refDate', JSON.stringify(activeDate))
   };
 
   return (
