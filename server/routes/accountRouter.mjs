@@ -26,21 +26,9 @@ const transporter = nodemailer.createTransport({
 
 router.use(cookieParser())
 
-router.post('/testGetActivity', async(req,res) => {
-  const dataArray = await queries.getActivity('ownerId',25,1708235107924)
-  console.log('AccountRouter console.log: ',util.inspect(dataArray, { depth: null }));
-  res.status(200).json(dataArray)
-})
-
 router.get('/logout', (req,res) => {
   res.clearCookie('jwt')
-  return res.send('Cleared?')
-})
-
-router.get('/activityTest', (req,res) => {
-  const cook = req.cookies.jwt
-  console.log('Activity Page sent the following cookie: ', cook)
-  return res.status(200).send('Cookie check recieved')
+  return res.send('Cleared')
 })
 
 router.get('/checkLoginSession', async(req,res) => {

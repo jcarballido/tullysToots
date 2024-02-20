@@ -109,6 +109,15 @@ const getOwnerIdFromEmail = async(email) => {
   }
 }
 
+const getSingleActivePetId = async( ownerId ) => {
+  try{
+    const result = await pool.query(sqlText.getSingleActivePetId, [ ownerId ])
+    return result.rows[0].pet_id
+  }catch(e){
+    return null
+  }
+}
+
 const getRefreshToken = async(identifier) => {
   try{
     //if(typeof identifier == 'number'){
@@ -250,7 +259,7 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 
 // ACTIVITY QUERIES
 // Recent activity (7 days)
-const getActivity = async(ownerId, petId,targetDate) => {
+const getActivity = async(petId,targetDate) => {
   // Get all active links to pets from ownerID and return pet IDs.
   // const petIdsArray = await getOwnersPetIds(ownerId)
   // Get activity for each petID on the target date, and 7 days before and 7 days aftercarballidoj92@gmail.com
@@ -262,7 +271,7 @@ const getActivity = async(ownerId, petId,targetDate) => {
     return { fullYear,month,date }
   }
   const { fullYear,month,date } = timestampParser(targetDate)
-  const daysBeforeAndAfter = 3
+  const daysBeforeAndAfter = 7
   const dateArray = []
   for(let i = daysBeforeAndAfter * -1 ; i < daysBeforeAndAfter + 1; i++){
     // Convert targetDate to Date Object
@@ -427,6 +436,7 @@ export default {
   getLastAccessedTimestamp,
   getInvitationId,
   getOwnerIdFromEmail,
+  getSingleActivePetId,
   deactivatePetOwnerLink,
   updateOwner,
   updatePet,

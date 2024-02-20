@@ -140,6 +140,13 @@ const getResetTokenText = `
   FROM reset_tokens
   WHERE reset_token = $1
 `
+
+const getSingleActivePetId = `
+  SELECT pet_id
+  FROM pet_owners
+  WHERE owner_id = $1 AND active = t
+  LIMIT 1
+`
 const getRefreshTokenFromOwnerIdText = `
   SELECT refresh_token
   FROM owners
@@ -222,6 +229,7 @@ export default {
   getRefreshTokenFromUsernameText,
   getOwnerIdFromEmailText,
   getResetTokenText,
+  getSingleActivePetId,
   setInvitationAccessedAtTimestampText,
   setResetAccessedAtTimestampText,
   setNewRefreshTokenText,
