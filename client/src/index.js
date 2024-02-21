@@ -11,7 +11,7 @@ import { Dashboard as DashboardLayout } from './layouts/Dashboard.js';
 import Login, { action as loginAction, loader as loginLoader } from './pages/Login.js'
 import SignUp, { action as signUpAction } from './pages/SignUp.js'
 import Profile from './pages/Profile.js'
-import Activity from './pages/Activity.js'
+import Activity,{ loader as activityLoader } from './pages/Activity.js'
 import Dashboard from './pages/Dashboard.js'
 import RequireAuth from './components/RequireAuth.js'
 import Account from './components/Account.js'
@@ -29,7 +29,7 @@ const router = createBrowserRouter(
           <Route path='/' element={<Login />} action={ loginAction } loader={ loginLoader }/>
           <Route path="signup" element={<SignUp />} action={ signUpAction } />
           <Route element={<RequireAuth />}>
-            <Route path="activity" element={<Activity />} loader={null} />
+            <Route path="activity" element={<Activity />} loader={activityLoader} />
           </Route> 
         </Route>
         <Route element={<RequireAuth />}>
