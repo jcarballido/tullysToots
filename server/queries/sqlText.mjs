@@ -1,4 +1,4 @@
-const activityColumns = ['pet_id','entered_by','set_on_at','pee','poo']
+const activityColumns = ['activity_id','pet_id','entered_by','set_on_at','pee','poo']
 
 const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
@@ -144,7 +144,7 @@ const getResetTokenText = `
 const getSingleActivePetId = `
   SELECT pet_id
   FROM pet_owners
-  WHERE owner_id = $1 AND active = t
+  WHERE owner_id = $1 AND active = true
   LIMIT 1
 `
 const getRefreshTokenFromOwnerIdText = `

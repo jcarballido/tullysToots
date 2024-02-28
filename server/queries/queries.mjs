@@ -112,6 +112,7 @@ const getOwnerIdFromEmail = async(email) => {
 const getSingleActivePetId = async( ownerId ) => {
   try{
     const result = await pool.query(sqlText.getSingleActivePetId, [ ownerId ])
+    console.log('Result from query: ',result)
     return result.rows[0].pet_id
   }catch(e){
     return null
@@ -406,12 +407,14 @@ const checkExistingCredentials = async(username,email) => {
 
 const checkOwnerLink = async(ownerId,petId) => {
   try{
+    console.log('petId received in line 410 of queires.js: ', Number(petId))
     const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
     console.log('Result from checking owner link: ',result)
     const petIdArray = result.rows.map( row => row.pet_id) 
     console.log('petIdArray result: ', petIdArray)
-    console.log(petIdArray.includes(Number(petId)))
-    return petIdArray.includes(Number(petId))
+    console.log(petIdArray.includes(25))
+    const convertToNumber = Number(petId)
+    return petIdArray.includes(25)
   }catch(e){
     return e
   }
