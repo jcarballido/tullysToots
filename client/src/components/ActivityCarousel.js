@@ -1,62 +1,66 @@
 import React, {  useState } from 'react'
 
-const ActivityCard = () => {
+const ActivityCard = ({dateString, activityArray, activityMap}) => {
+
+  const records = activityArray.map( id => activityMap.get(id))
+  console.log(records)
+
+
   return(
-    <div className='w-[90%] flex flex-col justify-center items-center'>
-      <Date/>
-      <Log />
-      <button className='min-w-[44px] min-h-[44px] flex justify-center items-center bg-gray-200 mb-4'>
-        Add
-      </button>
+    <div className='bg-red-300 h-full'>
+      { dateString }
+      { records.map( record => <div className='max-w-max h-full bg-yellow-200'>{record.pet_id}</div>) }
     </div>
   )
 }
 
-const ActivityCarousel = ({ activity, referenceDate, setReferenceDate }) => {
+const ActivityCarousel = ({ activity, setActivity, referencePetId, setReferencePetId, referenceDate, setReferenceDate }) => {
 
-  // Data required: 
-  //  activity: [{date:{activityId:{data}},{date:{activityId:{data}},...}]
-  //  setReferenceDate; Will update the reference date to account for the current card being displayed.
-
-  const daysOfActivity = 15;
+  const daysOfActivity = activity.dateMap.size;
   const [currentIndex, setCurrentIndex] = useState(Math.floor(daysOfActivity / 2));
 
   const nextCard = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1));
-    const activeDate = activity[currentIndex].date
-    setReferenceDate(activeDate)
-    localStorage.setItem('refDate', JSON.stringify(activeDate))
+    const entries = Array.from(activity.dateMap.entries())
+    // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
+    const activeReferenceDate = entries[currentIndex+1][0]
+    // setReferenceDate(activeReferenceDate)
+    localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
   };
 
   const prevCard = () => {
     setCurrentIndex((prevIndex) => (prevIndex - 1));
-    const activeDate = activity[currentIndex].date
-    setReferenceDate(activeDate)
-    localStorage.setItem('refDate', JSON.stringify(activeDate))
+    const entries = Array.from(activity.dateMap.entries())
+    // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
+    const activeReferenceDate = entries[currentIndex-1][0]
+    // setReferenceDate(activeReferenceDate)
+    localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
   };
 
   return (
     <div className="w-full flex items-center justify-center">
       <div className="relative overflow-hidden">
-        <button onClick={prevCard} className="px-4 py-2 bg-blue-500 text-white absolute bottom-4 left-4 z-10">
+        <button onClick={prevCard} className="px-0 py-2 bg-blue-500 text-white absolute bottom-4 left-4 z-10">
           Previous
         </button>
-        <button onClick={nextCard} className="px-4 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 ">
+        <button onClick={nextCard} className="px-0 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 ">
           Next
         </button>
         <div
             className="flex transition-transform duration-300 ease-in-out relative"
             style={{ transform: `translateX(-${currentIndex * 100 }%)` }}
           >
-            {Array.from({ length: totalCards }).map((_, index) => (
-              <div
-                key={index}
-                className="flex-shrink-0 w-full h-48 border border-gray-400 text-black text-[24px] px-4"
-              >
-                <div className='bg-red-300 h-full'>
+            {activity.dateMap ? 
+              Array.from(activity.dateMap).map(([dateString, activityArray],index) => (
+                <div
+                  key={index}
+                  className="flex-shrink-0 w-full h-48 border border-gray-400 text-black text-[24px] px-4"
+                >
+                  <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={activity.activityMap}/>
                 </div>
-              </div>
-            ))}
+            ))
+            : null
+          }
             
         </div>
       </div>

@@ -3,30 +3,52 @@ import {
   useActionData,
   useLoaderData
 } from 'react-router-dom'
-// import Pet from '../components/PetProfile'
 import ActivityCarousel from '../components/ActivityCarousel'
-// import AuthContext from '../context/AuthContext'
 import axios from '../api/axios'
 
 const Activity = () => {
 
   const { activity:initialActivity, referenceDate:initialReferenceDate, referencePetId:initialPetId} = useLoaderData()
-  // const updatedActivity = useActionData()
-  // const [ activity, setActivity ] = useState(prev => [...initialActivity])
-  // const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
-  // const [ referencePetId, setReferencePetId ] = useState(initialPetId)
+
+
+  const updatedActivity = useActionData()
+
+  const [ activity, setActivity ] = useState(initialActivity)
+  const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
+  const [ referencePetId, setReferencePetId ] = useState(initialPetId)
 
   // useEffect( () => {
-  //   //  NEED TO IDENTIFY WHAT ACTIVITY HAS CHANGED BY ACTIVITY ID, THEN FIND THAT INDEX AND APPLY THE CHANGES
-  //   updatedActivity
-  //   ? setActivity([ ...updatedActivity ]) 
-  //   : null
-  // },[updatedActivity] )
+  //   localStorage.setItem('referenceDate',referenceDate.toLocaleString().split(',')[0])
+  //   localStorage.setItem('referencePetId', JSON.stringify(referencePetId))
+  //   setMounted(true)
+  // }, [] )
+
+  useEffect( () => {
+    if(updatedActivity) {// updatedActivity: [ {...act1new},{...act2new},... ]
+    // activity: {dateMap: [ date1 => [id1,...], date2 => [id2,id3,...],...], activityMap : [ id1 => {...activity1}, id2 => {...activity2}, ... ] } 
+    const newActivityMap = new Map()
+    updatedActivity.forEach( updatedActivity => {
+      newActivityMap.set(updatedActivity.activity_id, updatedActivity)
+    })
+
+    setActivity( prev => {
+      const updatedActivityMap = new Map()
+      prev.activityMap.forEach( ( value, key ) => {
+        if(newActivityMap.has(key)){
+          updatedActivityMap.set(key, newActivityMap.get(key))
+        }else{
+          updatedActivityMap.set(key, value)
+        }
+      })
+      return { dateMap:prev.dateMap, activityMap: updatedActivityMap} 
+    })}
+
+  },[ updatedActivity ])
 
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center'>
-      {/* <div className='w-3/4 min-w-max flex justify-center items-center mb-4 border-2 border-blue-400 min-h-[44px]' referencePetId={ referencePetId } setReferencePetId={setReferencePetId} >Tullys' Activity</div>
-      <ActivityCarousel activity={activity || null} referenceDate={referenceDate || null} setReferenceDate={setReferenceDate || null} /> */}
+      <div className='w-3/4 min-w-max flex justify-center items-center mb-4 border-2 border-blue-400 min-h-[44px]'>Tullys' Activity</div>
+      <ActivityCarousel activity={activity} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>
   )
 }
@@ -34,9 +56,26 @@ const Activity = () => {
 export default Activity
 
 // When the Activity page loads, a request should be made to get any existing data based on the current date (and 7 days prior).
-export const loader = () => {
+export const loader = async () => {
   // returns a timestamp with local time zone of today's date.
-  const referenceDate = localStorage.getItem('referenceDate') || new Date()
+  // const referenceDate = localStorage.getItem('referenceDate') || new Date()
+  let referenceDate
+
+  if(localStorage.getItem('referenceDate') ){
+    referenceDate = localStorage.getItem('referenceDate')
+  }else{
+    referenceDate = new Date()
+    localStorage.setItem('referenceDate', referenceDate.toLocaleString().split(',')[0])
+  }
+
+  let referencePetId
+
+  if(localStorage.getItem('referencePetId') ){
+    referencePetId = localStorage.getItem('referencePetId')
+  }else{
+    referencePetId = null
+  }
+
   const timestampParser = (timestampNumber) => {
     const convertedDate = new Date(timestampNumber)
     const fullYear = convertedDate.getFullYear()
@@ -45,23 +84,38 @@ export const loader = () => {
     return { fullYear,month,date }
   }
   const { fullYear, month, date } = timestampParser(referenceDate)
-  console.log('Loader ref date check: ',referenceDate)
-  const referencePetId = localStorage.getItem('referencePetId')
-  console.log('Loader ref pet ID check: ',referencePetId)
-
-  const activity = 
-    axios
-    //DOUBLE CHECK SERVER PATH
+  // let referencePetId = localStorage.getItem('referencePetId')
+  const response = await axios
     .post('/activity/get', { referenceDate:`${fullYear}-${month+1}-${date}`, referencePetId })
-    .then(res => {
-      console.log('Loader res.data check: ',res.data)
-      return res.data
+  const initialActivity = response.data.activityArray || response.data
+
+  if(response.data.singlePetId){
+    referencePetId = response.data.singlePetId
+    localStorage.setItem('referencePetId', referencePetId)
+  }
+
+  const dateMap = new Map()
+  const activityMap = new Map()
+  if(initialActivity){
+    // initialActivity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
+    initialActivity.forEach( date => {
+      const [ dateString, activityArray ] = Object.entries(date)[0]
+
+      if(activityArray.length == 0){
+        dateMap.set(dateString, activityArray)
+      }else{
+        activityArray.forEach( loggedActivity => {
+          const existingDateActivity = dateMap.get(dateString) || []
+          existingDateActivity.push(loggedActivity.activity_id)
+          dateMap.set(dateString, existingDateActivity)
+          activityMap.set(loggedActivity.activity_id, loggedActivity)
+        })
+      }
+
     })
-    .catch(e => {
-      console.log('Error in loader: ', e)
-      return null
-    })
-  return { activity, referenceDate, referencePetId }
+  }
+
+  return { activity:{ dateMap,activityMap }, referenceDate, referencePetId }
 }
 
 export const action = ({ request }) => {

@@ -21,8 +21,6 @@ const Login = () => {
   const [searchParams, ...rest] = useSearchParams()
   const invitationToken = searchParams.get("invite")
   const [ error, setError ] = useState(null)
-  console.log('Invitation token from URL: ', invitationToken)
-  console.log('(Line 25) Login loader data: ', loaderData)
 
   /*
   Need to handle the following flow...
@@ -118,7 +116,6 @@ export const action = async ({ request }) => {
     const accessToken = response.data.detail
     return { accessToken, isLoggedIn: true }
   }catch(e){
-    console.log('Login Attempt resulted in this error: ', e)
     const error = e.response
     return { isLoggedIn: false, error }
   }
@@ -131,7 +128,6 @@ export const loader = () => {
       const { accessToken } = res.data
       return { accessToken, isLoggedIn:true }
     }).catch( e => {
-      console.log('Loader request resulted in this error: ', e)
       const error = e.response
     return { isLoggedIn: false, error }
   })
