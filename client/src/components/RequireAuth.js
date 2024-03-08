@@ -6,7 +6,6 @@ const RequireAuth = () => {
   
   const location = useLocation()
   const { auth } = useAuth()
-  console.log('Require Auth has mounted. Auth set to...', auth)
 
 
   return(

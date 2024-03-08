@@ -10,7 +10,6 @@ const Activity = () => {
 
   const { activity:initialActivity, referenceDate:initialReferenceDate, referencePetId:initialPetId} = useLoaderData()
 
-
   const updatedActivity = useActionData()
 
   const [ activity, setActivity ] = useState(initialActivity)
@@ -87,8 +86,7 @@ export const loader = async () => {
   // let referencePetId = localStorage.getItem('referencePetId')
   const response = await axios
     .post('/activity/get', { referenceDate:`${fullYear}-${month+1}-${date}`, referencePetId })
-  const initialActivity = response.data.activityArray || response.data
-
+  const rawActivity = response.data.activityArray || response.data
   if(response.data.singlePetId){
     referencePetId = response.data.singlePetId
     localStorage.setItem('referencePetId', referencePetId)
@@ -96,9 +94,9 @@ export const loader = async () => {
 
   const dateMap = new Map()
   const activityMap = new Map()
-  if(initialActivity){
-    // initialActivity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
-    initialActivity.forEach( date => {
+  if(rawActivity){
+    // rawActivity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
+    rawActivity.forEach( date => {
       const [ dateString, activityArray ] = Object.entries(date)[0]
 
       if(activityArray.length == 0){
@@ -111,11 +109,10 @@ export const loader = async () => {
           activityMap.set(loggedActivity.activity_id, loggedActivity)
         })
       }
-
     })
   }
 
-  return { activity:{ dateMap,activityMap }, referenceDate, referencePetId }
+  return { activity:{ dateMap,activityMap,rawActivity }, referenceDate, referencePetId }
 }
 
 export const action = ({ request }) => {
