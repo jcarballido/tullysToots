@@ -5,14 +5,14 @@ import {
 } from 'react-router-dom'
 import ActivityCarousel from '../components/ActivityCarousel'
 import axios from '../api/axios'
+import timestampParser from '../util/timestampParser'
 
 const Activity = () => {
-
   const { activity:initialActivity, referenceDate:initialReferenceDate, referencePetId:initialPetId} = useLoaderData()
 
-  const updatedActivity = useActionData()
-
   const [ activity, setActivity ] = useState(initialActivity)
+  const [ dateMap, setDateMap ] = useState({})
+  const [ activityMap, setActivityMap ] = useState({})
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
 
@@ -22,115 +22,93 @@ const Activity = () => {
   //   setMounted(true)
   // }, [] )
 
+  // useEffect( () => {
+  //   if(updatedActivity) {// updatedActivity: [ {...act1new},{...act2new},... ]
+  //   // activity: {dateMap: [ date1 => [id1,...], date2 => [id2,id3,...],...], activityMap : [ id1 => {...activity1}, id2 => {...activity2}, ... ] } 
+  //   const newActivityMap = new Map()
+  //   updatedActivity.forEach( updatedActivity => {
+  //     newActivityMap.set(updatedActivity.activity_id, updatedActivity)
+  //   })
+
+  //   setActivity( prev => {
+  //     const updatedActivityMap = new Map()
+  //     prev.activityMap.forEach( ( value, key ) => {
+  //       if(newActivityMap.has(key)){
+  //         updatedActivityMap.set(key, newActivityMap.get(key))
+  //       }else{
+  //         updatedActivityMap.set(key, value)
+  //       }
+  //     })
+  //     return { dateMap:prev.dateMap, activityMap: updatedActivityMap} 
+  //   })}
+
+  // },[ updatedActivity ])
+
   useEffect( () => {
-    if(updatedActivity) {// updatedActivity: [ {...act1new},{...act2new},... ]
-    // activity: {dateMap: [ date1 => [id1,...], date2 => [id2,id3,...],...], activityMap : [ id1 => {...activity1}, id2 => {...activity2}, ... ] } 
-    const newActivityMap = new Map()
-    updatedActivity.forEach( updatedActivity => {
-      newActivityMap.set(updatedActivity.activity_id, updatedActivity)
+    const workingDateMap = new Map()
+    const workingActivityMap = new Map()
+    // activity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
+    activity.forEach( date => {
+      const [ dateString, activityArray ] = Object.entries(date)[0]
+      if(activityArray.length == 0){
+        workingDateMap.set(dateString, activityArray)
+      }else{
+        activityArray.forEach( loggedActivity => {
+          const existingDateActivity = workingDateMap.get(dateString) || []
+          existingDateActivity.push(loggedActivity.activity_id)
+          workingDateMap.set(dateString, existingDateActivity)
+          workingActivityMap.set(loggedActivity.activity_id, loggedActivity)
+        })
+      }
     })
 
-    setActivity( prev => {
-      const updatedActivityMap = new Map()
-      prev.activityMap.forEach( ( value, key ) => {
-        if(newActivityMap.has(key)){
-          updatedActivityMap.set(key, newActivityMap.get(key))
-        }else{
-          updatedActivityMap.set(key, value)
-        }
-      })
-      return { dateMap:prev.dateMap, activityMap: updatedActivityMap} 
-    })}
+    setDateMap(workingDateMap)
+    setActivityMap(workingActivityMap)
 
-  },[ updatedActivity ])
+  },[activity])
 
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center'>
       <div className='w-3/4 min-w-max flex justify-center items-center mb-4 border-2 border-blue-400 min-h-[44px]'>Tullys' Activity</div>
-      <ActivityCarousel activity={activity} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
+      <ActivityCarousel dateMap={dateMap} activityMap={activityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>
   )
 }
 
 export default Activity
 
-// When the Activity page loads, a request should be made to get any existing data based on the current date (and 7 days prior).
 export const loader = async () => {
-  // returns a timestamp with local time zone of today's date.
-  // const referenceDate = localStorage.getItem('referenceDate') || new Date()
-  let referenceDate
-
-  if(localStorage.getItem('referenceDate') ){
-    referenceDate = localStorage.getItem('referenceDate')
-  }else{
+  // Get exisiting reference date from local storage or set to the current date
+  let referenceDate = localStorage.getItem('referenceDate') || null
+  if(!referenceDate){
     referenceDate = new Date()
     localStorage.setItem('referenceDate', referenceDate.toLocaleString().split(',')[0])
   }
 
-  let referencePetId
+  // Get exisiting reference pet ID from local storage or set to null
+  let referencePetId = localStorage.getItem('referencePetId') || null
 
-  if(localStorage.getItem('referencePetId') ){
-    referencePetId = localStorage.getItem('referencePetId')
-  }else{
-    referencePetId = null
-  }
-
-  const timestampParser = (timestampNumber) => {
-    const convertedDate = new Date(timestampNumber)
-    const fullYear = convertedDate.getFullYear()
-    const month = convertedDate.getMonth()
-    const date = convertedDate.getDate()
-    return { fullYear,month,date }
-  }
+  // Extract the full year, month, and date from the reference date
   const { fullYear, month, date } = timestampParser(referenceDate)
-  // let referencePetId = localStorage.getItem('referencePetId')
+
+  const timeWindow = { daysBefore:7, daysAfter:7 }
+  
+  // Fetch activity for the reference date and pet ID
   const response = await axios
-    .post('/activity/get', { referenceDate:`${fullYear}-${month+1}-${date}`, referencePetId })
+      .post('/activity/get', { referencePetId, referenceDate:`${fullYear}-${month+1}-${date}`, timeWindow })
+
+  // Fetch activity for the reference date and pet ID
+
+  // Extract the activity from the resoponse
   const rawActivity = response.data.activityArray || response.data
+  
+  // If a singlePetId is present in the response, assign to the the referencePetId variable
   if(response.data.singlePetId){
     referencePetId = response.data.singlePetId
     localStorage.setItem('referencePetId', referencePetId)
   }
 
-  const dateMap = new Map()
-  const activityMap = new Map()
-  if(rawActivity){
-    // rawActivity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
-    rawActivity.forEach( date => {
-      const [ dateString, activityArray ] = Object.entries(date)[0]
-
-      if(activityArray.length == 0){
-        dateMap.set(dateString, activityArray)
-      }else{
-        activityArray.forEach( loggedActivity => {
-          const existingDateActivity = dateMap.get(dateString) || []
-          existingDateActivity.push(loggedActivity.activity_id)
-          dateMap.set(dateString, existingDateActivity)
-          activityMap.set(loggedActivity.activity_id, loggedActivity)
-        })
-      }
-    })
-  }
-
-  return { activity:{ dateMap,activityMap,rawActivity }, referenceDate, referencePetId }
+  // Return the activity, referenceDate, and referecenSinglePetId
+  return { activity:rawActivity, referenceDate, referencePetId }
 }
 
-export const action = ({ request }) => {
-
-  const formData = request.formData()
-  const activityId = formData.get('id')
-  const date = formData.get('date')
-  const time = formData.get('time')
-  const activity = formData.get('activity')
-  const user = formData.get('user')
-  const command = formData.get('command')
-
-  const submissionResponse = axios
-    .post(`/activity/${command}`, { activityId, date, time, activity, user })
-    .then( res => {
-      return res.data
-    })
-    .catch( e => {return {error:'Change was unsucessful'}} )
-
-  return submissionResponse
-}
