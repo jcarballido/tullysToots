@@ -47,6 +47,8 @@ const insertIntoText = (tableName,newValuesArr) => {
 
 }
 
+
+
 const updateText = (tableName, fieldsArr, identifier) => {
 
   const camelCaseToSnakeCase = ( camelCase ) => {
@@ -81,20 +83,30 @@ const deactivatePetOwnerLinkText = () => {
 }
 
 // Get Commands
-const getActivityText = (numDays) => {
-  // referenceDate example: 'YYYY-MM-DD HH24:MM'
-  return `
-    SELECT ${activityColumns.join()}
-    FROM activities
-    WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $3::interval
-  `
-}
+// const getActivityText = (numDays) => {
+//   // referenceDate example: 'YYYY-MM-DD HH24:MM'
+//   return `
+//     SELECT ${activityColumns.join()}
+//     FROM activities
+//     WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $3::interval
+//   `
+// }
 
 const getOwnerText = (identifierString) => {
   return`
     SELECT owner_id
     FROM owners
     WHERE ${identifierString} = $1
+  `
+}
+
+//SQL
+const getActivityText = () => {
+  // referenceDate example: 'YYYY-MM-DD HH24:MM'
+  return `
+    SELECT ${activityColumns.join()}
+    FROM activities
+    WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $4::interval
   `
 }
 

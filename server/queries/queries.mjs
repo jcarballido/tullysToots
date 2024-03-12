@@ -260,35 +260,65 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 
 // ACTIVITY QUERIES
 // Recent activity (7 days)
-const getActivity = async(petId,targetDate) => {
-  // Get all active links to pets from ownerID and return pet IDs.
-  // const petIdsArray = await getOwnersPetIds(ownerId)
-  // Get activity for each petID on the target date, and 7 days before and 7 days aftercarballidoj92@gmail.com
-  const timestampParser = (timestampNumber) => {
-    const convertedDate = new Date(timestampNumber)
-    const fullYear = convertedDate.getFullYear()
-    const month = convertedDate.getMonth()
-    const date = convertedDate.getDate()
-    return { fullYear,month,date }
-  }
+// const getActivity = async(petId,targetDate) => {
+//   // Get all active links to pets from ownerID and return pet IDs.
+//   // const petIdsArray = await getOwnersPetIds(ownerId)
+//   // Get activity for each petID on the target date, and 7 days before and 7 days aftercarballidoj92@gmail.com
+//   const timestampParser = (timestampNumber) => {
+//     const convertedDate = new Date(timestampNumber)
+//     const fullYear = convertedDate.getFullYear()
+//     const month = convertedDate.getMonth()
+//     const date = convertedDate.getDate()
+//     return { fullYear,month,date }
+//   }
+//   const { fullYear,month,date } = timestampParser(targetDate)
+//   const daysBeforeAndAfter = 7
+//   const dateArray = []
+//   for(let i = daysBeforeAndAfter * -1 ; i < daysBeforeAndAfter + 1; i++){
+//     // Convert targetDate to Date Object
+//     const referenceDate = new Date(targetDate)
+//     // Set the new date; Returns Type: NUMBER
+//     let newDate = referenceDate.setDate(referenceDate.getDate() + i)
+//     dateArray.push(newDate)
+//   }
+//   // console.log(sqlText.getActivityText(3))
+//   const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${month+1}-${date}`,`${daysBeforeAndAfter} days`])
+//   // console.log('Queries console.log: ',util.inspect(result, { depth: null }));
+
+//   // Result.rows returns an array of objects, holding a key-value pair of the column name and its corresponding value.
+//   const data = result.rows
+//   // Need to loop through the data, filter by date, and then group the activity based on the date.
+//   // Then, return this data in the following format: [{date1(timestamp number):[ {activity1,...},{activity2,...}]},{date2(timestamp number):[ {activity1,...},{activity2,...}]},... ]
+//   const formattedData = dateArray.map( dateAsTimestamp => {
+//     const { fullYear, month, date } = timestampParser(dateAsTimestamp)
+//     const filteredActivityArray = data.filter( activity => { 
+//       const activityDate = new Date(activity.set_on_at)
+//       return (
+//         fullYear == activityDate.getFullYear() &&
+//         month == activityDate.getMonth() &&
+//         date == activityDate.getDate()
+//       )
+//     })
+//     return { [`${fullYear}-${month + 1}-${date}`]:filteredActivityArray }
+//   })
+
+//   return formattedData  
+// }
+
+const getActivity = async(petId,targetDate, timeWindow) => {
+
+  const { daysBefore, daysAfter } = timeWindow
+  
   const { fullYear,month,date } = timestampParser(targetDate)
-  const daysBeforeAndAfter = 7
   const dateArray = []
-  for(let i = daysBeforeAndAfter * -1 ; i < daysBeforeAndAfter + 1; i++){
-    // Convert targetDate to Date Object
+  for(let i = daysBefore * -1 ; i = daysAfter ; i++){
     const referenceDate = new Date(targetDate)
-    // Set the new date; Returns Type: NUMBER
     let newDate = referenceDate.setDate(referenceDate.getDate() + i)
     dateArray.push(newDate)
   }
-  // console.log(sqlText.getActivityText(3))
-  const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${month+1}-${date}`,`${daysBeforeAndAfter} days`])
-  // console.log('Queries console.log: ',util.inspect(result, { depth: null }));
+  const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${month+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
 
-  // Result.rows returns an array of objects, holding a key-value pair of the column name and its corresponding value.
   const data = result.rows
-  // Need to loop through the data, filter by date, and then group the activity based on the date.
-  // Then, return this data in the following format: [{date1(timestamp number):[ {activity1,...},{activity2,...}]},{date2(timestamp number):[ {activity1,...},{activity2,...}]},... ]
   const formattedData = dateArray.map( dateAsTimestamp => {
     const { fullYear, month, date } = timestampParser(dateAsTimestamp)
     const filteredActivityArray = data.filter( activity => { 

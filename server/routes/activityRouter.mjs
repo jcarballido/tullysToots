@@ -9,18 +9,21 @@ const router = express.Router();
 // router.use(verifyAccessToken)
 // router.use(verifyRefreshToken)
 
+
+
 router.post("/get", async (req, res) => {
   console.log('/activity/get request received')
 
   const ownerId = 30;
   const petId = req.body.referencePetId;
   const referenceDate = req.body.referenceDate;
+  const timeWindow = req.body.timeWindow
 
   if (petId) {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
-      const activityArray = await queries.getActivity(25, referenceDate);
+      const activityArray = await queries.getActivity(25, referenceDate, timeWindow);
       return res.status(200).json(activityArray);
     } else {
       return res.status(401).json({ error: confirmActiveLink });
