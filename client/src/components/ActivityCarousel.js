@@ -8,13 +8,15 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
   const [ currentIndex, setCurrentIndex ] = useState(7);
   const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
   const [ dailyActivity, setDailyActivity ] = useState([])
-  const [ isMounted, setIsMounted ] = useState(false)
+  const [ today, setToday ] = useState(false)
+  const [ yesterday, setYesterday ] = useState(false)
+  const [ referenceDateParsed, setReferenceDateParsed ] = useState(timestampParser(referenceDate))
 
-  useEffect( () => {
-    const { fullYear, month, date } = timestampParser(new Date())
-    if(referenceDate == `${fullYear}-${month+1}-${date}`) setPresentReferenceDate(true)
-    else setPresentReferenceDate(false)
-  },[referenceDate])
+  // useEffect( () => {
+  //   const { isToday, isYesterday } = referenceDateParsed
+  //   setToday(isToday)
+  //   setYesterday(isYesterday)
+  // },[referenceDate])
 
   useEffect( () => {
     if(currentIndex == 0){
@@ -62,7 +64,7 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
       <button onClick={prevCard} className="px-0 py-2 bg-blue-500 text-white absolute bottom-4 left-4 z-10">
         Previous
       </button>
-      <button disabled={presentReferenceDate} onClick={nextCard} className={`px-0 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 disabled:bg-red-500`} >
+      <button disabled={referenceDateParsed.isToday} onClick={nextCard} className={`px-0 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 disabled:bg-red-500`} >
         Next
       </button>
       <div
@@ -75,7 +77,7 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
                 key={index}
                 className={`shrink-0 w-full h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={activityMap} />
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } referenceDateParsed={ referenceDateParsed }/>
               </div>
           ))
           : null
