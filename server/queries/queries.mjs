@@ -1,11 +1,32 @@
 import pg from 'pg'
 import sqlText from './sqlText.mjs'
-//mport dotenv from 'dotenv/config'
+// import dotenv from 'dotenv/config'
+// import timestampParser from '../../client/src/util/timestampParser.js'
 import util from 'util'
 
 const { Pool } = pg
 
 const pool = new Pool()
+
+const parse = (timestamp) => {
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+  const monthNames = ['January','February','March','April','May','June','July','August','Septemeber','October','November','Decemeber']
+  const convertedDate = new Date(timestamp)
+  const fullYear = convertedDate.getFullYear()
+  const monthIndex = convertedDate.getMonth()
+  const monthName = monthNames[monthIndex]
+  const date = convertedDate.getDate()
+  const dayIndex = convertedDate.getDay()
+  const dayName = dayNames[dayIndex]
+  return {
+    year:fullYear,
+    monthIndex,
+    monthName,
+    date,
+    dayIndex,
+    dayName
+  }
+}
 
 // OWNER QUERIES
 // 'Insert into table' operations...
@@ -232,13 +253,11 @@ const deactivatePetOwnerLink = async( ownerId,petId ) => {
 }
 
 const getOwnersPetIds = async(ownerId) => {
-  // console.log(ownerId)
   const result = await pool.query(sqlText.getOwnersPetIdsText(), [ownerId])
-  // console.log('Here\'s the SQL text: ',sqlText.getOwnersPetIdsText())
-  // console.log('Result from fetching owners pet ids: ',result)
   const petIdsArr = result.rows.map(row => row.pet_id)
-  const filteredPetIdsArray = petIdsArr.filter( petId => !petId)
-  return filteredPetIdsArray
+  // May not be needed
+  // const filteredPetIdsArray = petIdsArr.filter( petId => !petId)
+  return petIdsArr
 }
 
 const getActivePetLinks = async(petId) => {
@@ -308,19 +327,20 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 const getActivity = async(petId,targetDate, timeWindow) => {
 
   const { daysBefore, daysAfter } = timeWindow
-  
-  const { fullYear,month,date } = timestampParser(targetDate)
+  console.log('TargetDate: ', targetDate)
+  const { year,monthIndex,date } = parse(targetDate)
+  console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)
   const dateArray = []
-  for(let i = daysBefore * -1 ; i = daysAfter ; i++){
+  for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
     const referenceDate = new Date(targetDate)
     let newDate = referenceDate.setDate(referenceDate.getDate() + i)
     dateArray.push(newDate)
   }
-  const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${month+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
+  const result = await pool.query(sqlText.getActivityText(), [ petId, `${year}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
 
   const data = result.rows
   const formattedData = dateArray.map( dateAsTimestamp => {
-    const { fullYear, month, date } = timestampParser(dateAsTimestamp)
+    const { fullYear, month, date } = parse(dateAsTimestamp)
     const filteredActivityArray = data.filter( activity => { 
       const activityDate = new Date(activity.set_on_at)
       return (
@@ -329,7 +349,7 @@ const getActivity = async(petId,targetDate, timeWindow) => {
         date == activityDate.getDate()
       )
     })
-    return { [`${fullYear}-${month + 1}-${date}`]:filteredActivityArray }
+    return { [`${year}-${monthIndex + 1}-${date}`]:filteredActivityArray }
   })
 
   return formattedData  

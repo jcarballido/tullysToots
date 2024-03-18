@@ -3,18 +3,18 @@ import queries from "../queries/queries.mjs";
 import verifyAccessToken from "../middleware/verifyAccessToken.mjs";
 import verifyRefreshToken from "../middleware/verifyRefreshToken.mjs";
 import util from 'util'
+import cookieParser from 'cookie-parser'
+
 
 const router = express.Router();
-
-// router.use(verifyAccessToken)
-// router.use(verifyRefreshToken)
+router.use(cookieParser())
 
 
+router.use(verifyAccessToken)
+router.use(verifyRefreshToken)
 
 router.post("/get", async (req, res) => {
-  console.log('/activity/get request received')
-
-  const ownerId = 30;
+  const ownerId = req.body.ownerId;
   const petId = req.body.referencePetId;
   const referenceDate = req.body.referenceDate;
   const timeWindow = req.body.timeWindow
@@ -23,8 +23,9 @@ router.post("/get", async (req, res) => {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
-      const activityArray = await queries.getActivity(25, referenceDate, timeWindow);
-      return res.status(200).json(activityArray);
+      const activityArray = await queries.getActivity(petId, referenceDate, timeWindow);
+      const petIdArray = await queries.getOwnersPetIds(ownerId)
+      return res.status(200).json({activityArray, petIdArray});
     } else {
       return res.status(401).json({ error: confirmActiveLink });
     }
@@ -33,9 +34,10 @@ router.post("/get", async (req, res) => {
       const singlePetId = await queries.getSingleActivePetId(ownerId);
       const activityArray = await queries.getActivity(
         singlePetId,
-        referenceDate
+        referenceDate,
+        timeWindow
       );
-      return res.status(200).json({activityArray, singlePetId });
+      return res.status(200).json({activityArray, petIdArray, singlePetId });
     } catch (e) {
       return res.status(400).json({ error: e });
     }

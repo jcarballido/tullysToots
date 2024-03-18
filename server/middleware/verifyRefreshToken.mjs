@@ -18,7 +18,11 @@ const checkExpiration = (token) => {
 }
 
 const verifyRefreshToken = async (req,res,next) => {
+  console.log('Cookies: ', req.cookies.jwt)
+  // const refreshToken = req.cookies.jwt
+
   const refreshTokenVerification = req.refreshTokenVerification
+  const accessTokenNotPresent = req.accessTokenNotPresent
   // console.log('RefreshTokenVerification: ', refreshTokenVerification)
   if(refreshTokenVerification){
     console.log('The access token was invalid, but the refresh token was still valid. A new refresh and acces token were attempted to be created.')
@@ -41,6 +45,12 @@ const verifyRefreshToken = async (req,res,next) => {
     res.locals.tokenData = { newRefreshToken, newAccessToken }
     console.log(`The new tokens were successfully created, they are are: access:${ newAccessToken }, refresh:${ newRefreshToken }`)
     return next()
+  }
+  if(accessTokenNotPresent){
+    console.log('Refresh token in verify refresh token middleware: ', refreshToken)
+    const decodeJwt = jwt.validateToken(refreshToken)
+    if(decodeJwt instanceof Error) return res.status(401).json({'error':'There is an error when validating the refresh token. Please sign in again'})
+    else return next()
   }
   console.log('Access token was valid; Refresh token middleware was skipped. Owner ID retrieved form access token is: ', req.ownerId)
   return next()

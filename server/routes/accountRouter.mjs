@@ -36,8 +36,15 @@ router.get('/checkLoginSession', async(req,res) => {
   console.log('Refresh token recieved: ', refreshToken)
   if( !refreshToken ) return res.status(401).json({ detail:'New session' })
   const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
-  if( decodedJwt instanceof Error ) return res.status(401).json({ detail:'Session expired. Login required.' })
-  return res.status(200).json({ detail:'Live session' })
+  if( decodedJwt instanceof Error ){
+    return res.status(401).json({ detail:'Session expired. Login required.' })
+  }else{
+    const accessSecret = process.env.ACCESS_SECRET
+    const ownerId = decodedJwt.ownerId
+    const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
+    return res.status(200).json({ accessToken })
+
+  }
 })
 
 router.post('/sign-up', async(req,res) => {

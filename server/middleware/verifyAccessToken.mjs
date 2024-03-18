@@ -23,8 +23,12 @@ const checkExpiration = (token) => {
 
 const verifyAccessToken = (req,res,next) => {
   const accessToken = req.headers['authorization']
+  console.log('Access token recieved in the verification middleware: ', accessToken)
   // Confirm access token exists. If not, send a custom error.
-  if(!accessToken) return res.status(401).json({error:new nullAccessTokenError('Access token was not provided')}) // Handled by frontend
+  if(!accessToken) {
+    req.accessTokenNotPresent = true
+    return next() 
+  }
   // Validate the access token
   const accessTokenPayload = validateToken(accessToken)
   // Check for an error after validation
@@ -52,6 +56,7 @@ const verifyAccessToken = (req,res,next) => {
           return next(new invalidSignatureError('Invalid signature present on refresh token')) // Additional action required
         }
       }
+      else req.refToken = refreshToken
       // Trigger the need for a new access token and refresh token.
       
       req.refreshTokenVerification = true
