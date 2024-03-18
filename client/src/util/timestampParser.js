@@ -7,9 +7,11 @@ const timestampParser = (referenceTimestamp) => {
   yesterday.setDate(yesterday.getDate() - 1)
 
   const parse = (timestamp) => {
+    console.log('Timeparser function, timestamp: ', timestamp)
     const convertedDate = new Date(timestamp)
     const fullYear = convertedDate.getFullYear()
     const monthIndex = convertedDate.getMonth()
+    console.log('Timeparser function, monthIndex: ', monthIndex)
     const monthName = monthNames[monthIndex]
     const date = convertedDate.getDate()
     const dayIndex = convertedDate.getDay()
@@ -35,6 +37,7 @@ const timestampParser = (referenceTimestamp) => {
   return {
     year:referenceDateParsed.year,
     monthName:referenceDateParsed.monthName,
+    monthIndex: referenceDateParsed.monthIndex,
     date: referenceDateParsed.date,
     dayName:referenceDateParsed.dayName,
     isToday,

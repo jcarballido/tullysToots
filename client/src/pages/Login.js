@@ -22,22 +22,13 @@ const Login = () => {
   const invitationToken = searchParams.get("invite")
   const [ error, setError ] = useState(null)
 
-  /*
-  Need to handle the following flow...
-  1. Page will render the first time with loader data available 'immediately'
-    loaderData will indicate if the user attempting to access the root page is a regsitered user and if their login session is ongoing.
-  2. useEffect will run after the initial render to assess loader data.
-    If no refresh token was sent to te server, user will need to either log in or sign up.
-    If refresh token was received, but no longer valid (expired), user will be left on the login page (with an invitation token in the URL).
-    If refresh token was received and is valid, user is redircted to the '/dashboard/acceptInvite' page.
-  */
-
     useEffect(() => {
       if( loaderData.isLoggedIn ){
         const { accessToken, isLoggedIn } = loaderData
         setAuth({ accessToken,isLoggedIn })
+        console.log('Loader data successful, accessToken: ', accessToken,' ,isLoggedIn true? ', isLoggedIn)
       }
-    }, [loaderData])
+    }, [])
   
     useEffect(() => {
       if( actionData?.isLoggedIn ){
@@ -121,17 +112,14 @@ export const action = async ({ request }) => {
   }
 }
 
-export const loader = () => {
-  const activeLogin = axios
-    .get('/account/checkLoginSession')
-    .then( res => {
-      const { accessToken } = res.data
-      return { accessToken, isLoggedIn:true }
-    }).catch( e => {
-      const error = e.response
-    return { isLoggedIn: false, error }
-  })
-  return activeLogin
+export const loader = async () => {
+  try{
+    const response = await axios.get('/account/checkLoginSession')
+    const { accessToken } = response.data
+    return { accessToken, isLoggedIn:true }
+  }catch(e){
+    return e
+  }
 }
 
 export default Login;

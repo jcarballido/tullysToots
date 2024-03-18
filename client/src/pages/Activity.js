@@ -3,18 +3,25 @@ import {
   useActionData,
   useLoaderData
 } from 'react-router-dom'
+import useAuth from '../hooks/useAuth'
 import ActivityCarousel from '../components/ActivityCarousel'
+import PetSelector from '../components/PetSelector'
 import axios from '../api/axios'
 import timestampParser from '../util/timestampParser'
 
+
 const Activity = () => {
-  const { activity:initialActivity, referenceDate:initialReferenceDate, referencePetId:initialPetId} = useLoaderData()
+
+  const { auth } = useAuth()
+
+  const { activity:initialActivity, referenceDate:initialReferenceDate, referencePetId:initialPetId, petIdArray:initialPetIdArray } = useLoaderData()
 
   const [ activity, setActivity ] = useState(initialActivity)
   const [ dateMap, setDateMap ] = useState({})
   const [ activityMap, setActivityMap ] = useState({})
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
+  const [ petIdArray, setPetIdArray ] = useState(initialPetIdArray)
 
   // useEffect( () => {
   //   localStorage.setItem('referenceDate',referenceDate.toLocaleString().split(',')[0])
@@ -61,15 +68,18 @@ const Activity = () => {
         })
       }
     })
-
     setDateMap(workingDateMap)
     setActivityMap(workingActivityMap)
 
   },[activity])
 
+  useEffect( () => {
+    setPetIdArray(initialPetIdArray)
+  }, [])
+
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center'>
-      <div className='w-3/4 min-w-max flex justify-center items-center mb-4 border-2 border-blue-400 min-h-[44px]'>Tullys' Activity</div>
+      {/* <PetSelector petIdArray={petIdArray} /> */}
       <ActivityCarousel dateMap={dateMap} activityMap={activityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>
   )
@@ -89,26 +99,32 @@ export const loader = async () => {
   let referencePetId = localStorage.getItem('referencePetId') || null
 
   // Extract the full year, month, and date from the reference date
-  const { fullYear, month, date } = timestampParser(referenceDate)
-
+  const { year, monthIndex, date } = timestampParser(referenceDate)
   const timeWindow = { daysBefore:7, daysAfter:7 }
   
   // Fetch activity for the reference date and pet ID
-  const response = await axios
-      .post('/activity/get', { referencePetId, referenceDate:`${fullYear}-${month+1}-${date}`, timeWindow })
+  try{
+    const response = await axios
+      .post('/activity/get', { referencePetId, referenceDate:`${year}-${monthIndex+1}-${date}`, timeWindow })
 
-  // Fetch activity for the reference date and pet ID
+    // Extract the activity from the resoponse
+    const rawActivity = response.data.activityArray
 
-  // Extract the activity from the resoponse
-  const rawActivity = response.data.activityArray || response.data
+    // Extract the petId array from the response
+    const petIdArray = response.data.petIdArray
   
-  // If a singlePetId is present in the response, assign to the the referencePetId variable
-  if(response.data.singlePetId){
-    referencePetId = response.data.singlePetId
-    localStorage.setItem('referencePetId', referencePetId)
+    // If a singlePetId is present in the response, assign to the the referencePetId variable
+    if(response.data.singlePetId){
+      referencePetId = response.data.singlePetId
+      localStorage.setItem('referencePetId', referencePetId)
+    }
+
+    return { activity:rawActivity, referenceDate, referencePetId, petIdArray }
+  }catch(e){
+    console.log(e)
+    return e
   }
 
   // Return the activity, referenceDate, and referecenSinglePetId
-  return { activity:rawActivity, referenceDate, referencePetId }
 }
 

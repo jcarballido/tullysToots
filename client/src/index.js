@@ -25,24 +25,24 @@ const root = createRoot(appElement)
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-        <Route element={<HomeLayout />} >
-          <Route path='/' element={<Login />} action={ loginAction } loader={ loginLoader }/>
-          <Route path="signup" element={<SignUp />} action={ signUpAction } />
-          <Route element={<RequireAuth />}>
-            <Route path="activity" element={<Activity />} loader={activityLoader} />
+      <Route element={<HomeLayout />} >
+        <Route path='/' element={<Login />} action={ loginAction } loader={ loginLoader }/>
+        <Route path="signup" element={<SignUp />} action={ signUpAction } />
+        <Route element={<RequireAuth />}>
+          <Route path="activity" element={<Activity />} loader={activityLoader} />
+        </Route> 
+      </Route>
+      <Route element={<RequireAuth />}>
+        <Route element={<DashboardLayout />} >
+          <Route path="dashboard" element={<Dashboard />} >
+            <Route path="account" element={<Account />} />
+            <Route path="invite" element={<Invite />} />
+            <Route path="pets" element={<Pets />} >
+              <Route path="acceptInvite" element={<AcceptInvite />} />
+            </Route>
           </Route> 
         </Route>
-        <Route element={<RequireAuth />}>
-          <Route element={<DashboardLayout />} >
-            <Route path="dashboard" element={<Dashboard />} >
-              <Route path="account" element={<Account />} />
-              <Route path="invite" element={<Invite />} />
-              <Route path="pets" element={<Pets />} >
-                <Route path="acceptInvite" element={<AcceptInvite />} />
-              </Route>
-            </Route> 
-          </Route>
-        </Route> 
+      </Route> 
     </>
   )
 )
