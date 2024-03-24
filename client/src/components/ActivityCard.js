@@ -1,10 +1,11 @@
 import React from 'react'
 import Date from './Date'
+import timestampParser from '../util/timestampParser'
 
-function ActivityCard({dateString, activityArray, activityMap, referenceDateParsed }) {
+function ActivityCard({ dateString, activityArray, activityMap }) {
   const records = activityArray.map( id => activityMap.get(id))
-
-  const { dayName,date, monthName, year, isToday, isYesterday } = referenceDateParsed
+  
+  const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
 
   return(
     <div className='bg-red-600 h-full w-full'>

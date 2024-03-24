@@ -10,18 +10,20 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
   const [ dailyActivity, setDailyActivity ] = useState([])
   const [ today, setToday ] = useState(false)
   const [ yesterday, setYesterday ] = useState(false)
-  const [ referenceDateParsed, setReferenceDateParsed ] = useState(timestampParser(referenceDate))
 
-  // useEffect( () => {
-  //   const { isToday, isYesterday } = referenceDateParsed
-  //   setToday(isToday)
-  //   setYesterday(isYesterday)
-  // },[referenceDate])
+  useEffect( () => {
+    const { isToday } = timestampParser(referenceDate)
+    setToday(isToday)
+  },[referenceDate])
 
   useEffect( () => {
     if(currentIndex == 0){
       const fetchData = async() => {
-        const response = await axios.post('/activity/getPastActivity',{referencePetId, referenceDate:new Date(referenceDate), daysOfActivity:3})
+        const timeWindow = { 
+          daysBefore:3, 
+          daysAfter:0
+        }
+        const response = await axios.post('/activity/getPastActivity',{referencePetId, referenceDate:new Date(referenceDate), timeWindow})
         const newActivity = response.data
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
@@ -36,7 +38,6 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
 
   useEffect( () => {
     setDailyActivity(Array.from(dateMap))
-    
   },[dateMap])
 
   const nextCard = (e) => {
@@ -64,7 +65,7 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
       <button onClick={prevCard} className="px-0 py-2 bg-blue-500 text-white absolute bottom-4 left-4 z-10">
         Previous
       </button>
-      <button disabled={referenceDateParsed.isToday} onClick={nextCard} className={`px-0 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 disabled:bg-red-500`} >
+      <button disabled={today} onClick={nextCard} className={`px-0 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 disabled:bg-red-500`} >
         Next
       </button>
       <div
@@ -77,7 +78,7 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
                 key={index}
                 className={`shrink-0 w-full h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } referenceDateParsed={ referenceDateParsed }/>
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } />
               </div>
           ))
           : null

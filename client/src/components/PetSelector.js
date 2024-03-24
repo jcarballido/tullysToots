@@ -1,27 +1,37 @@
 import React, { useState, useEffect } from 'react'
+import DropdownMenu from './DropdownMenu'
 
-const PetSelector = ({ petIdArray }) => {
+const PetSelector = ({ petIdArray, setReferencePetId }) => {
   const [ name, setName ] = useState('')
+  const [ visible, setVisible ] = useState(true)
 
   useEffect( () => {
     const activePetId = localStorage.getItem('referencePetId')
+    const petIdString = activePetId.replace(/^"|"$/g, '');
+    const petId = parseInt(petIdString)
+    
     if(activePetId){
-      const activePetRecord = petIdArray.filter( petRecord => activePetId == petRecord.id)
-      const activePetName = activePetRecord.name
-      setName(activePetName)
+      const activePetRecord = petIdArray.filter( petRecord => petRecord.id == petId)
+      
+      const activePetName = activePetRecord[0]
+      if(activePetName) setName(activePetName['petName'])
+      // console.log('Active pet name: ', activePetName.petName)
+      // setName(activePetName)
     }
   },[ petIdArray ])
 
-  return(
-      <div className='w-3/4 min-w-max flex justify-center items-center mb-4 border-2 border-blue-400 min-h-[44px]'>
-          {name? `${name}'s Activity`:''}
-          {
-            petIdArray
-            ? petIdArray.map( (el,index) => <div>{index}</div>)
-            : null 
+  const toggleDropdownVisibility = (e) => {
+    e.preventDefault()
+    setVisible(!visible)
+  }
 
-          }
-      </div>
+  return(
+    <div className='w-full border-green-700 border-2 flex justify-center items-center relative' onClick={toggleDropdownVisibility}>
+      {name ? `${name}'s Activity`:''}
+      <DropdownMenu petIdArray={petIdArray} visible={visible} setVisible={setVisible} setReferencePetId={setReferencePetId} />
+    </div>
+      
+    
   )
 }
 
