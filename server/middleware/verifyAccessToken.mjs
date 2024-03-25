@@ -5,7 +5,6 @@ import nullAccessTokenError from '../errors/nullAccesTokenError.mjs'
 import nullAdminError from '../errors/nullAdminPrivlidgesError.mjs'
 import invalidSignatureError from '../errors/invalidSignatureError.mjs'
 
-
 const validateToken = (token,tokenType = 'access') => {
   const secret = tokenType == 'refresh' ? process.env.REFRESH_SECRET:process.env.ACCESS_SECRET
   try{
@@ -23,7 +22,6 @@ const checkExpiration = (token) => {
 
 const verifyAccessToken = (req,res,next) => {
   const accessToken = req.headers['authorization']
-  console.log('Access token recieved in the verification middleware: ', accessToken)
   // Confirm access token exists. If not, send a custom error.
   if(!accessToken) {
     req.accessTokenNotPresent = true

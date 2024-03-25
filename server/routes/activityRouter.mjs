@@ -5,17 +5,17 @@ import verifyRefreshToken from "../middleware/verifyRefreshToken.mjs";
 import util from 'util'
 import cookieParser from 'cookie-parser'
 
-
 const router = express.Router();
 router.use(cookieParser())
-
 
 router.use(verifyAccessToken)
 router.use(verifyRefreshToken)
 
 router.post("/get", async (req, res) => {
-  const ownerId = req.body.ownerId;
-  const petId = req.body.referencePetId;
+  const ownerId = req.ownerId;
+  
+  const petIdString = req.body.referencePetId.replace(/^"|"$/g, '');
+  const petId = parseInt(petIdString)
   const referenceDate = req.body.referenceDate;
   const timeWindow = req.body.timeWindow
 

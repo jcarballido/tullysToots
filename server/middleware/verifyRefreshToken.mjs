@@ -18,9 +18,6 @@ const checkExpiration = (token) => {
 }
 
 const verifyRefreshToken = async (req,res,next) => {
-  console.log('Cookies: ', req.cookies.jwt)
-  // const refreshToken = req.cookies.jwt
-
   const refreshTokenVerification = req.refreshTokenVerification
   const accessTokenNotPresent = req.accessTokenNotPresent
   // console.log('RefreshTokenVerification: ', refreshTokenVerification)

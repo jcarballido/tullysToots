@@ -254,7 +254,8 @@ const deactivatePetOwnerLink = async( ownerId,petId ) => {
 
 const getOwnersPetIds = async(ownerId) => {
   const result = await pool.query(sqlText.getOwnersPetIdsText(), [ownerId])
-  const petIdsArr = result.rows.map(row => row.pet_id)
+  console.log('getOwnersPetIds result: ', result)
+  const petIdsArr = result.rows.map(row => {return {id:row.pet_id, petName:row.pet_name}})
   // May not be needed
   // const filteredPetIdsArray = petIdsArr.filter( petId => !petId)
   return petIdsArr
@@ -457,14 +458,15 @@ const checkExistingCredentials = async(username,email) => {
 
 const checkOwnerLink = async(ownerId,petId) => {
   try{
-    console.log('petId received in line 410 of queires.js: ', Number(petId))
+    console.log(petId)
+    console.log('petId received in line 410 of queires.js: ', parseInt(petId))
     const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
     console.log('Result from checking owner link: ',result)
     const petIdArray = result.rows.map( row => row.pet_id) 
     console.log('petIdArray result: ', petIdArray)
-    console.log(petIdArray.includes(25))
-    const convertToNumber = Number(petId)
-    return petIdArray.includes(25)
+    console.log(petIdArray)
+    // const convertToNumber = Number(petId)
+    return petIdArray.includes(parseInt(petId))
   }catch(e){
     return e
   }

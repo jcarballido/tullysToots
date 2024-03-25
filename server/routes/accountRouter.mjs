@@ -360,6 +360,16 @@ router.get('/invitation', async(req,res) => {
 router.use(verifyAccessToken)
 router.use(verifyRefreshToken)
 
+router.get('/getSinglePetId', async(req, res)=>{
+  const ownerId=req.ownerId
+  try{
+    const singlePetId = await queries.getSingleActivePetId(ownerId)
+    return res.status(200).json({singlePetId})
+  }catch(e){
+    return res.status(400).json({error:e})
+  }
+})
+
 // router.post('/test', (req,res) => {
 //   console.log('New Access Token: ', req.newAccessToken)
 //   console.log('New Refresh Token: ', req.newRefreshToken)

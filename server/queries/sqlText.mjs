@@ -127,10 +127,19 @@ const getPetIdText = `
   WHERE pet_name = $1 AND dob = $2 AND sex = $3;
 `
 
+// const getOwnersPetIdsText = () => {
+//   return `
+//   SELECT pet_id FROM pet_owners
+//   WHERE owner_id = $1 AND active = true
+//   `
+// }
+
 const getOwnersPetIdsText = () => {
   return `
-  SELECT pet_id FROM pet_owners
-  WHERE owner_id = $1 AND active = true
+    SELECT pets.pet_name,pet_owners.pet_id 
+    FROM pet_owners 
+    INNER JOIN pets ON pets.pet_id = pet_owners.pet_id 
+    WHERE pet_owners.owner_id = $1 AND pet_owners.active = true
   `
 }
 
