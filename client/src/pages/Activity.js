@@ -28,10 +28,7 @@ const Activity = () => {
       try{
         const timeWindow = { daysBefore:7, daysAfter:7 }
         const response = await axios
-          .post('/activity/get', { referencePetId, referenceDate, timeWindow },{ headers: {authorization:auth.accessToken}})
-        
-        // If referencePetId is null, the resoponse will also include a referencePetId.
-        
+          .post('/activity/get', { referencePetId:JSON.stringify(referencePetId), referenceDate, timeWindow },{ headers: {authorization:auth.accessToken}})
 
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
@@ -52,14 +49,16 @@ const Activity = () => {
     const getSinglePetId = async() => {
       try{
         const response = await axios.get('/account/getSinglePetId',{ headers: {authorization:auth.accessToken}})
-        setReferencePetId(response.singlePetId)
+        setReferencePetId(response.data.singlePetId)
       }catch(e){
         console.log(e)
       }
     }
     if(!referencePetId){
+      console.log('Null reference pet Id detected, making call to back end to retrieve one and set state')
       getSinglePetId()
     }else{
+      console.log('ReferencePetId detected, set state to: ', referencePetId)
       getActivity()
       localStorage.setItem('referencePetId', referencePetId.toString())
     }
@@ -90,7 +89,7 @@ const Activity = () => {
 
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
-      <PetSelector petIdArray={petIdArray} setReferencePetId={ setReferencePetId } />
+      <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
       <ActivityCarousel dateMap={dateMap} activityMap={activityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>
   )

@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 
-const DropdownMenu = ({ petIdArray, visible, setVisible, setReferencePetId }) => {
+const DropdownMenu = ({ petIdArray, visible, setVisible, referencePetId, setReferencePetId }) => {
 
   const [ activeSelection, setActiveSelection ] = useState('')
 
@@ -14,7 +14,7 @@ const DropdownMenu = ({ petIdArray, visible, setVisible, setReferencePetId }) =>
   const updatePetReference = (e) => {
     e.preventDefault()
     setActiveSelection('')
-    // setReferencePetId(activeSelection)
+    setReferencePetId(activeSelection)
   }
 
   const closeMenu = (e) => {
@@ -28,6 +28,7 @@ const DropdownMenu = ({ petIdArray, visible, setVisible, setReferencePetId }) =>
       {
         petIdArray
         ? petIdArray.map( pet => {
+          if(pet.id == referencePetId) return null
           return(
             <button key={pet.id} onClick={(e) => selectPet(e,pet.id,activeSelection)} disabled={ activeSelection != pet.id && activeSelection} className={`flex justify-center items-center transform transition ease-in ${visible? 'opaque-100 duration-1000':'opaque-0 duration-0'} disabled:bg-gray-100 disabled:text-black`}>
               {pet.petName}

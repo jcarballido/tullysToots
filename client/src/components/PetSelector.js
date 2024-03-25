@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react'
-import DropdownMenu from './DropdownMenu'
+import DropdownMenu from './DropdownMenu.js'
 
-const PetSelector = ({ petIdArray, setReferencePetId }) => {
+const PetSelector = ({ petIdArray, referencePetId, setReferencePetId }) => {
   const [ name, setName ] = useState('')
-  const [ visible, setVisible ] = useState(true)
+  const [ visible, setVisible ] = useState(false)
 
   useEffect( () => {
-    const activePetId = localStorage.getItem('referencePetId')
-    const petIdString = activePetId.replace(/^"|"$/g, '');
-    const petId = parseInt(petIdString)
-    
-    if(activePetId){
-      const activePetRecord = petIdArray.filter( petRecord => petRecord.id == petId)
-      
+    // const activePetId = localStorage.getItem('referencePetId')
+    // const petIdString = activePetId? activePetId.replace(/^"|"$/g, ''):null
+    // const petId = petIdString? parseInt(petIdString):null
+    if(referencePetId && petIdArray){
+      const activePetRecord = petIdArray.filter( petRecord => {
+        return petRecord.id == referencePetId
+      })
+      console.log('activePetRecord: ',activePetRecord)
       const activePetName = activePetRecord[0]
       if(activePetName) setName(activePetName['petName'])
       // console.log('Active pet name: ', activePetName.petName)
       // setName(activePetName)
     }
-  },[ petIdArray ])
+  },[ referencePetId, petIdArray ])
 
   const toggleDropdownVisibility = (e) => {
     e.preventDefault()
@@ -28,7 +29,7 @@ const PetSelector = ({ petIdArray, setReferencePetId }) => {
   return(
     <div className='w-full border-green-700 border-2 flex justify-center items-center relative' onClick={toggleDropdownVisibility}>
       {name ? `${name}'s Activity`:''}
-      <DropdownMenu petIdArray={petIdArray} visible={visible} setVisible={setVisible} setReferencePetId={setReferencePetId} />
+      <DropdownMenu petIdArray={petIdArray} visible={visible} setVisible={setVisible} referencePetId={referencePetId} setReferencePetId={setReferencePetId} />
     </div>
       
     
