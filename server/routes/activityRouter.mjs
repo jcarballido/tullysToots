@@ -12,6 +12,8 @@ router.use(verifyAccessToken)
 router.use(verifyRefreshToken)
 
 router.post("/get", async (req, res) => {
+
+
   const ownerId = req.ownerId;
   
   const petIdString = req.body.referencePetId.replace(/^"|"$/g, '');
@@ -23,7 +25,10 @@ router.post("/get", async (req, res) => {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
+      console.log('Line 28: ', petId, referenceDate, timeWindow)
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindow);
+      console.log('activityRouter activityArray line 42: ',activityArray)
+
       const petIdArray = await queries.getOwnersPetIds(ownerId)
       return res.status(200).json({activityArray, petIdArray});
     } else {
@@ -37,6 +42,7 @@ router.post("/get", async (req, res) => {
         referenceDate,
         timeWindow
       );
+      console.log('activityRouter activityArray line 42: ',activityArray)
       return res.status(200).json({activityArray, petIdArray, singlePetId });
     } catch (e) {
       return res.status(400).json({ error: e });

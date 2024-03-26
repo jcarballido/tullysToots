@@ -24,7 +24,7 @@ const insertIntoText = (tableName,newValuesArr) => {
 
   const multiplePetOwnersEntryText = (columnsArr) => {
       const valuesTextArray = newValuesArr.map( (_,index) => {return `($1,$${index+3},$2)`})
-      return `
+      return `getActivity
       INSERT INTO ${tableName} (${columnsArr.join()}) 
       VALUES ${valuesTextArray.join()} 
       RETURNING *`
@@ -152,7 +152,7 @@ const getInvitationTokenComparisonText = () => {
 }
 
 const getOwnerIdFromEmailText = `
-  SELECT owner_id
+  SELECT owner_idgetActivity
   FROM owners
   WHERE email = $1
 `

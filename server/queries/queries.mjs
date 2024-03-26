@@ -328,9 +328,9 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 const getActivity = async(petId,targetDate, timeWindow) => {
 
   const { daysBefore, daysAfter } = timeWindow
-  console.log('TargetDate: ', targetDate)
+  // console.log('TargetDate: ', targetDate)
   const { year,monthIndex,date } = parse(targetDate)
-  console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)
+  // console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)
   const dateArray = []
   for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
     const referenceDate = new Date(targetDate)
@@ -339,19 +339,23 @@ const getActivity = async(petId,targetDate, timeWindow) => {
   }
   const result = await pool.query(sqlText.getActivityText(), [ petId, `${year}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
 
+  
   const data = result.rows
+  // console.log('Line 342, data: ', data)
   const formattedData = dateArray.map( dateAsTimestamp => {
-    const { fullYear, month, date } = parse(dateAsTimestamp)
+    const { year, monthIndex, date } = parse(dateAsTimestamp)
+    console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
     const filteredActivityArray = data.filter( activity => { 
       const activityDate = new Date(activity.set_on_at)
       return (
-        fullYear == activityDate.getFullYear() &&
-        month == activityDate.getMonth() &&
+        year == activityDate.getFullYear() &&
+        monthIndex == activityDate.getMonth() &&
         date == activityDate.getDate()
       )
     })
     return { [`${year}-${monthIndex + 1}-${date}`]:filteredActivityArray }
   })
+  // console.log('Line 357, formattedData: ', formattedData)
 
   return formattedData  
 }
