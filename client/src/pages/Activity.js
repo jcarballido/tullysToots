@@ -27,9 +27,9 @@ const Activity = () => {
       // Fetch activity for the reference date and pet ID
       try{
         const timeWindow = { daysBefore:7, daysAfter:7 }
+
         const response = await axios
           .post('/activity/get', { referencePetId:JSON.stringify(referencePetId), referenceDate, timeWindow },{ headers: {authorization:auth.accessToken}})
-
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
         console.log(rawActivity)
