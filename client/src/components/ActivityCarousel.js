@@ -76,9 +76,9 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
             dailyActivity.map(([dateString, activityArray],index) => (
               <div
                 key={index}
-                className={`shrink-0 w-full h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
+                className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } />
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} />
               </div>
           ))
           : null
