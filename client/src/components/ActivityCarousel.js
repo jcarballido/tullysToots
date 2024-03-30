@@ -40,6 +40,8 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
     setDailyActivity(Array.from(dateMap))
   },[dateMap])
 
+  console.log('dailyActivity in activity carousel: ', dailyActivity)
+
   const nextCard = (e) => {
     e.preventDefault()
     setCurrentIndex((prevIndex) => prevIndex + 1);
@@ -73,14 +75,16 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
           style={{ transform: `translateX(-${currentIndex * 100}%)`}}
         >
           {dailyActivity ? 
-            dailyActivity.map(([dateString, activityArray],index) => (
-              <div
-                key={index}
-                className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
-              >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} />
-              </div>
-          ))
+            dailyActivity.map(([dateString, activityArray],index) => {
+              console.log('dateString: ', dateString)
+              return (
+                <div
+                  key={dateString}
+                  className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
+                >
+                  <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} />
+                </div>
+              )})
           : null
         }
           

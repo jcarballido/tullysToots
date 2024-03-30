@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import DateComponent from './Date'
 import timestampParser from '../util/timestampParser'
+import axios from '../api/axios'
 
-function ActivityCard({ dateString, activityArray, activityMap, setActivity, referenePetId }) {
+function ActivityCard({ index, dateString, activityArray, activityMap, setActivity, referencePetId }) {
   // dailyActivity: [ [dateString1,activityArray1],[dateString2, activityArray2],... ] (derived from 'dateMap')
   // activityArray: [id1,id2,id3,...] 
   // activityMap: { id1:{...details1}, id2:{...details2},... }
@@ -38,18 +39,24 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
       return updatedNewActivityArray
     })
   }
-  // NEEDS UPDATING
+
   const sendNewActivity = async (e) => {
     e.preventDefault()
     try{
-      const response = await axios.post('/activity/add', {referenePetId, referenceDate:dateString,timeWindow:{daysBefore:0, daysAfter:0}})
+      const response = await axios.post('/activity/add', {referencePetId, referenceDate:dateString})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
-      const activeDate = response.data
+      const referenceDateActivity = response.data
       setActivity(prevActivity => {
         const updatedActivityArray = prevActivity.map( dailyActivityLog => {
-          const 
-          if(dailyActivityLog)
+          const dailyActivityDate = Object.keys(dailyActivityLog)[0]
+          const referenceDate = Object.keys(referenceDateActivity)[0]
+          if(dailyActivityDate == referenceDate){
+            return referenceDateActivity
+          }else{
+            return dailyActivityLog
+          }
         })
+        return updatedActivityArray
       })
     }catch(e){
       console.log(e)
@@ -79,6 +86,8 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
     <div className='bg-red-600 h-full w-full flex flex-col items-center'>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
       { records.map( record => {
+        console.log('record: ', record)
+        console.log('record.activity_id: ', record.activity_id)
         return (
         <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
           {record.pet_id}
@@ -90,16 +99,19 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
           }   
         </div>
       )})}
-      { newActivity.map( record => (
-        <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-          <button onClick={sendNewActivity}>
-            SAVE
-          </button>
-          <button onClick={(e) => deleteNewActivity(e,record.newId)} >
-            CANCEL
-          </button>
-        </div>
-      ))}
+      { newActivity.map( record => {
+        console.log('record.newId: ',record.newId)
+        return (
+          <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
+            <button onClick={sendNewActivity}>
+              SAVE
+            </button>
+            <button onClick={(e) => deleteNewActivity(e,record.newId)} >
+              CANCEL
+            </button>
+          </div>
+        )
+      })}
       <div className='flex justify-center items-center border-black border-2'>
       { updateEnabled
         ? <button onClick={addActivity} className='border-2 border-white rounded-xl'>CONFIRM</button>
@@ -111,7 +123,6 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
           : <button onClick={enableUpdate} className='border-2 border-green-700 rounded-xl'>UPDATE</button>
         :null}  
       </div>
-      
     </div>
   )
 }
