@@ -51,15 +51,36 @@ router.post("/get", async (req, res) => {
 });
 
 router.post("/add", async (req, res) => {
-  const result = await queries.addActivity(
-    petId,
-    ownerId,
-    timestampWithoutTZ,
-    pee,
-    poo
-  );
-  if (!result) return res.send("ERROR: Did not save new activity");
-  return res.json({ result });
+  // const result = await queries.addActivity(
+  //   petId,
+  //   ownerId,
+  //   timestampWithoutTZ,
+  //   pee,
+  //   poo
+  // );
+  // if (!result) return res.send("ERROR: Did not save new activity");
+  // return res.json({ result });
+  const ownerId = req.ownerId
+  const petIdString = req.body.referencePetId.replace(/^"|"$/g, '');
+  const petId = parseInt(petIdString)
+  const referenceDate = req.body.referenceDate;
+  const { pee, poo } = req.body.activity
+  
+  try{
+    const result = await queries.addActivity(petId, ownerId, referenceDate,pee,poo)
+    console.log('Line 71, result: ', result)
+  }catch(e){
+    return res.status(400).json({error:e})
+  }
+
+  try{
+    const result = await queries.getSingleDayActivity(petId, referenceDate); 
+    console.log('')
+    return res.status(200).json(result)
+  }catch(e){
+    return res.status(400).json({error:e})
+  }
+
 });
 
 router.post("/update", async (req, res) => {

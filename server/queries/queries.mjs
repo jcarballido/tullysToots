@@ -46,8 +46,8 @@ const addPetOwnerLink = async(ownerId,petIdsArray) => {
 
 const addActivity = async(petId, ownerId, timestampWithoutTZ, pee, poo) => {
   const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestampWithoutTZ, pee, poo])
-  const resultId = result.rows[0].activity_id
-  return resultId
+  const data = result.rows[0]
+  return data
 }
 
 const getPasswordHash = async(ownerId) => {
@@ -338,8 +338,43 @@ const getActivity = async(petId,targetDate, timeWindow) => {
     dateArray.push(newDate)
   }
   const result = await pool.query(sqlText.getActivityText(), [ petId, `${year}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
-
+  console.log('Queries result: ', result)
   
+  const data = result.rows
+  // console.log('Line 342, data: ', data)
+  const formattedData = dateArray.map( dateAsTimestamp => {
+    const { year, monthIndex, date } = parse(dateAsTimestamp)
+    console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
+    const filteredActivityArray = data.filter( activity => { 
+      const activityDate = new Date(activity.set_on_at)
+      return (
+        year == activityDate.getFullYear() &&
+        monthIndex == activityDate.getMonth() &&
+        date == activityDate.getDate()
+      )
+    })
+    return { [`${year}-${monthIndex + 1}-${date}`]:filteredActivityArray }
+  })
+  // console.log('Line 357, formattedData: ', formattedData)
+
+  return formattedData  
+}
+
+const getSingleDayActivity = async(petId,targetDate) => {
+
+  //const { daysBefore, daysAfter } = timeWindow
+  // console.log('TargetDate: ', targetDate)
+  const { year,monthIndex,date } = parse(targetDate)
+  // console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)
+  const dateArray = [targetDate]
+  // for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
+  //   const referenceDate = new Date(targetDate)
+  //   let newDate = referenceDate.setDate(referenceDate.getDate() + i)
+  //   dateArray.push(newDate)
+  // }
+  const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${year}-${monthIndex+1}-${date}`])
+  console.log('Queries result: ', result)
+  // START HERE; RESULT.ROWS IS UNDEFINED AS THE QUERY ABOVE IT ONLY RETURNS A SINGLE OBJECT
   const data = result.rows
   // console.log('Line 342, data: ', data)
   const formattedData = dateArray.map( dateAsTimestamp => {
@@ -491,6 +526,7 @@ export default {
   getOwnersPetIds,
   getActivePetLinks,
   getActivity,
+  getSingleDayActivity,
   getPetActivityByOwner,
   getLastAccessedTimestamp,
   getInvitationId,

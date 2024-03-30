@@ -44,6 +44,7 @@ const verifyRefreshToken = async (req,res,next) => {
     return next()
   }
   if(accessTokenNotPresent){
+    const refreshToken = req.currentRefreshToken
     console.log('Refresh token in verify refresh token middleware: ', refreshToken)
     const decodeJwt = jwt.validateToken(refreshToken)
     if(decodeJwt instanceof Error) return res.status(401).json({'error':'There is an error when validating the refresh token. Please sign in again'})

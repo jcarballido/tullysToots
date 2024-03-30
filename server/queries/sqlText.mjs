@@ -1,4 +1,4 @@
-const activityColumns = ['activity_id','pet_id','entered_by','set_on_at','pee','poo']
+const activityColumns = ['pet_id','entered_by','set_on_at','pee','poo']
 
 const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
@@ -104,9 +104,18 @@ const getOwnerText = (identifierString) => {
 const getActivityText = () => {
   // referenceDate example: 'YYYY-MM-DD HH24:MM'
   return `
-    SELECT ${activityColumns.join()}
+    SELECT activity_id,${activityColumns.join()}
     FROM activities
     WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $4::interval
+  `
+}
+
+const getSingleDayActivityText = () => {
+  // referenceDate example: 'YYYY-MM-DD HH24:MM'
+  return `
+    SELECT activity_id,${activityColumns.join()}
+    FROM activities
+    WHERE pet_id = $1 AND set_on_at >= $2::timestamp AND set_on_at < $2::timestamp + '1 day'::interval
   `
 }
 
@@ -236,6 +245,7 @@ export default {
   updateText,
   deactivatePetOwnerLinkText,
   getActivityText,
+  getSingleDayActivityText,
   getOwnerText,
   getEmail,
   getActivePetLinksText,
