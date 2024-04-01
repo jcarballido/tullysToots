@@ -8,6 +8,13 @@ import cookieParser from 'cookie-parser'
 const router = express.Router();
 router.use(cookieParser())
 
+router.post('/testInterceptor', (req,res) => {
+  console.log('Request to "/activity/testInterceptor" received')
+  console.log(req.body);
+  if(!req.body.someMissingProperty) return res.status(401).send('Returned an error')
+  else return res.status(200).send(`someMissingProperty was present: ${req.body.someMissingProperty}`)
+})
+
 router.use(verifyAccessToken)
 router.use(verifyRefreshToken)
 
