@@ -7,8 +7,9 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   // dailyActivity: [ [dateString1,activityArray1],[dateString2, activityArray2],... ] (derived from 'dateMap')
   // activityArray: [id1,id2,id3,...] 
   // activityMap: { id1:{...details1}, id2:{...details2},... }
+  const records = activityArray.map( id => activityMap.get(id))
 
-  const [ records, setRecords ] = useState([])
+  // const [ records, setRecords ] = useState([])
   const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
 
@@ -17,11 +18,11 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   // records: [ {details1},{details2},... ]
   // details: {activity_id:1, pee: true, poo: false, set_on_at:'2024-10-23',set_by:'hp017'}
 
-  useEffect( () => {
-    if(activityArray){
-      setRecords(activityArray.map( id => activityMap.get(id)))
-    }
-  },[activityArray])
+  // useEffect( () => {
+  //   if(activityArray){
+  //     setRecords(activityArray.map( id => activityMap.get(id)))
+  //   }
+  // },[activityArray])
 
   const addActivity = (e) => {
     e.preventDefault()

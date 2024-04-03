@@ -87,8 +87,43 @@ const Activity = () => {
 
   },[activity])
 
+  const sendAxiosRequest = async() => {
+    const one = axios.interceptors.request.use( (config) => {
+      return config
+    }, (error) => {
+      console.log('Line 94 error: ',error)
+      return Promise.reject(error)
+    })
+
+    const two = axios.interceptors.response.use( (response) => {
+      console.log('Successful response was received, received: ', response);
+      return response
+    }, (error) => {
+      if(error.response.status == 400){
+        console.log(`Status code received: ${error.response.status}`)
+      }else if(error.response.status == 401){
+        console.log(`Status code received: ${error.response.status} `)
+        const originalRequest = error.config
+        console.log('Original data: ',JSON.parse(originalRequest.data))
+        const originalData = JSON.parse(originalRequest.data)
+        originalData['someMissingProperty'] = true
+        originalRequest.data = originalData
+        console.log('Modified request: ', originalRequest)
+        return axios(originalRequest)
+      }
+      return Promise.reject(error)
+    })
+    const sumn = await axios
+      .post('/activity/testInterceptor',{ someData:[1,2,3] })
+
+    axios.interceptors.request.eject(one)
+    axios.interceptors.response.eject(two)
+      
+  }
+
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
+      <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button>
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
       <ActivityCarousel dateMap={dateMap} activityMap={activityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>
