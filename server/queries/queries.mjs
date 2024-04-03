@@ -140,17 +140,11 @@ const getSingleActivePetId = async( ownerId ) => {
   }
 }
 
-const getRefreshToken = async(identifier) => {
+const getRefreshToken = async(ownerId) => {
   try{
-    //if(typeof identifier == 'number'){
-      const result = await pool.query(sqlText.getRefreshTokenFromOwnerIdText, [ identifier ])
-      console.log('Get refresh token query result: ', result)
-      return result.rows[0].refresh_token
-    // }else{
-    //   const result = await pool.query(sqlText.getRefreshTokenFromUsernameText, [ ownerId ])
-    //   console.log('Get refresh token query result: ', result)
-    //   return result.rows[0].refresh_token
-    // }
+    const result = await pool.query(sqlText.getRefreshTokenFromOwnerIdText, [ ownerId ])
+    console.log('Get refresh token query result: ', result)
+    return result.rows[0].refresh_token
   }catch(e){
     return null
   }

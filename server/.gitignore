@@ -4,3 +4,4 @@ rest
 .env
 archivedCode.mjs
 restTests
+jwtTests

@@ -8,6 +8,8 @@ import verifyRefreshToken from '../middleware/verifyRefreshToken.mjs'
 import postProcessing from '../middleware/postProcessing.mjs'
 import cookieParser from 'cookie-parser'
 import util from 'util'
+import RefreshTokenMismatchError from '../errors/RefreshTokenMismatchError.js'
+import nullRefreshTokenError from '../errors/nullRefreshTokenError.mjs'
 
 
 const router = express.Router()
@@ -29,6 +31,42 @@ router.use(cookieParser())
 router.get('/logout', (req,res) => {
   res.clearCookie('jwt')
   return res.send('Cleared')
+})
+
+router.get('/refreshAccessToken', async (req,res) => {
+  // Validate refresh token
+  const refreshToken = req.cookies.jwt
+  if(!refreshToken) return res.status(400).json({ error: nullRefreshTokenError('Refresh token missing.')})
+  const refreshSecret = process.env.REFRESH_SECRET
+  const accessSecret = process.env.ACCESS_SECRET
+  try{
+    // Verify and decode JWT
+    const decodedJwt = jwt.verify(refreshToken,refreshSecret)
+    // Capture ownerId from token payload
+    const { ownerId } = decodedJwt
+    // Compare refresh token to what is saved in DB for this specific account
+    const storedRefreshToken = await queries.getRefreshToken(ownerId)
+    const compareRefreshTokens = refreshToken == storedRefreshToken
+    if(compareRefreshTokens){
+      // Generate new access token
+      const newAccessToken = jwt.sign({ ownerId }, accessSecret,{ expiresIn: '15m' })
+      // Send the new access token and a HTTP status of 200    
+      return res.status(200).json({newAccessToken}) 
+    }else{
+      console.log('Compare refresh token returned FALSE')
+      throw new RefreshTokenMismatchError('Tokens don\'t match')
+    }  
+  } catch(err){
+      if(err instanceof jwt.TokenExpiredError){
+        return res.status(401).json({ err })
+      }else if(err instanceof jwt.JsonWebTokenError && err.message == 'invalid signature'){
+        return res.status(403).json({ err })
+      }else if(err instanceof RefreshTokenMismatchError){
+        return res.status(401).json({ err })
+      }else{
+        return res.status(400).json({error: "Undesignated error"})
+      }
+  }
 })
 
 router.get('/checkLoginSession', async(req,res) => {
