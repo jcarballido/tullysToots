@@ -40,8 +40,6 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
     setDailyActivity(Array.from(dateMap))
   },[dateMap])
 
-  console.log('dailyActivity in activity carousel: ', dailyActivity)
-
   const nextCard = (e) => {
     e.preventDefault()
     setCurrentIndex((prevIndex) => prevIndex + 1);
@@ -76,7 +74,6 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
         >
           {dailyActivity ? 
             dailyActivity.map(([dateString, activityArray],index) => {
-              console.log('dateString: ', dateString)
               return (
                 <div
                   key={dateString}

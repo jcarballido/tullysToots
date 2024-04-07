@@ -6,12 +6,13 @@ import {
 import useAuth from '../hooks/useAuth'
 import ActivityCarousel from '../components/ActivityCarousel'
 import PetSelector from '../components/PetSelector'
-import axios from '../api/axios'
+import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import timestampParser from '../util/timestampParser'
 
 const Activity = () => {
 
   const { auth } = useAuth()
+  const axiosPrivate = useAxiosPrivate()
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData()
 
@@ -28,8 +29,8 @@ const Activity = () => {
       try{
         const timeWindow = { daysBefore:7, daysAfter:7 }
 
-        const response = await axios
-          .post('/activity/get', { referencePetId:JSON.stringify(referencePetId), referenceDate, timeWindow },{ headers: {authorization:auth.accessToken}})
+        const response = await axiosPrivate
+          .post('/activity/get', { referencePetId:JSON.stringify(referencePetId), referenceDate, timeWindow })
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
         console.log(rawActivity)
@@ -48,7 +49,7 @@ const Activity = () => {
     }
     const getSinglePetId = async() => {
       try{
-        const response = await axios.get('/account/getSinglePetId',{ headers: {authorization:auth.accessToken}})
+        const response = await axiosPrivate.get('/account/getSinglePetId')
         setReferencePetId(response.data.singlePetId)
       }catch(e){
         console.log(e)
@@ -88,37 +89,8 @@ const Activity = () => {
   },[activity])
 
   const sendAxiosRequest = async() => {
-    const one = axios.interceptors.request.use( (config) => {
-      return config
-    }, (error) => {
-      console.log('Line 94 error: ',error)
-      return Promise.reject(error)
-    })
-
-    const two = axios.interceptors.response.use( (response) => {
-      console.log('Successful response was received, received: ', response);
-      return response
-    }, (error) => {
-      if(error.response.status == 400){
-        console.log(`Status code received: ${error.response.status}`)
-      }else if(error.response.status == 401){
-        console.log(`Status code received: ${error.response.status} `)
-        const originalRequest = error.config
-        console.log('Original data: ',JSON.parse(originalRequest.data))
-        const originalData = JSON.parse(originalRequest.data)
-        originalData['someMissingProperty'] = true
-        originalRequest.data = originalData
-        console.log('Modified request: ', originalRequest)
-        return axios(originalRequest)
-      }
-      return Promise.reject(error)
-    })
-    const sumn = await axios
-      .post('/activity/testInterceptor',{ someData:[1,2,3] })
-
-    axios.interceptors.request.eject(one)
-    axios.interceptors.response.eject(two)
-      
+    const response = await axiosPrivate.get('/activity/testInterceptor')
+    console.log('Response from axiosPrivate request: ', response)  
   }
 
   return(

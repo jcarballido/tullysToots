@@ -87,8 +87,6 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
     <div className='bg-red-600 h-full w-full flex flex-col items-center'>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
       { records.map( record => {
-        console.log('record: ', record)
-        console.log('record.activity_id: ', record.activity_id)
         return (
         <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
           {record.pet_id}

@@ -1,10 +1,10 @@
 import React from 'react'
 import useAuth from '../hooks/useAuth'
-import axios from '../api/axios'
+import {axiosPrivate} from '../api/axios'
 
 function AccountNavigation({ slide, setSlide }) {
 
-  const { auth, setAuth } = useAuth() 
+  const { setAuth } = useAuth() 
 
   const handleClose = (e) => {
     e.preventDefault()
@@ -12,11 +12,11 @@ function AccountNavigation({ slide, setSlide }) {
   }
   const handleLogout = (e) => {
     e.preventDefault()
-    axios
+    axiosPrivate
       .get('/account/logout')
       .then( res => {
         console.log(res)
-        return setAuth(prev => {return {...prev, isLoggedIn:false}})
+        return setAuth(prev => {return {...prev, accessToken:null, isLoggedIn:false}})
       }).catch( e => console.log(e))
   }
 

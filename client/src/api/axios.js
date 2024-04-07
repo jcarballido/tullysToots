@@ -6,7 +6,7 @@ export default axios.create({
   baseURL
 })
 
-// export const axiosPrivate = axios.create({
-//   baseURL,
-//   withCredentials: true
-// })
+export const axiosPrivate = axios.create({
+  baseURL,
+  withCredentials: true
+})

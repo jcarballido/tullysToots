@@ -10,8 +10,8 @@ import {
   useLoaderData,
   useSearchParams
 } from "react-router-dom";
-import axios from '../api/axios.js'
-import ErrorMessage from "../components/ErrorMessage.js";
+import { axiosPrivate } from '../api/axios.js'
+// import ErrorMessage from "../components/ErrorMessage.js";
 
 const Login = () => {
   const { auth, setAuth } = useAuth();
@@ -22,22 +22,21 @@ const Login = () => {
   const invitationToken = searchParams.get("invite")
   const [ error, setError ] = useState(null)
 
-    useEffect(() => {
-      if( loaderData.isLoggedIn ){
-        const { accessToken, isLoggedIn } = loaderData
-        setAuth({ accessToken,isLoggedIn })
-        console.log('Loader data successful, accessToken: ', accessToken,' ,isLoggedIn true? ', isLoggedIn)
-      }
-    }, [])
+  useEffect(() => {
+    const { accessToken, isLoggedIn, error } = loaderData
+    error 
+    ? setAuth({ accessToken:null, isLoggedIn:false })
+    : setAuth({ accessToken,isLoggedIn })
+  }, [])
   
-    useEffect(() => {
-      if( actionData?.isLoggedIn ){
-        const { accessToken, isLoggedIn } = actionData
-        setAuth({ accessToken, isLoggedIn })
-      } else if(actionData?.error) {
-        setError(actionData.error)
-      }
-    }, [actionData])
+  useEffect(() => {
+    if( actionData?.isLoggedIn ){
+      const { accessToken, isLoggedIn } = actionData
+      setAuth(prev => {return {...prev, accessToken, isLoggedIn }})
+    } else if(actionData?.error) {
+      setError(actionData.error)
+    }
+  }, [actionData])
 
   useEffect(() => {
     auth?.isLoggedIn 
@@ -94,31 +93,31 @@ const Login = () => {
 
 //Need to handle response for wrong credentials
 export const action = async ({ request }) => {
-  // Parse request for username and password from fom submission
+  // Parse request for username and password from form submission
   const formData = await request.formData();
   const username = formData.get("username");
   const password = formData.get("password");
-  // Package credentials to send backend
+  // Package credentials to send to backend
   const credentials = { username, password };
   // Send to backend for verification; Expect to get back an access token
   try{
-    const response = await axios
+    const response = await axiosPrivate
     .post('/account/sign-in', credentials)
-    const accessToken = response.data.detail
+    const accessToken = response.data.accessToken
     return { accessToken, isLoggedIn: true }
   }catch(e){
     const error = e.response
-    return { isLoggedIn: false, error }
+    return { error:error.data.error }
   }
 }
 
 export const loader = async () => {
   try{
-    const response = await axios.get('/account/checkLoginSession')
-    const { accessToken } = response.data
+    const response = await axiosPrivate.get('/account/checkLoginSession')
+    const accessToken = response.data.accessToken
     return { accessToken, isLoggedIn:true }
   }catch(e){
-    return e
+    return {error: e.response}
   }
 }
 
