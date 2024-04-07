@@ -30,13 +30,13 @@ router.use(cookieParser())
 
 router.get('/logout', (req,res) => {
   res.clearCookie('jwt')
-  return res.send('Cleared')
+  return res.status(200).send('Cleared')
 })
 
 router.get('/refreshAccessToken', async (req,res) => {
   // Validate refresh token
   const refreshToken = req.cookies.jwt
-  if(!refreshToken) return res.status(400).json({ error: nullRefreshTokenError('Refresh token missing.')})
+  if(!refreshToken) return res.status(400).json({ error: new nullRefreshTokenError('Refresh token missing.')})
   const refreshSecret = process.env.REFRESH_SECRET
   const accessSecret = process.env.ACCESS_SECRET
   try{
@@ -49,7 +49,7 @@ router.get('/refreshAccessToken', async (req,res) => {
     const compareRefreshTokens = refreshToken == storedRefreshToken
     if(compareRefreshTokens){
       // Generate new access token
-      const newAccessToken = jwt.sign({ ownerId }, accessSecret,{ expiresIn: '15m' })
+      const newAccessToken = jwt.sign({ ownerId }, accessSecret,{ expiresIn: '10s' })
       // Send the new access token and a HTTP status of 200    
       return res.status(200).json({newAccessToken}) 
     }else{
@@ -71,17 +71,17 @@ router.get('/refreshAccessToken', async (req,res) => {
 
 router.get('/checkLoginSession', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  console.log('Refresh token recieved: ', refreshToken)
   if( !refreshToken ) return res.status(401).json({ detail:'New session' })
   const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
   if( decodedJwt instanceof Error ){
+    console.log('decodedJwt returned an error')
     return res.status(401).json({ detail:'Session expired. Login required.' })
   }else{
+    console.log('decodedJwt: ', decodedJwt)
     const accessSecret = process.env.ACCESS_SECRET
     const ownerId = decodedJwt.ownerId
-    const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
+    const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'10s' })
     return res.status(200).json({ accessToken })
-
   }
 })
 
@@ -134,32 +134,31 @@ router.post('/sign-up', async(req,res) => {
 
 router.post('/sign-in', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(401).json({ detail :'User is currently logged in' })
+  if(refreshToken) return res.status(401).json({ error :'User is currently logged in' })
   // Extract email and password from req.body 
   const { username, password } = req.body
-  // Confirm user is registered; NEED TO CREATE UserQueries SERVICE
+  // Confirm user is registered
   const ownerId = await queries.getOwnerId('username',username)
-  if(!ownerId) return res.status(401).json({ detail:'User does not exist'})
+  if(!ownerId) return res.status(401).json({ error:'User does not exist'})
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
   // Check password
   const passwordMatch = await bcrypt.compare(password, passwordHash)
-  console.log('Account Router Line 75:', passwordMatch)
   // If passwords match:
-  if(passwordMatch === true){
+  if(passwordMatch){
     const accessSecret = process.env.ACCESS_SECRET
     const refreshSecret = process.env.REFRESH_SECRET
     // Create access token
-    const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '15m'})
+    const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '10s'})
     // Create refresh token 
-    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d'})
+    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:60})
     // Set refresh token cookie
-    const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14 // ms/s * s/min * min/hr * hrs/day * num. days
+    const refreshTokenMaxAge = 1000 * 60 // ms/s * s/min * min/hr * hrs/day * num. days
     res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
     const result = await queries.setNewRefreshToken(refreshToken,ownerId)
     if(!result) {
       console.log('Result from attempting to set new refresh token on sign-in')
-      return res.send('ERROR: Could not update refresh token on sign-in')
+      return res.status(400).json({error: 'Could not update refresh token on sign-in'})
     }
     const invitationToken = req.query.invitationToken
     if(invitationToken){
@@ -173,10 +172,10 @@ router.post('/sign-in', async(req,res) => {
       }
     }else{
       // Send access token
-      return res.json({accessToken})
+      return res.status(200).json({ accessToken })
     }
   }else{
-    return res.json( {detail: 'Wrong credentials'})
+    return res.status(400).json({ error: 'Wrong credentials' })
   }
 })
 
@@ -395,60 +394,7 @@ router.get('/invitation', async(req,res) => {
   // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
 
-router.get('/refreshAccessToken', (req,res) => {
-  const checkExpiration = (token) => {
-    const payload = jwt.decode(token)
-    return payload.exp < (Date.now() / 1000) // Date.now() must be converted to seconds 
-  }
-  // Validate refresh token
-  const refreshToken = req.cookies.jwt
-  const secret = process.env.REFRESH_SECRET
-  try{
-    const decodedJwt = jwt.verify(refreshToken,secret)
-    // CHORE: Update response
-    // return decodedJwt
-  }catch(err){
-    // Determine if the access token is expired.
-    const expiredRefreshToken = checkExpiration(refreshToken)
-    // If the access token is expired, confirm existence of and valdiate the refresh token.
-    if(expiredAccessToken){
-        // If a refresh token is not present, send a custom error.
-        if(!refreshToken){
-          return res.status(401).json({error: new nullRefreshTokenError('Refresh token was not provided; Requires sign-in')}) // Handled by frontend
-        }
-        console.log('The access token was expired. Checking to see if refresh token is valid...')
-        const refreshTokenValidation = validateToken(refreshToken, 'refresh')
-        // Return any error given after validation.
-        if(refreshTokenValidation instanceof Error){
-          const expiredRefreshToken = checkExpiration(refreshToken)
-          if(expiredRefreshToken){
-            console.log('Refresh token was not valid; expired. Error returned to client.')
-            return res.status(401).json({error: new Error('Refresh token is expired; Requires sign-in')}) // Handled by frontend
-          }else{
-            console.log('Refresh token was not valid; tampered with. Error pushed to error handler in server.')
-            return next(new invalidSignatureError('Invalid signature present on refresh token')) // Additional action required
-          }
-        }
-        else req.refToken = refreshToken
-        // Trigger the need for a new access token and refresh token.
-        
-        // req.refreshTokenVerification = true
-        // req.currentRefreshToken = refreshToken
-        // req.tokenPayload = refreshTokenValidation
-        // console.log('The access token was expired. Will pass the following data to the refresh token middleware...')
-        // console.log('refresh token verification: ', req.refreshTokenVerification)
-        // console.log('current refresh token: ', req.currentRefreshToken)
-        // console.log('refresh token payload: ', req.tokenPayload)
-        // return next()
-    }else{
-      // return next(new invalidSignatureError('Invalid signature present on access token')) // Additional action required
-    }
-    return res.status
-  }
-})
-
 router.use(verifyAccessToken)
-router.use(verifyRefreshToken)
 
 router.get('/getSinglePetId', async(req, res)=>{
   const ownerId=req.ownerId
@@ -672,3 +618,55 @@ router.use((error,req,res,next) => {
 })
 
 export default router
+
+// router.get('/refreshAccessToken', (req,res) => {
+//   const checkExpiration = (token) => {
+//     const payload = jwt.decode(token)
+//     return payload.exp < (Date.now() / 1000) // Date.now() must be converted to seconds 
+//   }
+//   // Validate refresh token
+//   const refreshToken = req.cookies.jwt
+//   const secret = process.env.REFRESH_SECRET
+//   try{
+//     const decodedJwt = jwt.verify(refreshToken,secret)
+//     // CHORE: Update response
+//     // return decodedJwt
+//   }catch(err){
+//     // Determine if the access token is expired.
+//     const expiredRefreshToken = checkExpiration(refreshToken)
+//     // If the access token is expired, confirm existence of and valdiate the refresh token.
+//     if(expiredAccessToken){
+//         // If a refresh token is not present, send a custom error.
+//         if(!refreshToken){
+//           return res.status(401).json({error: new nullRefreshTokenError('Refresh token was not provided; Requires sign-in')}) // Handled by frontend
+//         }
+//         console.log('The access token was expired. Checking to see if refresh token is valid...')
+//         const refreshTokenValidation = validateToken(refreshToken, 'refresh')
+//         // Return any error given after validation.
+//         if(refreshTokenValidation instanceof Error){
+//           const expiredRefreshToken = checkExpiration(refreshToken)
+//           if(expiredRefreshToken){
+//             console.log('Refresh token was not valid; expired. Error returned to client.')
+//             return res.status(401).json({error: new Error('Refresh token is expired; Requires sign-in')}) // Handled by frontend
+//           }else{
+//             console.log('Refresh token was not valid; tampered with. Error pushed to error handler in server.')
+//             return next(new invalidSignatureError('Invalid signature present on refresh token')) // Additional action required
+//           }
+//         }
+//         else req.refToken = refreshToken
+//         // Trigger the need for a new access token and refresh token.
+        
+//         // req.refreshTokenVerification = true
+//         // req.currentRefreshToken = refreshToken
+//         // req.tokenPayload = refreshTokenValidation
+//         // console.log('The access token was expired. Will pass the following data to the refresh token middleware...')
+//         // console.log('refresh token verification: ', req.refreshTokenVerification)
+//         // console.log('current refresh token: ', req.currentRefreshToken)
+//         // console.log('refresh token payload: ', req.tokenPayload)
+//         // return next()
+//     }else{
+//       // return next(new invalidSignatureError('Invalid signature present on access token')) // Additional action required
+//     }
+//     return res.status
+//   }
+// })

@@ -5,23 +5,39 @@ import nullAccessTokenError from '../errors/nullAccesTokenError.mjs'
 import nullAdminError from '../errors/nullAdminPrivlidgesError.mjs'
 import invalidSignatureError from '../errors/invalidSignatureError.mjs'
 
-const validateToken = (token,tokenType = 'access') => {
-  const secret = tokenType == 'refresh' ? process.env.REFRESH_SECRET:process.env.ACCESS_SECRET
-  try{
-    const decodedJwt = jwt.verify(token,secret)
-    return decodedJwt
-  }catch(err){
-    return err
-  }
-}
+// const validateToken = (token,tokenType = 'access') => {
+//   const secret = tokenType == 'refresh' ? process.env.REFRESH_SECRET:process.env.ACCESS_SECRET
+//   try{
+//     const decodedJwt = jwt.verify(token,secret)
+//     return decodedJwt
+//   }catch(err){
+//     return err
+//   }
+// }
 
-const checkExpiration = (token) => {
-  const payload = jwt.decode(token)
-  return payload.exp < (Date.now() / 1000) // Date.now() must be converted to seconds 
-}
+// const checkExpiration = (token) => {
+//   const payload = jwt.decode(token)
+//   return payload.exp < (Date.now() / 1000) // Date.now() must be converted to seconds 
+// }
 
 const verifyAccessToken = (req,res,next) => {
+  console.log('VERIFYING ACCESS TOKEN')
   const accessToken = req.headers['authorization']
+  if(!accessToken) return res.status(400).json({error: new Error('Missing access token')})
+  const accessSecret = process.env.ACCESS_SECRET
+  try{
+    const decodeJwt = jwt.verify(accessToken, accessSecret)
+    console.log('Decoded JWT: ', decodeJwt)
+    const ownerId = decodeJwt.ownerId
+    if(!ownerId) return res.status(400).json({ error: new Error('Missing owner ID') })
+    req.ownerId = ownerId
+    next()
+  }catch(e){
+    console.log('ERROR VERIFYING: ', e)
+    return res.status(400).json({ error: e })
+  }
+
+  /*const accessToken = req.headers['authorization']
   // Confirm access token exists. If not, send a custom error.
   if(!accessToken) {
     req.accessTokenNotPresent = true
@@ -74,6 +90,6 @@ const verifyAccessToken = (req,res,next) => {
   req.refreshTokenVerification = false
   req.accessTokenPayload = accessTokenPayload
   console.log('An account request has been received and the access token was valid. Here is the token payload:',accessTokenPayload)
-  next()
+  next()*/
 }
 export default verifyAccessToken

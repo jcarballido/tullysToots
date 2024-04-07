@@ -4,19 +4,35 @@ import verifyAccessToken from "../middleware/verifyAccessToken.mjs";
 import verifyRefreshToken from "../middleware/verifyRefreshToken.mjs";
 import util from 'util'
 import cookieParser from 'cookie-parser'
+import jwt from 'jsonwebtoken'
 
 const router = express.Router();
 router.use(cookieParser())
 
-router.post('/testInterceptor', (req,res) => {
-  console.log('Request to "/activity/testInterceptor" received')
-  console.log(req.body);
-  if(!req.body.someMissingProperty) return res.status(401).send('Returned an error')
-  else return res.status(200).send(`someMissingProperty was present: ${req.body.someMissingProperty}`)
+router.get('/testInterceptor', (req,res) => {
+  console.log('VERIFYING ACCESS TOKEN')
+  const accessToken = req.headers['authorization']
+  console.log('Access token received: ', accessToken)
+  if(!accessToken) return res.status(400).json({error: new Error('Missing access token')})
+  const accessSecret = process.env.ACCESS_SECRET
+  try{
+    const decodeJwt = jwt.verify(accessToken, accessSecret)
+    console.log('Decoded JWT: ', decodeJwt)
+    const ownerId = decodeJwt.ownerId
+    console.log('ownerId: ', ownerId)
+    if(!ownerId) return res.status(400).json({ error: new Error('Missing owner ID') })
+    return res.status(200).json({ownerId})
+    // req.ownerId = ownerId
+    // next()
+  }catch(e){
+    console.log('ERROR VERIFYING: ', e)
+    console.log('Response sent err and staus code 400')
+    return res.status(400).json({ error: e })
+  } 
 })
 
 router.use(verifyAccessToken)
-router.use(verifyRefreshToken)
+// router.use(verifyRefreshToken)
 
 router.post("/get", async (req, res) => {
 
@@ -32,10 +48,7 @@ router.post("/get", async (req, res) => {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
-      console.log('Line 28: ', petId, referenceDate, timeWindow)
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindow);
-      console.log('activityRouter activityArray line 42: ',activityArray)
-
       const petIdArray = await queries.getOwnersPetIds(ownerId)
       return res.status(200).json({activityArray, petIdArray});
     } else {

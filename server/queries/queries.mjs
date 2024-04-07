@@ -133,7 +133,7 @@ const getOwnerIdFromEmail = async(email) => {
 const getSingleActivePetId = async( ownerId ) => {
   try{
     const result = await pool.query(sqlText.getSingleActivePetId, [ ownerId ])
-    console.log('Result from query: ',result)
+    // console.log('Result from query: ',result)
     return result.rows[0].pet_id
   }catch(e){
     return null
@@ -248,7 +248,7 @@ const deactivatePetOwnerLink = async( ownerId,petId ) => {
 
 const getOwnersPetIds = async(ownerId) => {
   const result = await pool.query(sqlText.getOwnersPetIdsText(), [ownerId])
-  console.log('getOwnersPetIds result: ', result)
+  // console.log('getOwnersPetIds result: ', result)
   const petIdsArr = result.rows.map(row => {return {id:row.pet_id, petName:row.pet_name}})
   // May not be needed
   // const filteredPetIdsArray = petIdsArr.filter( petId => !petId)
@@ -332,13 +332,13 @@ const getActivity = async(petId,targetDate, timeWindow) => {
     dateArray.push(newDate)
   }
   const result = await pool.query(sqlText.getActivityText(), [ petId, `${year}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
-  console.log('Queries result: ', result)
+  // console.log('Queries result: ', result)
   
   const data = result.rows
   // console.log('Line 342, data: ', data)
   const formattedData = dateArray.map( dateAsTimestamp => {
     const { year, monthIndex, date } = parse(dateAsTimestamp)
-    console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
+    // console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
     const filteredActivityArray = data.filter( activity => { 
       const activityDate = new Date(activity.set_on_at)
       return (
@@ -491,13 +491,13 @@ const checkExistingCredentials = async(username,email) => {
 
 const checkOwnerLink = async(ownerId,petId) => {
   try{
-    console.log(petId)
-    console.log('petId received in line 410 of queires.js: ', parseInt(petId))
+    // console.log(petId)
+    // console.log('petId received in line 410 of queires.js: ', parseInt(petId))
     const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
-    console.log('Result from checking owner link: ',result)
+    // console.log('Result from checking owner link: ',result)
     const petIdArray = result.rows.map( row => row.pet_id) 
-    console.log('petIdArray result: ', petIdArray)
-    console.log(petIdArray)
+    // console.log('petIdArray result: ', petIdArray)
+    // console.log(petIdArray)
     // const convertToNumber = Number(petId)
     return petIdArray.includes(parseInt(petId))
   }catch(e){
