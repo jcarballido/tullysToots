@@ -1,10 +1,11 @@
 import React, {  useEffect, useState } from 'react'
 import ActivityCard from './ActivityCard'
 import timestampParser from '../util/timestampParser.js'
-import axios from '../api/axios.js';
+import useAxiosPrivate from '../hooks/useAxiosPrivate.js';
 
 const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, referenceDate, setReferenceDate }) => {
 
+  const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState(7);
   const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
   const [ dailyActivity, setDailyActivity ] = useState([])
@@ -23,7 +24,13 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
           daysBefore:3, 
           daysAfter:0
         }
-        const response = await axios.post('/activity/getPastActivity',{referencePetId, referenceDate:new Date(referenceDate), timeWindow})
+        const parameters = {
+          referencePetId:JSON.stringify(referencePetId), 
+          referenceDate, 
+          timeWindow
+        }
+        const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
+        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
         const newActivity = response.data
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)

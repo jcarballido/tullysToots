@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import DateComponent from './Date'
+import Record from './Record'
 import timestampParser from '../util/timestampParser'
-import axios from '../api/axios'
+import useAxiosPrivate from '../hooks/useAxiosPrivate'
 
 function ActivityCard({ index, dateString, activityArray, activityMap, setActivity, referencePetId }) {
   // dailyActivity: [ [dateString1,activityArray1],[dateString2, activityArray2],... ] (derived from 'dateMap')
   // activityArray: [id1,id2,id3,...] 
   // activityMap: { id1:{...details1}, id2:{...details2},... }
+  const axiosPrivate = useAxiosPrivate()
   const records = activityArray.map( id => activityMap.get(id))
 
   // const [ records, setRecords ] = useState([])
@@ -27,7 +29,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   const addActivity = (e) => {
     e.preventDefault()
     setNewActivity( prevNewActivity => {
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(), pee:true,poo:true}]
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(), pee:'Pee',poo:'Poo'}]
     })
   }
 
@@ -44,7 +46,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   const sendNewActivity = async (e) => {
     e.preventDefault()
     try{
-      const response = await axios.post('/activity/add', {referencePetId, referenceDate:dateString})
+      const response = await axiosPrivate.post('/activity/add', {referencePetId, referenceDate:dateString})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
       const referenceDateActivity = response.data
       setActivity(prevActivity => {
@@ -99,7 +101,8 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
         </div>
       )})}
       { newActivity.map( record => {
-        console.log('record.newId: ',record.newId)
+        const { convertedHour, minutes, meridian } = timestampParser(record.setOnAt)
+        const [ time, setTime ] = useState(`${convertedHour}:${minutes} ${meridian}`)
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
             <button onClick={sendNewActivity}>
@@ -108,6 +111,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
             <button onClick={(e) => deleteNewActivity(e,record.newId)} >
               CANCEL
             </button>
+            <Record pee={!!record.pee} poo={!!record.poo} time={time} />
           </div>
         )
       })}

@@ -25,12 +25,16 @@ const Activity = () => {
 
   useEffect( () => {
     const getActivity = async() => {
+      const timeWindow = { daysBefore:7, daysAfter:7 }
+      const parameters = {
+        referencePetId:JSON.stringify(referencePetId), 
+        referenceDate, 
+        timeWindow
+      }
+      const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
       // Fetch activity for the reference date and pet ID
       try{
-        const timeWindow = { daysBefore:7, daysAfter:7 }
-
-        const response = await axiosPrivate
-          .post('/activity/get', { referencePetId:JSON.stringify(referencePetId), referenceDate, timeWindow })
+        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
         console.log(rawActivity)
@@ -95,7 +99,7 @@ const Activity = () => {
 
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
-      <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button>
+      {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
       <ActivityCarousel dateMap={dateMap} activityMap={activityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>

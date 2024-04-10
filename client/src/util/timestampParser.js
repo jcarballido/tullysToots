@@ -14,13 +14,30 @@ const timestampParser = (referenceTimestamp) => {
     const date = convertedDate.getDate()
     const dayIndex = convertedDate.getDay()
     const dayName = dayNames[dayIndex]
+    const hour = convertedDate.getHours()
+    const minutes = convertedDate.getMinutes()
+
+    const convertHour = (hour24HFormat) => {
+      if(hour24HFormat > 12){
+        return { convertedHour:(hour24HFormat-12), meridianString:'PM'}
+      }else{
+        return { convertedHour:hour24HFormat, meridianString:'AM'}
+      }
+    }
+
+    const { convertedHour, meridianString } = convertHour(hour)
+
     return {
       year:fullYear,
       monthIndex,
       monthName,
       date,
       dayIndex,
-      dayName
+      dayName,
+      hour,
+      convertedHour,
+      minutes,
+      meridian:meridianString
     }
   }
 
@@ -38,6 +55,10 @@ const timestampParser = (referenceTimestamp) => {
     monthIndex: referenceDateParsed.monthIndex,
     date: referenceDateParsed.date,
     dayName:referenceDateParsed.dayName,
+    hour: referenceDateParsed.hour,
+    convertHour: referenceDateParsed.convertedHour,
+    minutes: referenceDateParsed.minutes,
+    meridian: referenceDateParsed.meridianString,
     isToday,
     isYesterday
   }
