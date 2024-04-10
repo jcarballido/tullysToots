@@ -34,15 +34,15 @@ router.get('/testInterceptor', (req,res) => {
 router.use(verifyAccessToken)
 // router.use(verifyRefreshToken)
 
-router.post("/get", async (req, res) => {
-
+router.get("/get", async (req, res) => {
 
   const ownerId = req.ownerId;
-  
-  const petIdString = req.body.referencePetId.replace(/^"|"$/g, '');
+  const encodedData = req.query.data
+  if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
+  const decodedData = JSON.parse(decodeURIComponent(encodedData))
+  const { referencePetId, referenceDate, timeWindow } = decodedData
+  const petIdString = referencePetId.replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
-  const referenceDate = req.body.referenceDate;
-  const timeWindow = req.body.timeWindow
 
   if (petId) {
     // Confirm active link between owner and pet.

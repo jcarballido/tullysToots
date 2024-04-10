@@ -149,11 +149,11 @@ router.post('/sign-in', async(req,res) => {
     const accessSecret = process.env.ACCESS_SECRET
     const refreshSecret = process.env.REFRESH_SECRET
     // Create access token
-    const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '10s'})
+    const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '15m'})
     // Create refresh token 
-    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:60})
+    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn: '3d' })
     // Set refresh token cookie
-    const refreshTokenMaxAge = 1000 * 60 // ms/s * s/min * min/hr * hrs/day * num. days
+    const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 3 // ms/s * s/min * min/hr * hrs/day * num. days
     res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
     const result = await queries.setNewRefreshToken(refreshToken,ownerId)
     if(!result) {
