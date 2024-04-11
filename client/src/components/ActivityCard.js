@@ -11,20 +11,10 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   const axiosPrivate = useAxiosPrivate()
   const records = activityArray.map( id => activityMap.get(id))
 
-  // const [ records, setRecords ] = useState([])
   const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
 
   const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
-
-  // records: [ {details1},{details2},... ]
-  // details: {activity_id:1, pee: true, poo: false, set_on_at:'2024-10-23',set_by:'hp017'}
-
-  // useEffect( () => {
-  //   if(activityArray){
-  //     setRecords(activityArray.map( id => activityMap.get(id)))
-  //   }
-  // },[activityArray])
 
   const addActivity = (e) => {
     e.preventDefault()
@@ -90,28 +80,23 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
       { records.map( record => {
         return (
-        <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
-          {record.pet_id}
-          {updateEnabled
-            ? <button onClick={deleteExistingActivity}>
-                DELETE
-              </button>
-            : null
-          }   
-        </div>
-      )})}
+          <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
+            {record.pet_id}
+            {updateEnabled
+              ? <button onClick={deleteExistingActivity}>
+                  DELETE
+                </button>
+              : null
+            }   
+          </div>
+        )      
+      })}
       { newActivity.map( record => {
         const { convertedHour, minutes, meridian } = timestampParser(record.setOnAt)
         const [ time, setTime ] = useState(`${convertedHour}:${minutes} ${meridian}`)
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <button onClick={sendNewActivity}>
-              SAVE
-            </button>
-            <button onClick={(e) => deleteNewActivity(e,record.newId)} >
-              CANCEL
-            </button>
-            <Record pee={!!record.pee} poo={!!record.poo} time={time} />
+            <Record record={record} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} />
           </div>
         )
       })}
