@@ -17,15 +17,27 @@ const timestampParser = (referenceTimestamp) => {
     const hour = convertedDate.getHours()
     const minutes = convertedDate.getMinutes()
 
+    const convertMinutes = (minute) => {
+      if(minute < 10){
+        return `0${minute}`
+      }else{
+        return `${minute}`
+      }
+    }
+
     const convertHour = (hour24HFormat) => {
       if(hour24HFormat > 12){
-        return { convertedHour:(hour24HFormat-12), meridianString:'PM'}
+        const hour12HFormat = hour24HFormat - 12
+        const hourPadded = hour12HFormat < 10 ? `0${hour12HFormat}`:`${hour12HFormat}`
+        return { convertedHour:hourPadded, meridianString:'PM'}
       }else{
-        return { convertedHour:hour24HFormat, meridianString:'AM'}
+        const hourPadded = hour24HFormat < 10 ? `0${hour24HFormat}`:`${hour24HFormat}`
+        return { convertedHour:hourPadded, meridianString:'AM'}
       }
     }
 
     const { convertedHour, meridianString } = convertHour(hour)
+    const convertedMinute = convertMinutes(minutes)
 
     return {
       year:fullYear,
@@ -37,6 +49,7 @@ const timestampParser = (referenceTimestamp) => {
       hour,
       convertedHour,
       minutes,
+      convertedMinute,
       meridian:meridianString
     }
   }
@@ -56,9 +69,10 @@ const timestampParser = (referenceTimestamp) => {
     date: referenceDateParsed.date,
     dayName:referenceDateParsed.dayName,
     hour: referenceDateParsed.hour,
-    convertHour: referenceDateParsed.convertedHour,
+    convertedHour: referenceDateParsed.convertedHour,
     minutes: referenceDateParsed.minutes,
-    meridian: referenceDateParsed.meridianString,
+    convertedMinutes: referenceDateParsed.convertedMinute,
+    meridian: referenceDateParsed.meridian,
     isToday,
     isYesterday
   }

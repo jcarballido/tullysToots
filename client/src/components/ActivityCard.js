@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import DateComponent from './Date'
 import Record from './Record'
+import TimeModal from './TimeModal'
 import timestampParser from '../util/timestampParser'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 
@@ -13,6 +14,8 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
 
   const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
+  const [ timeModalVisible, setTimeModalVisible ] = useState(false)
+
 
   const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
 
@@ -74,9 +77,10 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
     setUpdateEnabled(false)
   }
 
-
+  console.log('Activity Card newActivity array: ', newActivity)
   return(
-    <div className='bg-red-600 h-full w-full flex flex-col items-center'>
+    <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
+      <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
       { records.map( record => {
         return (
@@ -92,11 +96,9 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
         )      
       })}
       { newActivity.map( record => {
-        const { convertedHour, minutes, meridian } = timestampParser(record.setOnAt)
-        const [ time, setTime ] = useState(`${convertedHour}:${minutes} ${meridian}`)
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <Record record={record} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} />
+            <Record record={record} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModalVisible={setTimeModalVisible} />
           </div>
         )
       })}
