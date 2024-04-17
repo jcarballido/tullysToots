@@ -6,6 +6,7 @@ const TimeModal = ({ newActivity, setNewActivity, timeModalVisible, setTimeModal
   const [ hour,setHour ] = useState('06')
   const [ minutes,setMinutes ] = useState('00')
   const [ meridian, setMeridian ] = useState('AM')
+  const [ timeSet, setTimeSet ] = useState(true)
 
   useEffect( () => {
     const record = newActivity[0]
@@ -32,19 +33,22 @@ const TimeModal = ({ newActivity, setNewActivity, timeModalVisible, setTimeModal
   }
   const handleMinuteBlur = () => {
     if(minutes < 10) setMinutes(`0${parseInt(minutes)}`)
+    setTimeSet(true)
   }
   const handleHourBlur = () => {
     if(hour < 10 && hour != 0) setHour(`0${parseInt(hour)}`)
     else if (hour < 10 && hour == 0) setHour('12')
+    setTimeSet(true)
   }
   
   const handleChange = (e) => {
     const value = e.target.value
     console.log('TimeModal value: ', value)
     setMeridian(value)
-  }
+  }  
   
-  const handleTimeSet = () => {
+  const handleTimeSet = (e) => {
+    e.preventDefault()
     setNewActivity( prevNewActivity => {
       const recordId = prevNewActivity[0]?.newId
       // console.log('TimeModal record ID: ', recordId)
@@ -56,7 +60,8 @@ const TimeModal = ({ newActivity, setNewActivity, timeModalVisible, setTimeModal
           console.log('Record ID match; update made')
           const recordTimestamp = newRecord.setOnAt
           const { year, monthIndex, date } = timestampParser(recordTimestamp)
-          const adjustedHour = meridian == 'PM'? (hour+12) : hour
+          const adjustedHour = meridian == 'PM'? `${parseInt(hour)+12}` : hour
+          console.log('Time Modal adjusted Hour : ',adjustedHour)
           // const updatedTimestamp = 'year-month-day HH:MM'
           newRecord['setOnAt'] = new Date(year,monthIndex,date,adjustedHour,minutes,0)
           return newRecord
@@ -65,17 +70,24 @@ const TimeModal = ({ newActivity, setNewActivity, timeModalVisible, setTimeModal
 
       return updatedNewActivity
     })
-    // setTimeModalVisible(false)
+    setTimeModalVisible(false)
   }
   const closeModal = () => {
     setTimeModalVisible(false)
   }
-  
+
+  const handleHourFocus =() => {
+    setTimeSet(false)
+  }
+
+  const handleMinutesFocus =() => {
+    setTimeSet(false)
+  }  
   return(
     <div className={`w-full h-full z-20 border-4 border-red-500 flex flex-col items-center justify-start absolute transform origin-center ${timeModalVisible ? 'backdrop-grayscale scale-100':'backdrop-grayscale-0 scale-0'}`}>
       <div className='w-3/4 h-3/4 flex items-center justify-center gap-2'>
-        <input type='text' value={hour} onChange={handleHourChange} className='w-1/4 border-2 border-blue-500' onBlur={handleHourBlur}/>
-        <input type='text'value={minutes} onChange={handleMinutesChange} className='w-1/4 border-2 border-blue-500' onBlur={handleMinuteBlur}/>
+        <input type='text' value={hour} onChange={handleHourChange} className='w-1/4 border-2 border-blue-500' onBlur={handleHourBlur} onFocus={handleHourFocus} />
+        <input type='text'value={minutes} onChange={handleMinutesChange} className='w-1/4 border-2 border-blue-500' onBlur={handleMinuteBlur} onFocus={handleMinutesFocus} />
         <label>
           <input type='radio' name='test' onChange={handleChange} value='AM' checked={ meridian == 'AM' } />
           AM
@@ -85,9 +97,9 @@ const TimeModal = ({ newActivity, setNewActivity, timeModalVisible, setTimeModal
           
       </div>   
       <div className='flex justify-center items-center gap-4'>
-        <div onClick={handleTimeSet}>
+        <button onClick={handleTimeSet} disabled={!timeSet} className={` bg-yellow-500 disabled:bg-red-700`}>
           OK  
-        </div>
+        </button>
         <div onClick={closeModal}>
           CANCEL  
         </div>

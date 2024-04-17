@@ -19,10 +19,16 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
 
   const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
 
+  /*
+  const { hour,convertedMinutes } = timestampParser(currentTimestamp)
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(`${dateString} ${hour}:${convertedMinutes}`), pee:'Pee',poo:'Poo'}
+  */
+
   const addActivity = (e) => {
     e.preventDefault()
     setNewActivity( prevNewActivity => {
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(), pee:'Pee',poo:'Poo'}]
+      const { hour, convertedMinutes } = timestampParser(new Date())
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(`${dateString} ${hour}:${convertedMinutes}`), pee:true, poo: true}]
     })
   }
 
@@ -39,7 +45,12 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   const sendNewActivity = async (e) => {
     e.preventDefault()
     try{
-      const response = await axiosPrivate.post('/activity/add', {referencePetId, referenceDate:dateString})
+      const activity = {
+        pee:newActivity[0].pee,
+        poo:newActivity[0].poo
+      }
+      const newActivityTimestamp = newActivity[0].setOnAt
+      const response = await axiosPrivate.post('/activity/add', {referencePetId, referenceDate:newActivityTimestamp, activity})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
       const referenceDateActivity = response.data
       setActivity(prevActivity => {
@@ -77,7 +88,6 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
     setUpdateEnabled(false)
   }
 
-  console.log('Activity Card newActivity array: ', newActivity)
   return(
     <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
       <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
@@ -98,14 +108,18 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
       { newActivity.map( record => {
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <Record record={record} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModalVisible={setTimeModalVisible} />
+            <Record record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModalVisible={setTimeModalVisible} />
           </div>
         )
       })}
       <div className='flex justify-center items-center border-black border-2'>
       { updateEnabled
         ? <button onClick={addActivity} className='border-2 border-white rounded-xl'>CONFIRM</button>
-        : <div className='flex justify-center items-center'><button onClick={addActivity} className='border-2 border-white rounded-xl max-w-max '>ADD</button></div>
+        : <div className='flex justify-center items-center'>
+            <button onClick={addActivity} disabled={newActivity?.length > 0} className='border-2 border-white rounded-xl max-w-max disabled:bg-gray-700 disabled:text-white'>
+              ADD
+            </button>
+          </div>
       }
       { records.length > 0 
         ? updateEnabled
