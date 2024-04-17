@@ -95,7 +95,7 @@ router.post("/add", async (req, res) => {
 
   try{
     const result = await queries.getSingleDayActivity(petId, referenceDate); 
-    console.log('')
+    console.log('Result from querying single day activity: ', result)
     return res.status(200).json(result)
   }catch(e){
     return res.status(400).json({error:e})
