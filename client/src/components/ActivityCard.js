@@ -49,10 +49,11 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
         pee:newActivity[0].pee,
         poo:newActivity[0].poo
       }
-      const newActivityTimestamp = newActivity[0].setOnAt
+      const newActivityTimestamp = `${newActivity[0].setOnAt}`
       const response = await axiosPrivate.post('/activity/add', {referencePetId, referenceDate:newActivityTimestamp, activity})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
-      const referenceDateActivity = response.data
+      const referenceDateActivity = response.data[0]
+      console.log('*RECORD** response.data: ',referenceDateActivity)
       setActivity(prevActivity => {
         const updatedActivityArray = prevActivity.map( dailyActivityLog => {
           const dailyActivityDate = Object.keys(dailyActivityLog)[0]
@@ -92,7 +93,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
     <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
       <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
-      { records.map( record => {
+      { records?.map( record => {
         return (
           <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
             {record.pet_id}

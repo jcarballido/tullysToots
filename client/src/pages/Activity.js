@@ -65,7 +65,7 @@ const Activity = () => {
     }else{
       console.log('ReferencePetId detected, set state to: ', referencePetId)
       getActivity()
-      localStorage.setItem('referencePetId', referencePetId.toString())
+      localStorage.setItem('referencePetId', JSON.stringify(referencePetId))
     }
   },[referencePetId])
 
@@ -92,11 +92,6 @@ const Activity = () => {
 
   },[activity])
 
-  const sendAxiosRequest = async() => {
-    const response = await axiosPrivate.get('/activity/testInterceptor')
-    console.log('Response from axiosPrivate request: ', response)  
-  }
-
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
       {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
@@ -113,11 +108,11 @@ export const loader = async() => {
   let referenceDate = localStorage.getItem('referenceDate') || null
   if(!referenceDate){
     referenceDate = new Date()
-    localStorage.setItem('referenceDate', referenceDate.toLocaleString().split(',')[0])
+    localStorage.setItem('referenceDate', JSON.stringify(referenceDate.toLocaleString().split(',')[0]))
   }
 
   // Get exisiting reference pet ID from local storage or set to null
-  const referencePetId = localStorage.getItem('referencePetId') || null  
+  const referencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null  
   // if(!referencePetId) {
   //   const response = await axios
   //         .post('/activity/getSinglePetId', { referencePetId, referenceDate, timeWindow },{ headers: {authorization:auth.accessToken}})
