@@ -3,28 +3,60 @@ import sqlText from './sqlText.mjs'
 // import dotenv from 'dotenv/config'
 // import timestampParser from '../../client/src/util/timestampParser.js'
 import util from 'util'
+//import timestampParser from '../../client/src/util/timestampParser'
 
 const { Pool } = pg
 
 const pool = new Pool()
 
-const parse = (timestamp) => {
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-  const monthNames = ['January','February','March','April','May','June','July','August','Septemeber','October','November','Decemeber']
-  const convertedDate = new Date(timestamp)
+const parse = (timestamp) => {  
+  const timezoneCheck = /GMT/
+  const timestampWithoutOffset = timezoneCheck.test(timestamp) ? timestamp.substring(0, timestamp.lastIndexOf('GMT') - 1):timestamp;
+  const convertedDate = new Date(timestampWithoutOffset)
+  
   const fullYear = convertedDate.getFullYear()
   const monthIndex = convertedDate.getMonth()
-  const monthName = monthNames[monthIndex]
+  //const monthName = monthNames[monthIndex]
   const date = convertedDate.getDate()
   const dayIndex = convertedDate.getDay()
-  const dayName = dayNames[dayIndex]
+  //const dayName = dayNames[dayIndex]
+  const hour = convertedDate.getHours()
+  const minutes = convertedDate.getMinutes()
+
+  const convertMinutes = (minute) => {
+    if(minute < 10){
+      return `0${minute}`
+    }else{
+      return `${minute}`
+    }
+  }
+
+  const convertHour = (hour24HFormat) => {
+    if(hour24HFormat > 12){
+      const hour12HFormat = hour24HFormat - 12
+      const hourPadded = hour12HFormat < 10 ? `0${hour12HFormat}`:`${hour12HFormat}`
+      return { convertedHour:hourPadded, meridianString:'PM'}
+    }else{
+      const hourPadded = hour24HFormat < 10 ? `0${hour24HFormat}`:`${hour24HFormat}`
+      return { convertedHour:hourPadded, meridianString:'AM'}
+    }
+  }
+
+  const { convertedHour, meridianString } = convertHour(hour)
+  const convertedMinute = convertMinutes(minutes)
+
   return {
     year:fullYear,
     monthIndex,
-    monthName,
+    
     date,
     dayIndex,
-    dayName
+    
+    hour,
+    convertedHour,
+    minutes,
+    convertedMinute,
+    meridian:meridianString
   }
 }
 
@@ -45,7 +77,10 @@ const addPetOwnerLink = async(ownerId,petIdsArray) => {
 }
 
 const addActivity = async(petId, ownerId, timestampWithoutTZ, pee, poo) => {
-  const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestampWithoutTZ, pee, poo])
+  const { year,monthIndex,date,hour,minutes } = parse(timestampWithoutTZ)
+  const timestamp = `${year}-${monthIndex+1}-${date} ${hour}:${minutes}`
+  console.log('**Queries** addActivity timestamp: ', timestamp)
+  const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo])
   const data = result.rows[0]
   return data
 }
@@ -370,10 +405,10 @@ const getSingleDayActivity = async(petId,targetDate) => {
   console.log('Queries result: ', result)
   // START HERE; RESULT.ROWS IS UNDEFINED AS THE QUERY ABOVE IT ONLY RETURNS A SINGLE OBJECT
   const data = result.rows
-  // console.log('Line 342, data: ', data)
+  console.log('**Queries** getSingleDayActivity, data: ', data)
   const formattedData = dateArray.map( dateAsTimestamp => {
     const { year, monthIndex, date } = parse(dateAsTimestamp)
-    console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
+    console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
     const filteredActivityArray = data.filter( activity => { 
       const activityDate = new Date(activity.set_on_at)
       return (
@@ -505,6 +540,15 @@ const checkOwnerLink = async(ownerId,petId) => {
   }
 }
 
+const deleteActivityById = async (activityId) => {
+  try{
+    await pool.query(sqlText.deleteActivityByIdText, [activityId])
+    return 
+  }catch(e){
+    return e
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -536,6 +580,7 @@ export default {
   addOwner,
   addReceivingOwnerIdToInvitation,
   checkExistingCredentials,
-  checkOwnerLink
+  checkOwnerLink,
+  deleteActivityById
 }
 

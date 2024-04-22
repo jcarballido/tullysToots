@@ -239,6 +239,11 @@ const checkOwnerLinkText = `
   FROM pet_owners
   WHERE owner_id = $1 AND active = true
 `
+const deleteActivityByIdText = `
+  DELETE FROM activities
+  WHERE activity_id = $1
+`
+
 
 export default {
   insertIntoText,
@@ -265,7 +270,8 @@ export default {
   setResetAccessedAtTimestampText,
   setNewRefreshTokenText,
   updateInvitationToken,
-  checkOwnerLinkText
+  checkOwnerLinkText,
+  deleteActivityByIdText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
