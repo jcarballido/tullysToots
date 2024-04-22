@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import DateComponent from './Date'
 import Record from './Record'
 import TimeModal from './TimeModal'
+import ConfirmDeleteModal from './ConfirmDeleteModal'
 import timestampParser from '../util/timestampParser'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 
@@ -15,6 +16,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
   const [ timeModalVisible, setTimeModalVisible ] = useState(false)
+  const [ confirmationModalVisibility, setConfirmationModalVisibility ] = useState(false)
 
 
   const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
@@ -66,13 +68,45 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
         })
         return updatedActivityArray
       })
+      setNewActivity(prevNewActivity => [])
     }catch(e){
       console.log(e)
     }
   }
 
-  const deleteActivity = (e) => {
-    e.preventDefault()
+  const deleteExistingActivity = async(event, activityId) => {
+    event.preventDefault()
+    // Send delete request
+    const parameters = {
+      activityId,
+      referenceDate:dateString,
+      referencePetId
+    }
+    const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
+    try{
+      const response = await axiosPrivate.delete(`/activity/delete?data=${encodedParameters}`)
+      const referenceDateActivity = response.data[0]
+      console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
+      setActivity(prevActivity => {
+        const updatedActivityArray = prevActivity.map( dailyActivityLog => {
+          const dailyActivityDate = Object.keys(dailyActivityLog)[0]
+          const referenceDate = Object.keys(referenceDateActivity)[0]
+          if(dailyActivityDate == referenceDate){
+            return referenceDateActivity
+          }else{
+            return dailyActivityLog
+          }
+        })
+        return updatedActivityArray
+      })
+      setConfirmationModalVisibility(prev => { return {visible:false,activityId:null}})
+      setUpdateEnabled(false)
+    }catch(e){
+      console.log('**Activity Card** Error deleting existing activity: ', e) 
+      setConfirmationModalVisibility(prev => { return {visible:false,activityId:null}})
+    }
+    // Get updated data for current date back
+    // Set activity state with new data
   }
 
   const updatedActivity = (e) => {
@@ -92,20 +126,24 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
   return(
     <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
       <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
+      <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
-      { records?.map( record => {
+      { activityArray.length > 0 ? records.map( record => {
+        console.log('**Line 131** record: ',record)
+        if(record){
         return (
           <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
             {record.pet_id}
             {updateEnabled
-              ? <button onClick={deleteExistingActivity}>
+              ? <button onClick={() => setConfirmationModalVisibility(prevDeletion => { return {visible:true,activityId:record.activity_id}})}>
                   DELETE
                 </button>
               : null
             }   
           </div>
-        )      
-      })}
+
+        ) }     
+      }):null}
       { newActivity.map( record => {
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>

@@ -79,7 +79,7 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
           className="flex w-screen transition-transform duration-300 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)`}}
         >
-          {dailyActivity ? 
+          {dailyActivity ?
             dailyActivity.map(([dateString, activityArray],index) => {
               return (
                 <div
@@ -88,8 +88,8 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
                 >
                   <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} />
                 </div>
-              )})
-          : null
+              )}):null
+          
         }
           
       </div>
