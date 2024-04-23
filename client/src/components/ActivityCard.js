@@ -5,8 +5,9 @@ import TimeModal from './TimeModal'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
 import timestampParser from '../util/timestampParser'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
+import ExisitingRecord from './ExisitingRecord'
 
-function ActivityCard({ index, dateString, activityArray, activityMap, setActivity, referencePetId }) {
+function ActivityCard({ dateString, activityArray, activityMap, setActivity, referencePetId }) {
   // dailyActivity: [ [dateString1,activityArray1],[dateString2, activityArray2],... ] (derived from 'dateMap')
   // activityArray: [id1,id2,id3,...] 
   // activityMap: { id1:{...details1}, id2:{...details2},... }
@@ -74,6 +75,10 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
     }
   }
 
+  const sendUpdatedActivity = async (e) => {
+    e.preventDefault()
+  }
+
   const deleteExistingActivity = async(event, activityId) => {
     event.preventDefault()
     // Send delete request
@@ -109,18 +114,38 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
     // Set activity state with new data
   }
 
-  const updatedActivity = (e) => {
-    e.preventDefault()
-  }
+  // const updatedActivity = (e) => {
+  //   e.preventDefault()
+  // }
 
   const enableUpdate = (e) => {
     e.preventDefault()
     setUpdateEnabled(true)
   }
 
-  const sendUpdate = (e) => {
+  const disableUpdate = (e) => {
     e.preventDefault()
     setUpdateEnabled(false)
+  }
+
+  const sendUpdate = async (e) => {
+    e.preventDefault()
+    // 'Collect' updated activity that has been updated using the activity id
+    // Send the data to the server/db
+    // Query for the new 'state' of date's data
+    // Return the results and update 'activity'
+    try{
+      const response = await axiosPrivate.post
+      setUpdateEnabled(false)
+    }catch(e){
+      console.log(e)
+    }
+    
+  }
+
+  const openConfirmationModal = (e, activity_id) => {
+    e.preventDefault()
+    setConfirmationModalVisibility(prevDeletion => { return {visible:true,activityId:activity_id}})
   }
 
   return(
@@ -128,22 +153,14 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
       <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
       <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
-      { activityArray.length > 0 ? records.map( record => {
-        console.log('**Line 131** record: ',record)
-        if(record){
+      { records.map( record => {
         return (
           <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
-            {record.pet_id}
-            {updateEnabled
-              ? <button onClick={() => setConfirmationModalVisibility(prevDeletion => { return {visible:true,activityId:record.activity_id}})}>
-                  DELETE
-                </button>
-              : null
-            }   
+            <ExisitingRecord record={record} updateEnabled={updateEnabled} openConfirmationModal={openConfirmationModal} />
           </div>
 
-        ) }     
-      }):null}
+        )   
+      })}
       { newActivity.map( record => {
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
@@ -153,7 +170,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
       })}
       <div className='flex justify-center items-center border-black border-2'>
       { updateEnabled
-        ? <button onClick={addActivity} className='border-2 border-white rounded-xl'>CONFIRM</button>
+        ? <button onClick={sendUpdatedActivity} className='border-2 border-white rounded-xl'>CONFIRM</button>
         : <div className='flex justify-center items-center'>
             <button onClick={addActivity} disabled={newActivity?.length > 0} className='border-2 border-white rounded-xl max-w-max disabled:bg-gray-700 disabled:text-white'>
               ADD
@@ -162,7 +179,7 @@ function ActivityCard({ index, dateString, activityArray, activityMap, setActivi
       }
       { records.length > 0 
         ? updateEnabled
-          ? <button onClick={sendUpdate} className='border-2 border-red-700 rounded-xl '>CANCEL</button>
+          ? <button onClick={disableUpdate} className='border-2 border-red-700 rounded-xl '>CANCEL</button>
           : <button onClick={enableUpdate} className='border-2 border-green-700 rounded-xl'>UPDATE</button>
         :null}  
       </div>

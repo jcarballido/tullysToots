@@ -1,13 +1,6 @@
-import React, { useState } from 'react'
-import Checkbox from './Checkbox'
-import timestampParser from '../util/timestampParser'
+import React from 'react'
 
-const Record = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, setTimeModalVisible }) => {
-
-  console.log('Record info: ', record)
-    const { convertedHour, convertedMinutes, meridian } = timestampParser(record.setOnAt)
-    console.log('Record meridian: ', meridian)
-    const time = `${convertedHour}:${convertedMinutes} ${meridian}`
+const ExisitingRecord = ({ record,updateEnabled, openConfirmationModal }) => {
 
   return (
     <div className='w-full border-[2px] border-solid border-red-400 flex items-start'>
@@ -16,18 +9,20 @@ const Record = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, set
       <input type='time' value={time} className='invisible absolute' disabled />
       <div>@</div>
       <div onClick={() => setTimeModalVisible(true)}>{time}</div>
-      <button onClick={sendNewActivity}>
-        SAVE
+      <button onClick={}>
+          SAVE
       </button>
       <button onClick={(e) => deleteNewActivity(e,record.newId)} >
-        CANCEL
+          CANCEL
       </button>
+      {updateEnabled
+      ? <button onClick={(e) => openConfirmationModal(e, record.activity_id)}>
+          DELETE
+        </button>
+      : null
+      }
     </div>
   )
 }
 
-export default Record
-
-
-
-
+export default ExisitingRecord

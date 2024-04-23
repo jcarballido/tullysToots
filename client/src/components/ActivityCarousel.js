@@ -7,8 +7,9 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
 
   const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState(7);
-  const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
-  const [ dailyActivity, setDailyActivity ] = useState([])
+  // const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
+  // const [ dailyActivity, setDailyActivity ] = useState([])
+  const dailyActivity = Array.from(dateMap)
   const [ today, setToday ] = useState(false)
   const [ yesterday, setYesterday ] = useState(false)
 
@@ -43,9 +44,9 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
     }
   }, [currentIndex])
 
-  useEffect( () => {
-    setDailyActivity(Array.from(dateMap))
-  },[dateMap])
+  // useEffect( () => {
+  //   setDailyActivity(Array.from(dateMap))
+  // },[dateMap])
 
   const nextCard = (e) => {
     e.preventDefault()
@@ -76,22 +77,22 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
         Next
       </button>
       <div
-          className="flex w-screen transition-transform duration-300 ease-in-out"
-          style={{ transform: `translateX(-${currentIndex * 100}%)`}}
-        >
-          {dailyActivity ?
-            dailyActivity.map(([dateString, activityArray],index) => {
-              return (
-                <div
-                  key={dateString}
-                  className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
-                >
-                  <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} />
-                </div>
-              )}):null
-          
+        className="flex w-screen transition-transform duration-300 ease-in-out"
+        style={{ transform: `translateX(-${currentIndex * 100}%)`}}
+      >
+        {
+          dailyActivity?.map(([dateString, activityArray]) => {
+            return (
+              <div
+                key={dateString}
+                className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
+              >
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} />
+              </div>
+            )
+          })
         }
-          
+        
       </div>
     </div>
   );

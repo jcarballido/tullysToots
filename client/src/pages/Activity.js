@@ -11,7 +11,7 @@ import timestampParser from '../util/timestampParser'
 
 const Activity = () => {
 
-  const { auth } = useAuth()
+  // const { auth } = useAuth()
   const axiosPrivate = useAxiosPrivate()
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData()
