@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import DateComponent from './Date'
-import Record from './Record'
+import NewRecord from './NewRecord'
 import TimeModal from './TimeModal'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
 import timestampParser from '../util/timestampParser'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import ExisitingRecord from './ExisitingRecord'
+import EditableRecord from './EditableRecord'
 
 function ActivityCard({ dateString, activityArray, activityMap, setActivity, referencePetId }) {
-  // dailyActivity: [ [dateString1,activityArray1],[dateString2, activityArray2],... ] (derived from 'dateMap')
-  // activityArray: [id1,id2,id3,...] 
-  // activityMap: { id1:{...details1}, id2:{...details2},... }
   const axiosPrivate = useAxiosPrivate()
   const records = activityArray.map( id => activityMap.get(id))
+  const editableRecords = activityArray.map( id => activityMap.get(id) )
 
   const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
@@ -21,11 +20,6 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
 
 
   const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
-
-  /*
-  const { hour,convertedMinutes } = timestampParser(currentTimestamp)
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(`${dateString} ${hour}:${convertedMinutes}`), pee:'Pee',poo:'Poo'}
-  */
 
   const addActivity = (e) => {
     e.preventDefault()
@@ -114,10 +108,6 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
     // Set activity state with new data
   }
 
-  // const updatedActivity = (e) => {
-  //   e.preventDefault()
-  // }
-
   const enableUpdate = (e) => {
     e.preventDefault()
     setUpdateEnabled(true)
@@ -153,18 +143,26 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
       <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
       <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/>
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
-      { records.map( record => {
-        return (
-          <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
-            <ExisitingRecord record={record} updateEnabled={updateEnabled} openConfirmationModal={openConfirmationModal} />
-          </div>
-
-        )   
-      })}
+      { updateEnabled 
+          ? editableRecords.map( record => {
+              return (
+                <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
+                  <EditableRecord updateEnabled={updateEnabled} record={record} openConfirmationModal={openConfirmationModal} setTimeModalVisible={setTimeModalVisible}/>
+                </div>
+              )
+          })
+          : records.map( record => {
+              return (
+                <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
+                  <ExisitingRecord record={record} />
+                </div>
+              )
+          })
+      }
       { newActivity.map( record => {
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <Record record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModalVisible={setTimeModalVisible} />
+            <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModalVisible={setTimeModalVisible} />
           </div>
         )
       })}

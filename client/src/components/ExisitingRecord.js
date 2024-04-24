@@ -1,26 +1,20 @@
 import React from 'react'
+import timestampParser from '../util/timestampParser'
+import Checkbox from './Checkbox'
 
-const ExisitingRecord = ({ record,updateEnabled, openConfirmationModal }) => {
+const ExisitingRecord = ({ record }) => {
+  // console.log('Record: ', record)
+  // console.log('Record set on at: ', record.sett)
+  const { convertedHour, convertedMinutes, meridian } = timestampParser(record.set_on_at)
+  // console.log('Parsed: ',convertedHour, convertedMinutes, meridian)
+  const time = `${convertedHour}:${convertedMinutes} ${meridian}`
 
   return (
-    <div className='w-full border-[2px] border-solid border-red-400 flex items-start'>
-      <Checkbox id={record.id} setNewActivity={setNewActivity} checked={record.pee} activity='pee' />
-      <Checkbox id={record.id} setNewActivity={setNewActivity} checked={record.poo} activity='poo' />
-      <input type='time' value={time} className='invisible absolute' disabled />
+    <div className='w-full border-[2px] border-pink-700 flex items-start'>
+      <Checkbox id={record.id} checked={record.pee} activity='pee' disabled={true}/>
+      <Checkbox id={record.id} checked={record.poo} activity='poo' disabled={true}/>
       <div>@</div>
-      <div onClick={() => setTimeModalVisible(true)}>{time}</div>
-      <button onClick={}>
-          SAVE
-      </button>
-      <button onClick={(e) => deleteNewActivity(e,record.newId)} >
-          CANCEL
-      </button>
-      {updateEnabled
-      ? <button onClick={(e) => openConfirmationModal(e, record.activity_id)}>
-          DELETE
-        </button>
-      : null
-      }
+      <div>{time}</div>
     </div>
   )
 }

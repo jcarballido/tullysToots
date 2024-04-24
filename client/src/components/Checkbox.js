@@ -1,6 +1,6 @@
-import React,{ useEffect, useState } from "react"
+import React from "react"
 
-const Checkbox =({id, setNewActivity, checked, activity}) => {
+const Checkbox =({id, setNewActivity, checked, activity, disabled}) => {
   
   const handleCheck = () => {
     setNewActivity( prevNewActivity => {
@@ -18,7 +18,11 @@ const Checkbox =({id, setNewActivity, checked, activity}) => {
 
   return(
     <label className=' border-2 border-solid border-gray-700 w-full relative'>
-      <input type='checkbox' name={activity} checked={checked} className='appearance-none peer absolute invisible' onChange={handleCheck} />
+      {
+        disabled != undefined && disabled == true
+        ? <input type='checkbox' name={activity} checked={checked} className='appearance-none peer absolute invisible' disabled />
+        : <input type='checkbox' name={activity} checked={checked} className='appearance-none peer absolute invisible' onChange={handleCheck} />
+      }
       <div className='peer-checked:opacity-100 opacity-25 border-2 border-solid border-purple-500' >{activity.toUpperCase()}</div>
     </label>
   )
