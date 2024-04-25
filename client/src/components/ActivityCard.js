@@ -9,15 +9,20 @@ import ExisitingRecord from './ExisitingRecord'
 import EditableRecord from './EditableRecord'
 
 function ActivityCard({ dateString, activityArray, activityMap, setActivity, referencePetId }) {
+  console.log(`${dateString} activityArray: `, activityArray)
   const axiosPrivate = useAxiosPrivate()
-  const records = activityArray.map( id => activityMap.get(id))
-  const editableRecords = activityArray.map( id => activityMap.get(id) )
+  const [ records, setRecords ] = useState(activityArray.map( id => activityMap.get(id)))
+  const [ editableRecords, setEditableRecords ] = useState(activityArray.map( id => activityMap.get(id) ))
 
   const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
   const [ timeModalVisible, setTimeModalVisible ] = useState(false)
   const [ confirmationModalVisibility, setConfirmationModalVisibility ] = useState(false)
 
+  useEffect(() => {
+    setRecords(activityArray.map( id => activityMap.get(id)))
+    setEditableRecords(activityArray.map( id => activityMap.get(id)))
+  },[activityArray])
 
   const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
 
@@ -140,18 +145,19 @@ function ActivityCard({ dateString, activityArray, activityMap, setActivity, ref
 
   return(
     <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
-      <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/>
-      <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/>
+      {/* <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/> */}
+      {/* <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/> */}
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
       { updateEnabled 
-          ? editableRecords.map( record => {
+          ? editableRecords?.map( record => {
               return (
                 <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
                   <EditableRecord updateEnabled={updateEnabled} record={record} openConfirmationModal={openConfirmationModal} setTimeModalVisible={setTimeModalVisible}/>
                 </div>
               )
           })
-          : records.map( record => {
+          : records?.map( record => {
+              console.log(`Record in ${dateString}: `, record)
               return (
                 <div key={record.activity_id} className='max-w-max border-purple-400 border-2 flex items-center justify-center'>
                   <ExisitingRecord record={record} />

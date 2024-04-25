@@ -9,7 +9,7 @@ import PetSelector from '../components/PetSelector'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import timestampParser from '../util/timestampParser'
 
-const Activity = () => {
+const Activity = () => { 
 
   // const { auth } = useAuth()
   const axiosPrivate = useAxiosPrivate()
