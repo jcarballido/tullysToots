@@ -2,7 +2,7 @@ import React from 'react'
 import timestampParser from '../util/timestampParser'
 import Checkbox from './Checkbox'
 
-const ExisitingRecord = ({ record }) => {
+const SavedRecord = ({ record }) => {
   // console.log('Record: ', record)
   // console.log('Record set on at: ', record.sett)
   const { convertedHour, convertedMinutes, meridian } = timestampParser(record.set_on_at)
@@ -19,4 +19,4 @@ const ExisitingRecord = ({ record }) => {
   )
 }
 
-export default ExisitingRecord
+export default SavedRecord

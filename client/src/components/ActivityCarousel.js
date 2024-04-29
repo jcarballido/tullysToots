@@ -3,18 +3,21 @@ import ActivityCard from './ActivityCard'
 import timestampParser from '../util/timestampParser.js'
 import useAxiosPrivate from '../hooks/useAxiosPrivate.js';
 import TimeModal from './TimeModal.js';
+import ConfirmationModal from './ConfirmationModal.js'
 
-const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, referenceDate, setReferenceDate }) => {
+const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate }) => {
 
   const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState(7);
   // const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
-  // const [ dailyActivity, setDailyActivity ] = useState([])
-  const [ dailyActivity, setDailyActivity ] = useState(Array.from(dateMap))
-  const [ editableActivityMap, setEditableActivityMap ] = useState(activityMap)
+  // const [ activity, setActivity ] = useState([])
+  const [ activity, setActivityArr ] = useState(Array.from(dateMap))
+  // const [ editableActivityMap, setEditableActivityMap ] = useState(activityMap)
   const [ today, setToday ] = useState(false)
-  const [ yesterday, setYesterday ] = useState(false)
-  const [ workingActivityId, setWorkingActivityId ] = useState(null)
+  // const [ yesterday, setYesterday ] = useState(false)
+  // const [ workingActivityId, setWorkingActivityId ] = useState(null)
+  const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
+  const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
 
   useEffect( () => {
     const { isToday } = timestampParser(referenceDate)
@@ -48,7 +51,7 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
   }, [currentIndex])
 
   useEffect( () => {
-    setDailyActivity(Array.from(dateMap))
+    setActivityArr(Array.from(dateMap))
   },[dateMap])
 
   const nextCard = (e) => {
@@ -75,10 +78,46 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
     e.preventDefault()
     setEditableActivityMap(/* use activityId to update activity map */)
   }
+  
+  const deleteExistingActivity = async(event, activityId, dateString) => {
+    event.preventDefault()
+    // Send delete request
+    const parameters = {
+      activityId,
+      referencePetId,
+      referenceDate:dateString,
+    }
+    const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
+    try{
+      const response = await axiosPrivate.delete(`/activity/delete?data=${encodedParameters}`)
+      const referenceDateActivity = response.data[0]
+      // console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
+      setActivity(prevActivity => {
+        const updatedActivityArray = prevActivity.map( dailyActivityLog => {
+          const dailyActivityDate = Object.keys(dailyActivityLog)[0]
+          const referenceDate = Object.keys(referenceDateActivity)[0]
+          if(dailyActivityDate == referenceDate){
+            return referenceDateActivity
+          }else{
+            return dailyActivityLog
+          }
+        })
+        return updatedActivityArray
+      })
+      setConfirmationModal(prev => { return {visible:false,activityId:null}})
+    }catch(e){
+      // console.log('**Activity Card** Error deleting existing activity: ', e) 
+      console.log('ERROR deleting existing activity: ',e)
+      setConfirmationModal(prev => { return {visible:false,activityId:null}})
+    }
+    // Get updated data for current date back
+    // Set activity state with new data
+  }
 
   return (
     <div className="w-full flex items-center justify-center relative">
-      <TimeModal workingActivityId={workingActivityId} updateActivtyMap={updateActivtyMap} />
+      <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
+      <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/> 
       <button onClick={prevCard} className="px-0 py-2 bg-blue-500 text-white absolute bottom-4 left-4 z-10">
         Previous
       </button>
@@ -90,65 +129,21 @@ const ActivityCarousel = ({ dateMap, activityMap, setActivity, referencePetId, r
         style={{ transform: `translateX(-${currentIndex * 100}%)`}}
       >
         {
-          dailyActivity?.map(([dateString, activityArray]) => {
+          activity?.map(([dateString, activityArray]) => {
+            console.log('** Activity Caoursel ** activity array: ',activityArray)
             return (
               <div
                 key={dateString}
                 className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} activityMap={ activityMap } setActivity={ setActivity } referencePetId={referencePetId} setWorkingActivityId={setWorkingActivityId} />
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} />
               </div>
             )
           })
-        }
-        
+        }   
       </div>
     </div>
   );
 };
 
 export default ActivityCarousel
-/*
-  const fetchData = async(referenceDate,referencePetId,activityObj,setActivity,setCurrentIndex) => {
-    const response = await axios.post('/activity/getPastActivity', { referencePetId, referenceDate:new Date(referenceDate), daysOfActivity: 3 })
-    const newActivity = response.data
-    console.log('Line 43, Activity Carousel, raw activity: ', activityObj.rawActivity)
-    console.log('Line 44, Activity Carousel, structured clone: ', structuredClone(activityObj.rawActivity))
-    // newActivity = [ {date1old:[]}, {date2old:[]}, {date3old:[]} ]
-    setActivity( (prevActivity) => {
-      const rawActivity = structuredClone(prevActivity.rawActivity)
-      console.log('Line 48, rawActivity:', rawActivity)
-      rawActivity.unshift(...newActivity)
-      console.log('Line 48, rawActivity with newly fetched activity:', rawActivity)
-      const dateMap = new Map()
-      const activityMap = new Map()
-      rawActivity.forEach( date => {
-        const [ dateString, activityArray ] = Object.entries(date)[0]
-        if(activityArray.length == 0){
-          dateMap.set(dateString, activityArray)
-        }else{
-          activityArray.forEach( loggedActivity => {
-            const existingDateActivity = dateMap.get(dateString) || []
-            existingDateActivity.push(loggedActivity.activity_id)
-            dateMap.set(dateString, existingDateActivity)
-            activityMap.set(loggedActivity.activity_id, loggedActivity)
-          })
-        }
-      })
-      return { activity:{dateMap, activityMap, rawActivity} }
-    })
-    
-  }
-
-  useEffect( () => {
-    if(currentIndex == 0){
-      try{
-        fetchData(referenceDate,referencePetId,activity,setActivity,setCurrentIndex)
-        setCurrentIndex(3)
-      }catch(e){
-        console.log('Line 52, Carousel: ',e)
-      }
-        
-    }
-  })
-*/

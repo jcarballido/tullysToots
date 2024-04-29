@@ -1,7 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import timestampParser from '../util/timestampParser'
 
-const TimeModal = ({ record, timeModalVisible, setTimeModalVisible }) => {
+const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
+
+  const [ hour,setHour ] = useState('')
+  const [ minutes,setMinutes ] = useState('')
+  const [ meridian, setMeridian ] = useState('')
+  const [ timeSet, setTimeSet ] = useState(true)
+
+  useEffect( () => {
+    const { time } = timeModal
+    // console.log('TimeModal record: ', record)
+    const { convertedHour, convertedMinutes, meridian:initialMeridian } = timestampParser(time)
+    // console.log('Converted minutes: ', convertedMinutes)
+    setHour(convertedHour)
+    setMinutes(convertedMinutes)
+    setMeridian(initialMeridian)
+  },[timeModal])
 
   const handleHourChange = (e) => {
     const target = e.target
@@ -30,7 +45,7 @@ const TimeModal = ({ record, timeModalVisible, setTimeModalVisible }) => {
     setMeridian(value)
   } 
   const closeModal = () => {
-    setTimeModalVisible(false)
+    setTimeModal({visible:false, recordId:null})
   }
   const handleHourFocus =() => {
     setTimeSet(false)
@@ -38,10 +53,26 @@ const TimeModal = ({ record, timeModalVisible, setTimeModalVisible }) => {
   const handleMinutesFocus =() => {
     setTimeSet(false)
   } 
+  const handleTimeSet = (e) => {
+    e.preventDefault()
+    if(!timeModal.new){
+      // editableActivityMap: { 1: {id:1,pee:true,poo:false}, 2:{id:1,pee:true,poo:false}, 3:{id:1,pee:true,poo:false}}
+      setEditableActivityMap( prevEditableActivityMap => {
+        const updateMap = new Map(prevEditableActivityMap)
+        console.log('**TimeModal** updateMap: ',updateMap)
+        const timestamp = new Date(`${timeModal.dateString} ${hour}:${minutes} ${meridian}`)
+        updateMap.set(timeModal.recordId,{...prevEditableActivityMap.get(timeModal.recordId),'set_on_at':timestamp })
+        return updateMap
+      })
+      setTimeModal({visible:false, new:false, activityId:null, time:''})
+    }else{
+      setTimeModal({visible:false, new:false, activityId:null, time:''})
+    }   
+  }
 
   return(
-    <div className={`w-full h-full z-20 border-4 border-red-500 flex flex-col items-center justify-start absolute transform origin-center ${timeModalVisible ? 'backdrop-grayscale scale-100':'backdrop-grayscale-0 scale-0'}`}>
-      <div className='w-3/4 h-3/4 flex items-center justify-center gap-2'>
+    <div className={`w-full h-full z-20 border-4 border-red-500 flex flex-col items-center justify-start absolute transform origin-center ${timeModal.visible ? 'bg-gray-700 scale-100':'scale-0'}`}>
+      <div className='w-3/4 h-3/4 flex items-center justify-center gap-2 text-black'>
         <input type='text' value={hour} onChange={handleHourChange} className='w-1/4 border-2 border-blue-500' onBlur={handleHourBlur} onFocus={handleHourFocus} />
         <input type='text'value={minutes} onChange={handleMinutesChange} className='w-1/4 border-2 border-blue-500' onBlur={handleMinuteBlur} onFocus={handleMinutesFocus} />
         <label>
@@ -53,7 +84,7 @@ const TimeModal = ({ record, timeModalVisible, setTimeModalVisible }) => {
           
       </div>   
       <div className='flex justify-center items-center gap-4'>
-        <button onClick={handleTimeSet} disabled={!timeSet} className={` bg-yellow-500 disabled:bg-red-700`}>
+        <button onClick={(e) => handleTimeSet(e)} disabled={!timeSet} className={` bg-yellow-500 disabled:bg-red-700`}>
           OK  
         </button>
         <div onClick={closeModal}>

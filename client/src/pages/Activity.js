@@ -18,7 +18,8 @@ const Activity = () => {
 
   const [ activity, setActivity ] = useState({})
   const [ dateMap, setDateMap ] = useState({})
-  const [ activityMap, setActivityMap ] = useState({})
+  const [ savedActivityMap, setSavedActivityMap ] = useState(new Map())
+  const [ editableActivityMap, setEditableActivityMap ] = useState(new Map())
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
   const [ petIdArray, setPetIdArray ] = useState([])
@@ -88,7 +89,8 @@ const Activity = () => {
       }
     })}
     setDateMap(workingDateMap)
-    setActivityMap(workingActivityMap)
+    setSavedActivityMap(workingActivityMap)
+    setEditableActivityMap(workingActivityMap)
 
   },[activity])
 
@@ -96,7 +98,7 @@ const Activity = () => {
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
       {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
-      <ActivityCarousel dateMap={dateMap} activityMap={activityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
+      <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
     </main>
   )
 }
