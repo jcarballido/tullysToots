@@ -51,24 +51,28 @@ const insertIntoText = (tableName,newValuesArr) => {
 
 const updateText = (tableName, fieldsArr, identifier) => {
 
-  const camelCaseToSnakeCase = ( camelCase ) => {
-    // ex: threeWordExample to three_word_example
-    // Separate the string where a lower case letter meets an uppercase letter and then replace it with an underscore '_' and covnert the uppercase letters to lowercase
-    const capitalLetterLookahead = /(?=[A-Z])/
-    const splitString = camelCase.split(capitalLetterLookahead)
-    const snakeCaseString = splitString.join('_').toLowerCase()
-    console.log('Snake case string => ', snakeCaseString)
-    return snakeCaseString
-  }
+  /* UPDATE activities
+           
+  */
 
-  const fieldsArrayConvertedToSnakeCase = fieldsArr.map(field => { return camelCaseToSnakeCase(field) })
-  console.log("feildsArrayConvertedToSnake =>",fieldsArrayConvertedToSnakeCase)
-  const identifierConvertedToSnakeCase = camelCaseToSnakeCase(identifier)
+  // const camelCaseToSnakeCase = ( camelCase ) => {
+  //   // ex: threeWordExample to three_word_example
+  //   // Separate the string where a lower case letter meets an uppercase letter and then replace it with an underscore '_' and covnert the uppercase letters to lowercase
+  //   const capitalLetterLookahead = /(?=[A-Z])/
+  //   const splitString = camelCase.split(capitalLetterLookahead)
+  //   const snakeCaseString = splitString.join('_').toLowerCase()
+  //   console.log('Snake case string => ', snakeCaseString)
+  //   return snakeCaseString
+  // }
+
+  // const fieldsArrayConvertedToSnakeCase = fieldsArr.map(field => { return camelCaseToSnakeCase(field) })
+  // // console.log("fieldsArrayConvertedToSnake =>",fieldsArrayConvertedToSnakeCase)
+  // const identifierConvertedToSnakeCase = camelCaseToSnakeCase(identifier)
 
   return(
     `UPDATE ${tableName}
-    SET ${fieldsArrayConvertedToSnakeCase.map( (field,index) => {return `${field}=$${index+1}`})} 
-    WHERE ${identifierConvertedToSnakeCase}=$${fieldsArr.length + 1}
+    SET ${fieldsArr.map( (field,index) => {return `${field}=$${index+1}`})} 
+    WHERE ${identifier}=$${fieldsArr.length + 1}
     RETURNING *
     `
   )

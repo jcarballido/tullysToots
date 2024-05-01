@@ -264,15 +264,52 @@ const updatePet = async(updatedData) => {
   return result
 }
 
-const updateActivity = async(updatedActivityArray, petId) => {
-  const activityId = updatedActivityArray.petId
+const updateActivity = async(updatedActivityArray) => {
+  // [ {activity_id:1,set_on_at:'timestamp1'},{activity_id:2,pee:false, poo:true} ]
+
+  // const breakdown = updatedActivityArray.map( update => {
+  //   const columnNames = Object.keys(update)
+  //   const filtered = columnNames.filter( columnName => columnName != 'activity_id')
+  //   const values = Object.values(update)
+  //   return [filtered,values]
+  // } )
+  const successful = []
+  const failed = []
+  for(const update of updatedActivityArray){
+    try{
+      const fields = Object.keys(update)
+      const filteredFields = fields.filter( field => field != 'activity_id')
+      const newValues = filteredFields.map( field => updateObject[field])
+      const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
+      const id = result.rows[0]['activity_id']
+      successful.push(id)
+    }catch(e){
+      failed.push(update['activity_id'])
+    }
+  }
+
+  try{
+    updatedActivityArray.forEach( async updateObject => {
+      const fields = Object.keys(updateObject)
+      const filteredFields = fields.filter( field => field != 'activity_id')
+      const newValues = filteredFields.map( field => updateObject[field])
+      const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
+
+    })
+  }catch(e){
+
+  }
+
+  // breakdown: [ [ [activity_id,set_on_at], [ 1, 'timestamp1' ] ],[ [ activity_id,pee,poo ],[ 2,false,false ] ]]
+
+  // const activityId = updatedActivityArray
   // const email = updatedData.email
+
   const [ ...fields ] = updatedActivityArray.fields
   // console.log('Fields => ',fields)
   const [ ...newValues ] = updatedActivityArray.newValues
-  const result = await pool.query(sqlText.updateText('activites',fields, 'activity_id'),[...newValues, activityId])
-  if(!result.rowCount) return result.send('ERROR: Did not update activity')
-  return result.send('Successfully updated activity')
+  const result = await pool.query(sqlText.updateText('activities',fields, 'activity_id'),[...newValues, activityId])
+  return result.rowCount
 }
 
 // 'Remove' operations

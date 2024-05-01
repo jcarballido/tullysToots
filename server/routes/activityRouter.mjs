@@ -109,10 +109,10 @@ router.post("/add", async (req, res) => {
 
 });
 
-router.post("/update", async (req, res) => {
-  const updatedActivityDataArray = req.body.updates;
-  const petId = req.body.petId;
-  const result = await queries.updateActivity(updatedActivityDataArray, petId);
+router.patch("/update", async (req, res) => {
+  const updatedActivityDataArray = req.body;
+  // const petId = req.body.petId;
+  const result = await queries.updateActivity(updatedActivityDataArray);
   if (!result.rowCount) return res.send("Error making changes");
   return res.send("Successfully updated");
 });
