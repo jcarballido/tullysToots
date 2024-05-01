@@ -130,7 +130,6 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       >
         {
           activity?.map(([dateString, activityArray]) => {
-            console.log('** Activity Caoursel ** activity array: ',activityArray)
             return (
               <div
                 key={dateString}

@@ -36,8 +36,8 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
 
   return (
     <div className='w-full border-[2px] border-blue-700 flex items-start'>
-      <Checkbox id={record.id} checked={record.pee} activity='pee' />
-      <Checkbox id={record.id} checked={record.poo} activity='poo' />
+      <Checkbox id={record.activity_id} checked={record.pee} activity='pee' setEditableActivityMap={setEditableActivityMap} />
+      <Checkbox id={record.activity_id} checked={record.poo} activity='poo' setEditableActivityMap={setEditableActivityMap} />
       {/* <input type='time' value={time} className='invisible absolute' disabled /> */}
       <div>@</div>
       <div onClick={() => openTimeModal()} >{time}</div>

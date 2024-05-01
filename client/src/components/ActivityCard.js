@@ -154,11 +154,39 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     return updates
   }
 
-  const sendUpdate = async (e) => {
+  const sendUpdate =  (e) => {
+    // console.log('** Activity Card ** savedRecords',savedRecords)
+    // console.log('** Activity Card ** editableRecords',editableRecords)
     const updates = compareArrays(savedRecords, editableRecords)
-    if(updates.length == 0) return setUpdateEnabled(false)
-    else{
-      const response = axiosPrivate.patch()
+    // console.log(updates)
+    if(updates.length == 0) {
+      setEditableActivityMap( prevEditableActivityMap => {
+        const originalActivityMap = structuredClone(savedActivityMap)
+        return originalActivityMap
+      })
+      setUpdateEnabled(false)
+      return
+    }else{
+      try{
+        const response = axiosPrivate.patch('/activity/update', updates)
+        const referenceDateActivity = response.data[0]
+        // console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
+        setActivity(prevActivity => {
+          const updatedActivityArray = prevActivity.map( dailyActivityLog => {
+            const dailyActivityDate = Object.keys(dailyActivityLog)[0]
+            const referenceDate = Object.keys(referenceDateActivity)[0]
+            if(dailyActivityDate == referenceDate){
+              return referenceDateActivity
+            }else{
+              return dailyActivityLog
+            }
+          })
+          return updatedActivityArray
+        })
+      }catch(e){
+        console.log('**Activity Card** Error updating activity: ',e)
+        setUpdateEnabled(false)
+      }
     }
   //   // 'Collect' updated activity that has been updated using the activity id
   //   // Send the data to the server/db
