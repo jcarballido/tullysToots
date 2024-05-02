@@ -110,11 +110,17 @@ router.post("/add", async (req, res) => {
 });
 
 router.patch("/update", async (req, res) => {
-  const updatedActivityDataArray = req.body;
-  // const petId = req.body.petId;
-  const result = await queries.updateActivity(updatedActivityDataArray);
-  if (!result.rowCount) return res.send("Error making changes");
-  return res.send("Successfully updated");
+  const { updatedActivity, referencePetId:petId, dateString:referenceDate } = req.body
+  const result = await queries.updateActivity(updatedActivity);
+  const { successful:successfulArray,failed:failedArray } = result
+  
+  if(failedArray.length == updatedActivity.length){
+    console.log(result)
+    return res.status(400).json({updateError:'Failed to save update(s)'})
+  }
+
+  const getSingleDateActivityResult = await queries.getSingleDayActivity(petId, referenceDate)
+  return res.status(200).json({getSingleDateActivityResult,successfulArray,failedArray})
 });
 
 router.delete("/delete", async (req, res) => {

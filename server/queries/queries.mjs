@@ -266,6 +266,24 @@ const updatePet = async(updatedData) => {
 
 const updateActivity = async(updatedActivityArray) => {
   // [ {activity_id:1,set_on_at:'timestamp1'},{activity_id:2,pee:false, poo:true} ]
+  const successful = []
+  const failed = []
+  for(const update of updatedActivityArray){
+    try{
+      const activityId = update['activity_id']
+      const fields = Object.keys(update)
+      const filteredFields = fields.filter( field => field != 'activity_id')
+      const newValues = filteredFields.map( field => update[field])
+      const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
+      console.log('**queires/updateActivity** result from update query: ', result)
+      const id = result.rows[0]['activity_id']
+      successful.push(id)
+    }catch(e){
+      console.log(`**queires/updateActivity** error from update query for activity_id ${update['activity_id']}: `, e)
+      failed.push(update['activity_id'])
+    }
+  }
+  return {successful,failed}
 
   // const breakdown = updatedActivityArray.map( update => {
   //   const columnNames = Object.keys(update)
@@ -273,43 +291,30 @@ const updateActivity = async(updatedActivityArray) => {
   //   const values = Object.values(update)
   //   return [filtered,values]
   // } )
-  const successful = []
-  const failed = []
-  for(const update of updatedActivityArray){
-    try{
-      const fields = Object.keys(update)
-      const filteredFields = fields.filter( field => field != 'activity_id')
-      const newValues = filteredFields.map( field => updateObject[field])
-      const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
-      const id = result.rows[0]['activity_id']
-      successful.push(id)
-    }catch(e){
-      failed.push(update['activity_id'])
-    }
-  }
+  
 
-  try{
-    updatedActivityArray.forEach( async updateObject => {
-      const fields = Object.keys(updateObject)
-      const filteredFields = fields.filter( field => field != 'activity_id')
-      const newValues = filteredFields.map( field => updateObject[field])
-      const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
+  // try{
+  //   updatedActivityArray.forEach( async updateObject => {
+  //     const fields = Object.keys(updateObject)
+  //     const filteredFields = fields.filter( field => field != 'activity_id')
+  //     const newValues = filteredFields.map( field => updateObject[field])
+  //     const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
 
-    })
-  }catch(e){
+  //   })
+  // }catch(e){
 
-  }
+  // }
 
   // breakdown: [ [ [activity_id,set_on_at], [ 1, 'timestamp1' ] ],[ [ activity_id,pee,poo ],[ 2,false,false ] ]]
 
   // const activityId = updatedActivityArray
   // const email = updatedData.email
 
-  const [ ...fields ] = updatedActivityArray.fields
-  // console.log('Fields => ',fields)
-  const [ ...newValues ] = updatedActivityArray.newValues
-  const result = await pool.query(sqlText.updateText('activities',fields, 'activity_id'),[...newValues, activityId])
-  return result.rowCount
+  // const [ ...fields ] = updatedActivityArray.fields
+  // // console.log('Fields => ',fields)
+  // const [ ...newValues ] = updatedActivityArray.newValues
+  // const result = await pool.query(sqlText.updateText('activities',fields, 'activity_id'),[...newValues, activityId])
+  // return result.rowCount
 }
 
 // 'Remove' operations

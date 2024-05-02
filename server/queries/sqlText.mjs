@@ -27,7 +27,7 @@ const insertIntoText = (tableName,newValuesArr) => {
       return `getActivity
       INSERT INTO ${tableName} (${columnsArr.join()}) 
       VALUES ${valuesTextArray.join()} 
-      RETURNING *`
+      RETURNING activity_id`
   }
 
   switch(tableName){
