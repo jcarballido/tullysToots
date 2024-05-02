@@ -168,8 +168,8 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       return
     }else{
       try{
-        const response = axiosPrivate.patch('/activity/update', updates)
-        const referenceDateActivity = response.data[0]
+        const response = axiosPrivate.patch('/activity/update', {updatedActivity:updates, referencePetId, dateString})
+        const referenceDateActivity = response.data.getSingleDateActivityResult
         // console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
         setActivity(prevActivity => {
           const updatedActivityArray = prevActivity.map( dailyActivityLog => {
