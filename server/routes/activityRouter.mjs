@@ -111,6 +111,7 @@ router.post("/add", async (req, res) => {
 
 router.patch("/update", async (req, res) => {
   const { updatedActivity, referencePetId:petId, dateString:referenceDate } = req.body
+  console.log('**activityRouter** updatedActivity: ', updatedActivity)
   const result = await queries.updateActivity(updatedActivity);
   const { successful:successfulArray,failed:failedArray } = result
   
@@ -120,6 +121,7 @@ router.patch("/update", async (req, res) => {
   }
 
   const getSingleDateActivityResult = await queries.getSingleDayActivity(petId, referenceDate)
+
   return res.status(200).json({getSingleDateActivityResult,successfulArray,failedArray})
 });
 

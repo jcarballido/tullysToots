@@ -275,7 +275,7 @@ const updateActivity = async(updatedActivityArray) => {
       const filteredFields = fields.filter( field => field != 'activity_id')
       const newValues = filteredFields.map( field => update[field])
       const result = await pool.query(sqlText.updateText('activities',filteredFields, 'activity_id'),[...newValues, activityId])
-      console.log('**queires/updateActivity** result from update query: ', result)
+      // console.log('**queires/updateActivity** result from update query: ', result)
       const id = result.rows[0]['activity_id']
       successful.push(id)
     }catch(e){
@@ -444,13 +444,13 @@ const getSingleDayActivity = async(petId,targetDate) => {
   //   dateArray.push(newDate)
   // }
   const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${year}-${monthIndex+1}-${date}`])
-  console.log('Queries result: ', result)
+  // console.log('Queries result: ', result)
   // START HERE; RESULT.ROWS IS UNDEFINED AS THE QUERY ABOVE IT ONLY RETURNS A SINGLE OBJECT
   const data = result.rows
-  console.log('**Queries** getSingleDayActivity, data: ', data)
+  // console.log('**Queries** getSingleDayActivity, data: ', data)
   const formattedData = dateArray.map( dateAsTimestamp => {
     const { year, monthIndex, date } = parse(dateAsTimestamp)
-    console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
+    // console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
     const filteredActivityArray = data.filter( activity => { 
       const activityDate = new Date(activity.set_on_at)
       return (
