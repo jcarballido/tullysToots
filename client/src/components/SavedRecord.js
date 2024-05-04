@@ -4,9 +4,9 @@ import Checkbox from './Checkbox'
 
 const SavedRecord = ({ record }) => {
   // console.log('Record: ', record)
-  // console.log('Record set on at: ', record.sett)
+  // console.log('Record set on at: ', record.set_on_at)
   const { convertedHour, convertedMinutes, meridian } = timestampParser(record.set_on_at)
-  // console.log('Parsed: ',convertedHour, convertedMinutes, meridian)
+  // console.log('**Saved Record** Parsed: ',convertedHour, convertedMinutes, meridian)
   const time = `${convertedHour}:${convertedMinutes} ${meridian}`
 
   return (

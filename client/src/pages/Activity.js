@@ -16,8 +16,8 @@ const Activity = () => {
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData()
 
-  const [ activity, setActivity ] = useState({})
-  const [ dateMap, setDateMap ] = useState({})
+  const [ activity, setActivity ] = useState([])
+  const [ dateMap, setDateMap ] = useState(new Map())
   const [ savedActivityMap, setSavedActivityMap ] = useState(new Map())
   const [ editableActivityMap, setEditableActivityMap ] = useState(new Map())
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
@@ -74,7 +74,7 @@ const Activity = () => {
     const workingDateMap = new Map()
     const workingActivityMap = new Map()
     // activity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
-    if(Object.keys(activity).length > 0){
+    if(activity.length > 0){
       activity.forEach( date => {
       const [ dateString, activityArray ] = Object.entries(date)[0]
       if(activityArray.length == 0){
@@ -94,11 +94,13 @@ const Activity = () => {
 
   },[activity])
 
+  // console.log('**Activity** activity array: ',activity)
+
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
       {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
-      <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} setReferencePetId={setReferencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} />
+      <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
     </main>
   )
 }

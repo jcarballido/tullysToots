@@ -10,8 +10,12 @@ const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
 
   useEffect( () => {
     const { time } = timeModal
+    // console.log('**TimeModal** time received for TimeModal: ', time)
+    // console.log('**TimeModal** time type receieved for TimeModal: ', typeof(time))
     // console.log('TimeModal record: ', record)
     const { convertedHour, convertedMinutes, meridian:initialMeridian } = timestampParser(time)
+    
+    // console.log('**TimeModal** time parsed for TimeModal: ', convertedHour, convertedMinutes, initialMeridian)
     // console.log('Converted minutes: ', convertedMinutes)
     setHour(convertedHour)
     setMinutes(convertedMinutes)
@@ -41,7 +45,7 @@ const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
   }
   const handleChange = (e) => {
     const value = e.target.value
-    console.log('TimeModal value: ', value)
+    // console.log('TimeModal value: ', value)
     setMeridian(value)
   } 
   const closeModal = () => {
@@ -58,10 +62,12 @@ const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
     if(!timeModal.new){
       // editableActivityMap: { 1: {id:1,pee:true,poo:false}, 2:{id:1,pee:true,poo:false}, 3:{id:1,pee:true,poo:false}}
       setEditableActivityMap( prevEditableActivityMap => {
-        const updateMap = new Map(prevEditableActivityMap)
-        console.log('**TimeModal** updateMap: ',updateMap)
+        const updateMap = structuredClone(prevEditableActivityMap)
+        // console.log('**TimeModal** updateMap: ',updateMap)
         const timestamp = new Date(`${timeModal.dateString} ${hour}:${minutes} ${meridian}`)
+        console.log('**TimeModal** handleTimeSet timestamp: ', timestamp)
         updateMap.set(timeModal.recordId,{...prevEditableActivityMap.get(timeModal.recordId),'set_on_at':timestamp })
+        // console.log('**TimeModal** updateMap result: ',updateMap)
         return updateMap
       })
       setTimeModal({visible:false, new:false, activityId:null, time:''})

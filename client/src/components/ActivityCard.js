@@ -8,8 +8,9 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import SavedRecord from './SavedRecord'
 import EditableRecord from './EditableRecord'
 
-function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal }) {
+function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity }) {
   // console.log(`${dateString} activityArray: `, activityArray)
+  //console.log('**ActivityCard Rendered** savedActivityMap: ',  savedActivityMap)
   const axiosPrivate = useAxiosPrivate()
   const [ savedRecords, setSavedRecords ] = useState([])
   const [ editableRecords, setEditableRecords ] = useState([])
@@ -154,7 +155,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     return updates
   }
 
-  const sendUpdate =  (e) => {
+  const sendUpdate =  async(e) => {
     // console.log('** Activity Card ** savedRecords',savedRecords)
     // console.log('** Activity Card ** editableRecords',editableRecords)
     const updates = compareArrays(savedRecords, editableRecords)
@@ -168,19 +169,24 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       return
     }else{
       try{
-        const response = axiosPrivate.patch('/activity/update', {updatedActivity:updates, referencePetId, dateString})
-        const referenceDateActivity = response.data.getSingleDateActivityResult
+        console.log('**ActivityCard** updates: ', updates)
+        const response = await axiosPrivate.patch('/activity/update', {updatedActivity:updates, referencePetId, dateString})
+        const referenceDateActivity = response.data.getSingleDateActivityResult[0]
         // console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
         setActivity(prevActivity => {
           const updatedActivityArray = prevActivity.map( dailyActivityLog => {
             const dailyActivityDate = Object.keys(dailyActivityLog)[0]
             const referenceDate = Object.keys(referenceDateActivity)[0]
             if(dailyActivityDate == referenceDate){
+              //const activityAray = referenceDateActivity[0]
+
               return referenceDateActivity
             }else{
               return dailyActivityLog
             }
           })
+          console.log('*ActivityCard** result from patch: ', referenceDateActivity)
+          console.log('*ActivityCard** updated array after attempting to update state : ', updatedActivityArray)
           return updatedActivityArray
         })
       }catch(e){
@@ -211,7 +217,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       {/* <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/> */}
       <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
       { updateEnabled 
-          ? editableRecords?.map( record => {
+          ? editableRecords.map( record => {
               return (
                 <div key={record.activity_id} className='max-w-max border-red-700 border-6 flex items-center justify-center bg-gray-300'>
                   <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>

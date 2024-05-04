@@ -7,7 +7,18 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
   const [ time, setTime ] = useState('')
   
   useEffect( () => {
-    const { convertedHour, convertedMinutes, meridian } = timestampParser(record.set_on_at)
+    // console.log('Editable record, set on at: ',record.set_on_at)
+    // console.log('Editable record, set on at typeof: ', typeof(record.set_on_at))
+    const timezoneRemoval =/(?<= \d{2}:\d{2}:\d{2}).*/
+    const timestampStringified = `${record.set_on_at}`
+    console.log('timestampStringified: ',timestampStringified)
+    const strippedTimezone = timestampStringified.replace(timezoneRemoval,'')
+    console.log('**EditableRecord** stripped time: ', strippedTimezone)
+    const dateOb = new Date(strippedTimezone)
+    console.log('dateOb in locale string: ', dateOb.toLocaleString())
+    const { convertedHour, convertedMinutes, meridian } = timestampParser(dateOb.toLocaleString())
+    console.log('Editable record, convertedHour: ',convertedHour)
+
     setTime(`${convertedHour}:${convertedMinutes} ${meridian}`)
   },[record])
 
@@ -17,7 +28,7 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
         visible:true,
         new:false,
         recordId:record.activity_id,
-        time,
+        time:record.set_on_at,
         dateString
       }
     })

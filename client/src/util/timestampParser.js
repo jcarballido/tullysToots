@@ -7,6 +7,7 @@ const timestampParser = (referenceTimestamp) => {
   yesterday.setDate(yesterday.getDate() - 1)
 
   const parse = (timestamp) => {
+    // const timestampWithoutTZ = JSON.stringify(timestamp).replace('Z','')
     const convertedDate = new Date(timestamp)
     const fullYear = convertedDate.getFullYear()
     const monthIndex = convertedDate.getMonth()
@@ -14,7 +15,7 @@ const timestampParser = (referenceTimestamp) => {
     const date = convertedDate.getDate()
     const dayIndex = convertedDate.getDay()
     const dayName = dayNames[dayIndex]
-    const hour = convertedDate.getHours()
+    const hour = convertedDate.getUTCHours()
     const minutes = convertedDate.getMinutes()
 
     const convertMinutes = (minute) => {
@@ -26,6 +27,7 @@ const timestampParser = (referenceTimestamp) => {
     }
 
     const convertHour = (hour24HFormat) => {
+      
       if(hour24HFormat > 12){
         const hour12HFormat = hour24HFormat - 12
         const hourPadded = hour12HFormat < 10 ? `0${hour12HFormat}`:`${hour12HFormat}`
