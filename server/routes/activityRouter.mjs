@@ -31,44 +31,49 @@ router.get('/testInterceptor', (req,res) => {
   } 
 })
 
-router.use(verifyAccessToken)
+// router.use(verifyAccessToken)
 // router.use(verifyRefreshToken)
 
-router.get("/get", async (req, res) => {
-
-  const ownerId = req.ownerId;
-  const encodedData = req.query.data
-  if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
-  const decodedData = JSON.parse(decodeURIComponent(encodedData))
-  const { referencePetId, referenceDate, timeWindow } = decodedData
-  console.log("**Activity Router ** type of petId: ",typeof(referencePetId))
-  const petIdString = referencePetId.replace(/^"|"$/g, '');
+router.post("/get", async (req, res) => {
+  console.log(req.body)
+  const ownerId = req.body.ownerId
+  const petIdString = req.body.petId
+  const referenceDate = '2024-03-26'
+  const timeWindow = {daysBefore:2,daysAfter:2}
+  // const ownerId = req.ownerId
+  // const encodedData = req.query.data
+  // if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
+  // const decodedData = JSON.parse(decodeURIComponent(encodedData))
+  // const { referencePetId, referenceDate, timeWindow } = decodedData
+  // console.log("**Activity Router ** type of petId: ",typeof(referencePetId))
+  // const petIdString = referencePetId.replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
-  console.log('**Activity Router** petId: ', petId)
-
+  // console.log('**Activity Router** petId: ', petId)
   if (petId) {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindow);
-      const petIdArray = await queries.getOwnersPetIds(ownerId)
-      return res.status(200).json({activityArray, petIdArray});
+      // const petIdArray = await queries.getOwnersPetIds(ownerId)
+      // return res.status(200).json({activityArray, petIdArray});
+      return res.status(200).json({ activityArray })
     } else {
       return res.status(401).json({ error: confirmActiveLink });
     }
   } else {
-    try {
-      const singlePetId = await queries.getSingleActivePetId(ownerId);
-      const activityArray = await queries.getActivity(
-        singlePetId,
-        referenceDate,
-        timeWindow
-      );
-      console.log('activityRouter activityArray line 42: ',activityArray)
-      return res.status(200).json({activityArray, petIdArray, singlePetId });
-    } catch (e) {
-      return res.status(400).json({ error: e });
-    }
+      try {
+        const singlePetId = await queries.getSingleActivePetId(ownerId);
+        const activityArray = await queries.getActivity(
+          singlePetId,
+          referenceDate,
+          timeWindow
+        );
+        console.log('activityRouter activityArray line 42: ',activityArray)
+        return res.status(200).json({activityArray, petIdArray, singlePetId });
+      
+      } catch (e) {
+        return res.status(400).json({ error: e });
+      } 
   }
 });
 
@@ -82,10 +87,13 @@ router.post("/add", async (req, res) => {
   // );
   // if (!result) return res.send("ERROR: Did not save new activity");
   // return res.json({ result });
-  const ownerId = req.ownerId
-  console.log("**Activity Router ** type of petId: ",typeof(req.body.referencePetId))
-  const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
-  const petId = parseInt(petIdString)
+
+  // const ownerId = req.ownerId
+  const ownerId = 35
+  // console.log("**Activity Router ** type of petId: ",typeof(req.body.referencePetId))
+  // const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
+  // const petId = parseInt(petIdString)
+  const petId = req.body.petId
   const referenceDate = req.body.referenceDate;
   console.log('**Activity Router** referenceDate: ', referenceDate)
   const { pee, poo } = req.body.activity
@@ -99,10 +107,10 @@ router.post("/add", async (req, res) => {
   }
 
   try{
-    const result = await queries.getSingleDayActivity(petId, referenceDate); 
+    const result2 = await queries.getSingleDayActivity(petId, referenceDate); 
     console.log('Result from querying single day activity: ')
-    console.log(util.inspect(result, { depth: null }))
-    return res.status(200).json(result)
+    console.log(util.inspect(result2, { depth: null }))
+    return res.status(200).json(result2)
   }catch(e){
     return res.status(400).json({error:e})
   }

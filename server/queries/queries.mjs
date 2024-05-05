@@ -77,12 +77,18 @@ const addPetOwnerLink = async(ownerId,petIdsArray) => {
 }
 
 const addActivity = async(petId, ownerId, timestampWithoutTZ, pee, poo) => {
-  const { year,monthIndex,date,hour,minutes } = parse(timestampWithoutTZ)
-  const timestamp = `${year}-${monthIndex+1}-${date} ${hour}:${minutes}`
+  const { year,monthIndex,date,convertedHour,convertedMinute, meridian } = parse(timestampWithoutTZ)
+  const timestamp = `${year}-${monthIndex+1}-${date} ${convertedHour}:${convertedMinute} ${meridian}`
   console.log('**Queries** addActivity timestamp: ', timestamp)
-  const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo])
-  const data = result.rows[0]
-  return data
+  try{
+    const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo])
+    console.log('Queries, addActivity, result: ',result)
+    const data = result.rows[0]
+    return data
+  }catch(e){
+    console.log('ERROR adding activity',e)
+    return
+  }
 }
 
 const getPasswordHash = async(ownerId) => {
