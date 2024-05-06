@@ -7,7 +7,7 @@ import useAuth from '../hooks/useAuth'
 import ActivityCarousel from '../components/ActivityCarousel'
 import PetSelector from '../components/PetSelector'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
-import timestampParser from '../util/timestampParser'
+// import timestampParser from '../util/timestampParser'
 
 const Activity = () => { 
 
