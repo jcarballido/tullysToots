@@ -1,6 +1,7 @@
 import React from 'react'
 
-const Date = ({dayName, date, monthName, year, isToday, isYesterday}) => {
+const Date = ({ dateString }) => {
+  
   return(
     <div className='border-solid border-[10px] border-green-700 flex items-center justify-center'> 
       <div className='basis-1/3'>

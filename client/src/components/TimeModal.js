@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import timestampParser from '../util/timestampParser'
+// import timestampParser from '../util/timestampParser'
+import getTimeCharacteristics from '../util/getTimeCharacteristics'
 
 const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
 
@@ -10,16 +11,17 @@ const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
 
   useEffect( () => {
     const { time } = timeModal
+    const { timestampUTC, timezoneOffset } = time
     // console.log('**TimeModal** time received for TimeModal: ', time)
     // console.log('**TimeModal** time type receieved for TimeModal: ', typeof(time))
     // console.log('TimeModal record: ', record)
-    const { convertedHour, convertedMinutes, meridian:initialMeridian } = timestampParser(time)
+    const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTC, timezoneOffset)
     
     // console.log('**TimeModal** time parsed for TimeModal: ', convertedHour, convertedMinutes, initialMeridian)
     // console.log('Converted minutes: ', convertedMinutes)
-    setHour(convertedHour)
-    setMinutes(convertedMinutes)
-    setMeridian(initialMeridian)
+    setHour(paddedHourString)
+    setMinutes(paddedMinutesString)
+    setMeridian(meridianString)
   },[timeModal])
 
   const handleHourChange = (e) => {
@@ -64,15 +66,15 @@ const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
       setEditableActivityMap( prevEditableActivityMap => {
         const updateMap = structuredClone(prevEditableActivityMap)
         // console.log('**TimeModal** updateMap: ',updateMap)
-        const timestamp = new Date(`${timeModal.dateString} ${hour}:${minutes} ${meridian}`)
+        const timestamp = new Date(`${timeModal.dateString} ${hour}:${minutes} ${meridian}`).toUTCString()
         console.log('**TimeModal** handleTimeSet timestamp: ', timestamp)
-        updateMap.set(timeModal.recordId,{...prevEditableActivityMap.get(timeModal.recordId),'set_on_at':timestamp })
+        updateMap.set(timeModal.recordId,{...prevEditableActivityMap.get(timeModal.recordId),'timestamp_received':timestamp,'timestamp_utc_offset':new Date().getTimezoneOffset() })
         // console.log('**TimeModal** updateMap result: ',updateMap)
         return updateMap
       })
-      setTimeModal({visible:false, new:false, activityId:null, time:''})
+      setTimeModal({ visible:false, new:false, activityId:null, time:{timestampUTC:'', timezoneOffset:0} })
     }else{
-      setTimeModal({visible:false, new:false, activityId:null, time:''})
+      setTimeModal({ visible:false, new:false, activityId:null, time:{timestampUTC:'', timezoneOffset:0} })
     }   
   }
 

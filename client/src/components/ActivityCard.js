@@ -3,10 +3,12 @@ import DateComponent from './Date'
 import NewRecord from './NewRecord'
 // import TimeModal from './TimeModal'
 // import ConfirmDeleteModal from './ConfirmationModal'
-import timestampParser from '../util/timestampParser'
+// import timestampParser from '../util/timestampParser'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import SavedRecord from './SavedRecord'
 import EditableRecord from './EditableRecord'
+import getDateCharacteristics from '../util/getDateCharacteristics'
+import getTimeCharacteristics from '../util/getTimeCharacteristics'
 
 function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity }) {
   // console.log(`${dateString} activityArray: `, activityArray)
@@ -34,13 +36,13 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     setEditableRecords(prevRecords => activityArray.map(id => editableActivityMap.get(id)))
   },[editableActivityMap])
 
-  const { dayName,date, monthName, year, isToday, isYesterday } = timestampParser(dateString)
+  // const { dayName,date, monthName, year, isToday, isYesterday, localTimezoneOffset } = getDateCharacteristics(dateString)
 
   const addActivity = (e) => {
     e.preventDefault()
     setNewActivity( prevNewActivity => {
-      const { hour, convertedMinutes } = timestampParser(new Date())
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), setOnAt:new Date(`${dateString} ${hour}:${convertedMinutes}`), pee:true, poo: true}]
+      const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(new Date().toUTCString())
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${dateString} ${paddedHourString}:${paddedMinutesString} ${meridianString}`).toUTCString(),timestampUTCOffset:localTimezoneOffset, pee:true, poo: true}]
     })
   }
 
@@ -61,7 +63,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
         pee:newActivity[0].pee,
         poo:newActivity[0].poo
       }
-      const newActivityTimestamp = `${newActivity[0].setOnAt}`
+      const newActivityTimestamp = `${newActivity[0].timestampReceived}`
       const response = await axiosPrivate.post('/activity/add', {referencePetId, referenceDate:newActivityTimestamp, activity})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
       const referenceDateActivity = response.data[0]
@@ -215,7 +217,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
       {/* <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/> */}
       {/* <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/> */}
-      <DateComponent dayName={dayName} date={date} monthName={monthName} year={year} isToday={isToday} isYesterday={isYesterday} />
+      <DateComponent dateString={dateString} />
       { updateEnabled 
           ? editableRecords.map( record => {
               return (

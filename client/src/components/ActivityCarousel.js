@@ -1,6 +1,7 @@
 import React, {  useEffect, useState } from 'react'
 import ActivityCard from './ActivityCard'
-import timestampParser from '../util/timestampParser.js'
+// import timestampParser from '../util/timestampParser.js'
+import getDateCharacteristics from '../util/getDateCharacteristics.js';
 import useAxiosPrivate from '../hooks/useAxiosPrivate.js';
 import TimeModal from './TimeModal.js';
 import ConfirmationModal from './ConfirmationModal.js'
@@ -20,7 +21,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
 
   useEffect( () => {
-    const { isToday } = timestampParser(referenceDate)
+    const { isToday } = getDateCharacteristics(referenceDate)
     setToday(isToday)
   },[referenceDate])
 
