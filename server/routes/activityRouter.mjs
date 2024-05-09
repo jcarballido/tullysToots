@@ -31,22 +31,23 @@ router.get('/testInterceptor', (req,res) => {
   } 
 })
 
-// router.use(verifyAccessToken)
+router.use(verifyAccessToken)
 // router.use(verifyRefreshToken)
 
-router.post("/get", async (req, res) => {
-  console.log(req.body)
-  const ownerId = req.body.ownerId
-  const petIdString = req.body.petId
-  const referenceDate = '2024-03-26'
-  const timeWindow = {daysBefore:2,daysAfter:2}
-  // const ownerId = req.ownerId
-  // const encodedData = req.query.data
-  // if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
-  // const decodedData = JSON.parse(decodeURIComponent(encodedData))
-  // const { referencePetId, referenceDate, timeWindow } = decodedData
+// USE ENCODED DATA
+router.get("/get", async (req, res) => {
+
+  // const ownerId = req.body.ownerId
+  // const petIdString = req.body.petId
+  // const referenceDate = '2024-03-26'
+  // const timeWindow = {daysBefore:2,daysAfter:2}
+  const ownerId = req.ownerId
+  const encodedData = req.query.data
+  if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
+  const decodedData = JSON.parse(decodeURIComponent(encodedData))
+  const { referencePetId, referenceDate, timeWindow } = decodedData
   // console.log("**Activity Router ** type of petId: ",typeof(referencePetId))
-  // const petIdString = referencePetId.replace(/^"|"$/g, '');
+  const petIdString = referencePetId.replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
   // console.log('**Activity Router** petId: ', petId)
   if (petId) {
@@ -88,29 +89,28 @@ router.post("/add", async (req, res) => {
   // if (!result) return res.send("ERROR: Did not save new activity");
   // return res.json({ result });
 
-  // const ownerId = req.ownerId
-  const ownerId = 35
+  const ownerId = req.ownerId
   // console.log("**Activity Router ** type of petId: ",typeof(req.body.referencePetId))
-  // const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
-  // const petId = parseInt(petIdString)
-  const petId = req.body.petId
-  const referenceDate = req.body.referenceDate;
-  console.log('**Activity Router** referenceDate: ', referenceDate)
+  const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
+  const petId = parseInt(petIdString)
+  const timestampUTCString = req.body.timestampUTCString;
+  const referenceTimezoneOffset = req.body.referenceTimezoneOffset
+  // console.log('**Activity Router** referenceDate: ', timestampUTCString)
   const { pee, poo } = req.body.activity
   
   try{
-    const result = await queries.addActivity(petId, ownerId, referenceDate,pee,poo)
-    console.log('Line 71, result: ', result)
+    const result = await queries.addActivity(petId, ownerId, timestampUTCString,referenceTimezoneOffset,pee,poo)
+    // console.log('Line 71, result: ', result)
   }catch(e){
     console.log('Error adding activity; error code sent to client')
     return res.status(400).json({error:'Error adding activity to db'})
   }
 
   try{
-    const result2 = await queries.getSingleDayActivity(petId, referenceDate); 
-    console.log('Result from querying single day activity: ')
-    console.log(util.inspect(result2, { depth: null }))
-    return res.status(200).json(result2)
+    const result = await queries.getSingleDayActivity(petId, timestampUTCString); 
+    // console.log('Result from querying single day activity: ')
+    // console.log(util.inspect(result, { depth: null }))
+    return res.status(200).json(result)
   }catch(e){
     return res.status(400).json({error:e})
   }

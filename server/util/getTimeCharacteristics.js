@@ -15,9 +15,9 @@ const getTimeCharacteristics = ( referenceTimestampUTC,referenceTimestampOffsetM
   const paddedMinutesString = minutes < 10 ? '0' + minutes.toString() : minutes.toString()
 
   return {
-    hour,
+    hourNumber,
     paddedHourString,
-    minutes,
+    minutesNumber,
     paddedMinutesString,
     meridianString,
     localTimezoneOffset

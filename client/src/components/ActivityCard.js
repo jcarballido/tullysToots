@@ -41,7 +41,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   const addActivity = (e) => {
     e.preventDefault()
     setNewActivity( prevNewActivity => {
-      const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(new Date().toUTCString())
+      const { paddedHourString, paddedMinutesString, meridianString, localTimezoneOffset } = getTimeCharacteristics(new Date().toUTCString())
       return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${dateString} ${paddedHourString}:${paddedMinutesString} ${meridianString}`).toUTCString(),timestampUTCOffset:localTimezoneOffset, pee:true, poo: true}]
     })
   }
@@ -64,7 +64,8 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
         poo:newActivity[0].poo
       }
       const newActivityTimestamp = `${newActivity[0].timestampReceived}`
-      const response = await axiosPrivate.post('/activity/add', {referencePetId, referenceDate:newActivityTimestamp, activity})
+      const timezoneOffset = newActivity[0].timestampUTCOffset
+      const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp,referenceTimezoneOffset:timezoneOffset, activity})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
       const referenceDateActivity = response.data[0]
       // console.log('*RECORD** response.data: ',referenceDateActivity)
@@ -85,6 +86,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       console.log(e)
     }
   }
+
 
   const sendUpdatedActivity = async (e) => {
     e.preventDefault()
@@ -238,7 +240,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       { newActivity.map( record => {
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModalVisible={setTimeModalVisible} />
+            <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} />
           </div>
         )
       })}
