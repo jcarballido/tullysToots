@@ -79,6 +79,7 @@ router.get("/get", async (req, res) => {
 });
 
 router.post("/add", async (req, res) => {
+
   // const result = await queries.addActivity(
   //   petId,
   //   ownerId,
@@ -88,7 +89,7 @@ router.post("/add", async (req, res) => {
   // );
   // if (!result) return res.send("ERROR: Did not save new activity");
   // return res.json({ result });
-
+  // console.log('**Activity Router** req.body: ', req.body)
   const ownerId = req.ownerId
   // console.log("**Activity Router ** type of petId: ",typeof(req.body.referencePetId))
   const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
@@ -99,19 +100,22 @@ router.post("/add", async (req, res) => {
   const { pee, poo } = req.body.activity
   
   try{
+    // console.log('Attempt to add activity is being made.')
     const result = await queries.addActivity(petId, ownerId, timestampUTCString,referenceTimezoneOffset,pee,poo)
     // console.log('Line 71, result: ', result)
   }catch(e){
-    console.log('Error adding activity; error code sent to client')
+    console.log('Error adding activity; error code sent to client: ',e)
     return res.status(400).json({error:'Error adding activity to db'})
   }
 
   try{
+    console.log('*activityRouter* attempting to retrieve singleDayActivity')
     const result = await queries.getSingleDayActivity(petId, timestampUTCString); 
-    // console.log('Result from querying single day activity: ')
-    // console.log(util.inspect(result, { depth: null }))
+    // console.log('*activityRouter* Result from querying single day activity: ', result)
+    console.log(util.inspect(result, { depth: null }))
     return res.status(200).json(result)
   }catch(e){
+    console.log('*activityRouter* error getting single day activity: ', e)
     return res.status(400).json({error:e})
   }
 

@@ -41,8 +41,15 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   const addActivity = (e) => {
     e.preventDefault()
     setNewActivity( prevNewActivity => {
+      const result = getTimeCharacteristics(new Date().toUTCString())
+      console.log('Activity Card, result: ',result)
       const { paddedHourString, paddedMinutesString, meridianString, localTimezoneOffset } = getTimeCharacteristics(new Date().toUTCString())
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${dateString} ${paddedHourString}:${paddedMinutesString} ${meridianString}`).toUTCString(),timestampUTCOffset:localTimezoneOffset, pee:true, poo: true}]
+      const { fullYear, monthIndex, date } = getDateCharacteristics(dateString)
+      // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
+      // console.log('ActivityCard, newTimestamp: ', timestampString)
+      // const newTimestamp = new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
+      // console.log('ActivityCard, newTimestamp: ', newTimestamp)
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), timestampUTCOffset:localTimezoneOffset, pee:true, poo: true}]
     })
   }
 

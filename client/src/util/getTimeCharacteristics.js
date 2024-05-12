@@ -11,7 +11,11 @@ const getTimeCharacteristics = ( referenceTimestampUTC,referenceTimestampOffsetM
 
   const meridianString = hour > 12 ? 'PM':'AM'
 
-  const paddedHourString = hour < 10 ? '0' + hour.toString() : hour.toString()
+  const paddedHourString = hour < 10 
+    ? '0' + hour.toString() 
+    : hour > 12
+      ? (hour - 12).toString()
+      : hour.toString()
   const paddedMinutesString = minutes < 10 ? '0' + minutes.toString() : minutes.toString()
 
   return {

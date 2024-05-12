@@ -9,6 +9,7 @@ const insertIntoText = (tableName,newValuesArr) => {
   const invitationsColumns = ['sender_owner_id','receiver_owner_id','invitation_token']
  
   const singleEntryText = (columnsArr) => {
+    console.log('*sqlText* attempt to insert data to table')
     return `INSERT INTO ${tableName} (${columnsArr.join()})
     VALUES (${columnsArr.map( (_,index) => {return `$${index+1}`}).join()})
     RETURNING *
@@ -78,7 +79,7 @@ const updateText = (tableName, fieldsArr, identifier) => {
   )
 }
 
-const deactivatePetOwnerLinkText = () => {
+const deactivatePetOwnerLinkText = () => { 
   return `
     UPDATE pet_owners
     SET active=false
@@ -119,7 +120,7 @@ const getSingleDayActivityText = () => {
   return `
     SELECT activity_id,${activityColumns.join()}
     FROM activities
-    WHERE pet_id = $1 AND set_on_at >= $2::timestamp AND set_on_at < $2::timestamp + '1 day'::interval
+    WHERE pet_id = $1 AND timestamp_received >= $2::timestamp AND timestamp_received < $2::timestamp + '1 day'::interval
   `
 }
 

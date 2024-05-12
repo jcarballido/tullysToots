@@ -4,6 +4,7 @@ import sqlText from './sqlText.mjs'
 // import timestampParser from '../../client/src/util/timestampParser.js'
 import util from 'util'
 import getDateCharacteristics from '../util/getDateCharacteristics.js'
+import getTimeCharacteristics from '../util/getTimeCharacteristics.js'
 //import timestampParser from '../../client/src/util/timestampParser'
 
 const { Pool } = pg
@@ -78,20 +79,23 @@ const addPetOwnerLink = async(ownerId,petIdsArray) => {
 }
 
 const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee, poo) => {
+  // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
   const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
   const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString)
   const timestamp = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
   // console.log('**Queries** addActivity timestamp: ', timestamp)
   try{
+    
     const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, timezoneOffset, pee, poo])
     // console.log('Queries, addActivity, result: ',result)
     const data = result.rows[0]
+    console.log('*queries* data: ', data)
     return data
   }catch(e){
     console.log('ERROR adding activity',e)
     return
   }
-  // const { year,monthIndex,date,convertedHour,convertedMinute, meridian } = parse(timestampWithoutTZ)
+  // const { year,monthIndex,date,convertedHour,convertedMinute, meridian } = (timestampWithoutTZ)
   // const timestamp = `${year}-${monthIndex+1}-${date} ${convertedHour}:${convertedMinute} ${meridian}`
   // console.log('**Queries** addActivity timestamp: ', timestamp)
 }
