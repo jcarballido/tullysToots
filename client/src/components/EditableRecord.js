@@ -38,6 +38,7 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
   }
 
   const openConfirmationModal = (e, activityId) => {
+    console.log('Editable Record activityId: ', activityId)
     e.preventDefault()
     setConfirmationModal( prevConfirmationModal => {
       return {

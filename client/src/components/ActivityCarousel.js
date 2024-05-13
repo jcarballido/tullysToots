@@ -12,13 +12,15 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   const [ currentIndex, setCurrentIndex ] = useState(7);
   // const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
   // const [ activity, setActivity ] = useState([])
-  const [ activityArr, setActivityArr ] = useState([])
+  // const [ activityArr, setActivityArr ] = useState([])
   // const [ editableActivityMap, setEditableActivityMap ] = useState(activityMap)
   const [ today, setToday ] = useState(false)
   // const [ yesterday, setYesterday ] = useState(false)
   // const [ workingActivityId, setWorkingActivityId ] = useState(null)
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
+
+  const activityArr = Array.from(dateMap)
 
   useEffect( () => {
     const { isToday } = getDateCharacteristics(referenceDate)
@@ -51,9 +53,9 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     }
   }, [currentIndex])
 
-  useEffect( () => {
-    setActivityArr(Array.from(dateMap))
-  },[dateMap])
+  // useEffect( () => {
+  //   setActivityArr(Array.from(dateMap))
+  // },[dateMap])
 
   const nextCard = (e) => {
     e.preventDefault()

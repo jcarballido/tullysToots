@@ -229,6 +229,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       <DateComponent dateString={dateString} />
       { updateEnabled 
           ? editableRecords.map( record => {
+            console.log('*Activity Card* record: ',record)
               return (
                 <div key={record.activity_id} className='max-w-max border-red-700 border-6 flex items-center justify-center bg-gray-300'>
                   <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>
