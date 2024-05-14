@@ -40,14 +40,50 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
           timeWindow
         }
         const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
-        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
-        const newActivity = response.data
-        setActivity( (prevActivity) => {
-          const rawActivity = structuredClone(prevActivity)
-          rawActivity.unshift(...newActivity)
-          return rawActivity
-        })
-        setCurrentIndex(3)
+        try{
+          const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
+          const newActivity = response.data.activityArray
+          console.log('*Activity Carousel* newActivity: ', newActivity)
+          setActivity( (prevActivity) => {
+            const rawActivity = structuredClone(prevActivity)
+            rawActivity.unshift(...newActivity)
+            console.log('*Raw activity* : ', rawActivity)
+            return rawActivity
+          })
+          setCurrentIndex(3)
+        }catch(e){
+          console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
+        }
+        
+      }
+      fetchData()
+    }else if(currentIndex == activityArr.length - 1){
+      const fetchData = async() => {
+        const timeWindow = { 
+          daysBefore:0, 
+          daysAfter:3
+        }
+        const parameters = {
+          referencePetId:JSON.stringify(referencePetId), 
+          referenceDate, 
+          timeWindow
+        }
+        const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
+        try{
+          const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
+          const newActivity = response.data.activityArray
+          console.log('*Activity Carousel* newActivity: ', newActivity)
+          setActivity( (prevActivity) => {
+            const rawActivity = structuredClone(prevActivity)
+            rawActivity.push(...newActivity)
+            console.log('*Raw activity* : ', rawActivity)
+            return rawActivity
+          })
+          setCurrentIndex(activityArr.length)
+        }catch(e){
+          console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
+        }
+        
       }
       fetchData()
     }
