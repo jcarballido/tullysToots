@@ -9,89 +9,75 @@ import ConfirmationModal from './ConfirmationModal.js'
 const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity }) => {
 
   const axiosPrivate = useAxiosPrivate()
-  const [ currentIndex, setCurrentIndex ] = useState(7);
-  // const [ presentReferenceDate, setPresentReferenceDate ] = useState(null)
-  // const [ activity, setActivity ] = useState([])
-  // const [ activityArr, setActivityArr ] = useState([])
-  // const [ editableActivityMap, setEditableActivityMap ] = useState(activityMap)
+  const [ currentIndex, setCurrentIndex ] = useState(4);
   const [ today, setToday ] = useState(false)
-  // const [ yesterday, setYesterday ] = useState(false)
-  // const [ workingActivityId, setWorkingActivityId ] = useState(null)
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
 
   const activityArr = Array.from(dateMap)
+
+  const fetchAdditionalData = async(timeWindowObj) => {
+    console.log('*Carousel* timeWindow: ', timeWindowObj)
+    // const timeWindow = { 
+    //     daysBefore:3, 
+    //     daysAfter:0
+    //   }
+      const parameters = {
+        referencePetId:JSON.stringify(referencePetId), 
+        referenceDate, 
+        timeWindowObj
+      }
+      const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
+      try{
+        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
+        const newActivity = response.data.activityArray
+        // console.log('*Activity Carousel* newActivity: ', newActivity)
+        if(timeWindowObj.daysBefore){
+            setActivity( (prevActivity) => {
+                const rawActivity = structuredClone(prevActivity)
+                rawActivity.unshift(...newActivity)
+              //   console.log('*Raw activity* : ', rawActivity)
+                return rawActivity
+            })
+            
+        }else{
+            setActivity( (prevActivity) => {
+                const rawActivity = structuredClone(prevActivity)
+                rawActivity.push(...newActivity)
+              //   console.log('*Raw activity* : ', rawActivity)
+                return rawActivity
+              })
+            
+        }
+        
+      }catch(e){
+        console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
+      }
+  }
 
   useEffect( () => {
     const { isToday } = getDateCharacteristics(referenceDate)
     setToday(isToday)
   },[referenceDate])
 
+
   useEffect( () => {
     if(currentIndex == 0){
-      const fetchData = async() => {
-        const timeWindow = { 
-          daysBefore:3, 
-          daysAfter:0
-        }
-        const parameters = {
-          referencePetId:JSON.stringify(referencePetId), 
-          referenceDate, 
-          timeWindow
-        }
-        const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
-        try{
-          const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
-          const newActivity = response.data.activityArray
-          console.log('*Activity Carousel* newActivity: ', newActivity)
-          setActivity( (prevActivity) => {
-            const rawActivity = structuredClone(prevActivity)
-            rawActivity.unshift(...newActivity)
-            console.log('*Raw activity* : ', rawActivity)
-            return rawActivity
-          })
-          setCurrentIndex(3)
-        }catch(e){
-          console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
-        }
-        
-      }
-      fetchData()
+      fetchAdditionalData({ daysBefore:3, daysAfter:0 })
     }else if(currentIndex == activityArr.length - 1){
-      const fetchData = async() => {
-        const timeWindow = { 
-          daysBefore:0, 
-          daysAfter:3
-        }
-        const parameters = {
-          referencePetId:JSON.stringify(referencePetId), 
-          referenceDate, 
-          timeWindow
-        }
-        const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
-        try{
-          const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
-          const newActivity = response.data.activityArray
-          console.log('*Activity Carousel* newActivity: ', newActivity)
-          setActivity( (prevActivity) => {
-            const rawActivity = structuredClone(prevActivity)
-            rawActivity.push(...newActivity)
-            console.log('*Raw activity* : ', rawActivity)
-            return rawActivity
-          })
-          setCurrentIndex(activityArr.length)
-        }catch(e){
-          console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
-        }
-        
-      }
-      fetchData()
+      fetchAdditionalData({ daysBefore:0, daysAfter:3 })
     }
   }, [currentIndex])
 
-  // useEffect( () => {
-  //   setActivityArr(Array.from(dateMap))
-  // },[dateMap])
+  useEffect( () =>{
+    if(currentIndex == 0 || currentIndex == activityArr.length - 1){
+      const mapKeys = dateMap.keys()
+      const mapKeysArray = Array.from(mapKeys)
+      const index = mapKeysArray.indexOf(referenceDate)
+      if(index != -1) setCurrentIndex(index)
+      else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
+    }
+  },[ dateMap  ])
 
   const nextCard = (e) => {
     e.preventDefault()
@@ -130,7 +116,6 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     try{
       const response = await axiosPrivate.delete(`/activity/delete?data=${encodedParameters}`)
       const referenceDateActivity = response.data[0]
-      // console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
       setActivity(prevActivity => {
         const updatedActivityArray = prevActivity.map( dailyActivityLog => {
           const dailyActivityDate = Object.keys(dailyActivityLog)[0]
@@ -146,16 +131,11 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       })
       setConfirmationModal(prev => { return {visible:false,activityId:null}})
     }catch(e){
-      // console.log('**Activity Card** Error deleting existing activity: ', e) 
       console.log('ERROR deleting existing activity: ',e)
       setConfirmationModal(prev => { return {visible:false,activityId:null}})
     }
-    // Get updated data for current date back
-    // Set activity state with new data
   }
 
-  // console.log('**ActivityCarousel Rendered** activitArr: ', activityArr)
-  // console.log('**ActivityCarousel Rendered** savedActivityMap: ',  savedActivityMap)
   return (
     <div className="w-full flex items-center justify-center relative">
       <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />

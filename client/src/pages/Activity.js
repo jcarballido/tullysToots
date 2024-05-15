@@ -26,11 +26,11 @@ const Activity = () => {
 
   useEffect( () => {
     const getActivity = async() => {
-      const timeWindow = { daysBefore:7, daysAfter:7 }
+      const timeWindowObj = { daysBefore:3, daysAfter:3 }
       const parameters = {
         referencePetId:JSON.stringify(referencePetId), 
         referenceDate, 
-        timeWindow
+        timeWindowObj
       }
       const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
       // Fetch activity for the reference date and pet ID

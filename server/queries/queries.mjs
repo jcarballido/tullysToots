@@ -411,9 +411,9 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 //   return formattedData  
 // }
 
-const getActivity = async(petId,targetDate, timeWindow) => {
+const getActivity = async(petId,targetDate, timeWindowObj) => {
 
-  const { daysBefore, daysAfter } = timeWindow
+  const { daysBefore, daysAfter } = timeWindowObj
   // console.log('TargetDate: ', targetDate)
   const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
   // console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)

@@ -45,16 +45,16 @@ router.get("/get", async (req, res) => {
   const encodedData = req.query.data
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
-  const { referencePetId, referenceDate, timeWindow } = decodedData
+  const { referencePetId, referenceDate, timeWindowObj } = decodedData
   // console.log("**Activity Router ** type of petId: ",typeof(referencePetId))
   const petIdString = referencePetId.replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
-  // console.log('**Activity Router** petId: ', petId)
+  console.log('**Activity Router** timeWindowObj: ', timeWindowObj)
   if (petId) {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
-      const activityArray = await queries.getActivity(petId, referenceDate, timeWindow);
+      const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
       // const petIdArray = await queries.getOwnersPetIds(ownerId)
       // return res.status(200).json({activityArray, petIdArray});
       return res.status(200).json({ activityArray })
