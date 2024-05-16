@@ -55,9 +55,9 @@ router.get("/get", async (req, res) => {
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
     if (confirmActiveLink) {
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
-      // const petIdArray = await queries.getOwnersPetIds(ownerId)
+      const petIdArray = await queries.getOwnersPetIds(ownerId)
       // return res.status(200).json({activityArray, petIdArray});
-      return res.status(200).json({ activityArray })
+      return res.status(200).json({ activityArray, petIdArray })
     } else {
       return res.status(401).json({ error: confirmActiveLink });
     }
@@ -67,8 +67,9 @@ router.get("/get", async (req, res) => {
         const activityArray = await queries.getActivity(
           singlePetId,
           referenceDate,
-          timeWindow
+          timeWindowObj
         );
+        const petIdArray = await queries.getOwnersPetIds(ownerId)
         console.log('activityRouter activityArray line 42: ',activityArray)
         return res.status(200).json({activityArray, petIdArray, singlePetId });
       

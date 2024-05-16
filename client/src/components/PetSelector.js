@@ -9,14 +9,15 @@ const PetSelector = ({ petIdArray, referencePetId, setReferencePetId }) => {
     // const activePetId = localStorage.getItem('referencePetId')
     // const petIdString = activePetId? activePetId.replace(/^"|"$/g, ''):null
     // const petId = petIdString? parseInt(petIdString):null
+    console.log('petIdArray: ',petIdArray)
     if(referencePetId && petIdArray){
       const activePetRecord = petIdArray.filter( petRecord => {
         return petRecord.id == referencePetId
       })
       console.log('activePetRecord: ',activePetRecord)
       const activePetName = activePetRecord[0]
+      console.log('Active pet name: ', activePetName)
       if(activePetName) setName(activePetName['petName'])
-      // console.log('Active pet name: ', activePetName.petName)
       // setName(activePetName)
     }
   },[ referencePetId, petIdArray ])

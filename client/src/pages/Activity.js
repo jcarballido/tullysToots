@@ -41,7 +41,7 @@ const Activity = () => {
         console.log(rawActivity)
 
         // Extract the petId array from the response
-        const responsePetIdArray = response.data.petIdArray        
+        const responsePetIdArray = response.data.petIdArray      
 
         setActivity(rawActivity)
         setPetIdArray(responsePetIdArray)

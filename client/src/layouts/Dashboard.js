@@ -46,10 +46,12 @@ import Footer from '../components/Footer.js'
 // }
 // Root will serve as your app layout. Any components to be rendered inside of the root layout must be expressed as an 'Outlet' from the RR6.4 library
 export const Dashboard = () => {
+
+  // const [ slide,setSlide ] = useState(false)
+
   return(
-    <div className='max-w-screen min-h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white overflow-x-hidden'>
+    <div className='max-w-screen h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white overflow-x-hidden border-4 border-blue-700'>
       <Banner />
-      Dashbaord layout
       <Outlet />
       <Footer />
     </div>

@@ -55,10 +55,10 @@ export const Home = () => {
     
       <div className='max-w-screen min-h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white'>
         <Banner setSlide={setSlide} />
-        <AuthProvider>
-          <AccountNavigation slide={slide} setSlide={setSlide} />
-          <Outlet />
-        </AuthProvider>
+        {/* <AuthProvider> */}
+        <AccountNavigation slide={slide} setSlide={setSlide} />
+        <Outlet />
+        {/* </AuthProvider> */}
         <Footer />
       </div>
       
