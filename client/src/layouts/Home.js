@@ -4,7 +4,8 @@ import '../tailwind.css';
 import Banner from '../components/Banner.js'
 import Footer from '../components/Footer.js'
 import AccountNavigation from '../components/AccountNavigation.js';
-import { AuthProvider } from '../context/AuthContext.js';
+import useAuth from '../hooks/useAuth.js';
+// import { AuthProvider } from '../context/AuthContext.js';
 
 // const TextInput = ({ inputName }) => {
 //   const [value, setValue] = useState('')
@@ -50,15 +51,17 @@ import { AuthProvider } from '../context/AuthContext.js';
 export const Home = () => {
 
   const [ slide,setSlide ] = useState(false)
+  const { auth } = useAuth()
 
   return(
     
-      <div className='max-w-screen min-h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white'>
-        <Banner setSlide={setSlide} />
-        {/* <AuthProvider> */}
-        <AccountNavigation slide={slide} setSlide={setSlide} />
+      <div className='max-w-screen min-h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white overflow-hidden'>
+        <Banner setSlide={setSlide} auth={auth} />
+        { auth.isLoggedIn
+          ? <AccountNavigation slide={slide} setSlide={setSlide} />
+          : null
+        }
         <Outlet />
-        {/* </AuthProvider> */}
         <Footer />
       </div>
       

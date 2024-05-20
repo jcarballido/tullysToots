@@ -2,7 +2,7 @@ import React from 'react'
 
 function AcceptInvite() {
   return (
-    <div>AcceptInvite</div>
+    <div>AcceptInvite Component</div>
   )
 }
 
