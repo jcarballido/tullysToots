@@ -611,7 +611,30 @@ router.post('/acceptInvite', async(req,res,next) => {
   return next()
 })
 
-router.use(postProcessing)
+//CHORE: Finalize and check
+router.post('/updatePassword', async (req, res) => {
+  const { currentPassword, newPassword } = req.body
+  console.log('Update password endpoint hit; currentPassword/newPassword received: ', currentPassword,'/', newPassword)
+  const ownerId = req.ownerId
+  console.log('Owner ID: ', ownerId)
+
+  try{
+    const passwordHash = await queries.getPasswordHash(ownerId)
+    const passwordMatch = await bcrypt.compare(currentPassword, passwordHash)
+    console.log('Password match? ', passwordMatch)
+    if(!passwordMatch) throw new Error('Invalid Password')
+    const saltRounds = 5
+    const hash = bcrypt.hashSync(newPassword, saltRounds);
+    const result = await queries.updatePassword(ownerId,hash)
+    return res.status(200).json({ successful:'Password Updated' })
+  }catch(e){
+    console.log('Error with update password query: ', e)
+    return res.status(400).json({updatePasswordError: e})
+  }
+  
+})
+
+// router.use(postProcessing)
 
 router.use((error,req,res,next) => {
   console.log('Error handler received the following error: ', error)

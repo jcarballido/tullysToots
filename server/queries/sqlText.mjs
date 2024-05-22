@@ -79,6 +79,12 @@ const updateText = (tableName, fieldsArr, identifier) => {
   )
 }
 
+const updatePassword = `
+  UPDATE owners
+  SET password_hash = $1
+  WHERE owner_id = $2
+`
+
 const deactivatePetOwnerLinkText = () => { 
   return `
     UPDATE pet_owners
@@ -253,6 +259,7 @@ const deleteActivityByIdText = `
 export default {
   insertIntoText,
   updateText,
+  updatePassword,
   deactivatePetOwnerLinkText,
   getActivityText,
   getSingleDayActivityText,

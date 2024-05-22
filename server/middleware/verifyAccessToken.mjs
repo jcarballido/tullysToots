@@ -23,6 +23,7 @@ import invalidSignatureError from '../errors/invalidSignatureError.mjs'
 const verifyAccessToken = (req,res,next) => {
   console.log('VERIFYING ACCESS TOKEN')
   const accessToken = req.headers['authorization']
+  console.log('VerifyAcces token middleware. Access Token: ', accessToken)
   if(!accessToken) return res.status(400).json({error: new Error('Missing access token')})
   const accessSecret = process.env.ACCESS_SECRET
   try{

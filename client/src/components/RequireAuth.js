@@ -7,8 +7,8 @@ const RequireAuth = () => {
   const location = useLocation()
   const { auth } = useAuth()
 
-  console.log('Require Auth ran')
-  console.log('auth: ', auth)
+  // console.log('Require Auth ran')
+  // console.log('auth: ', auth)
 
 
   return(

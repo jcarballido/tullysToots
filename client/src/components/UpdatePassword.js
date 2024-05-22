@@ -1,55 +1,57 @@
 import React, { useEffect, useState } from 'react'
 import { Form, useActionData } from 'react-router-dom'
-import { axiosPrivate } from '../api/axios'
+import useAxiosPrivate from '../hooks/useAxiosPrivate.js'
 import useTextInput from '../hooks/useTextInput.js'
 import UpdateErrorMessage from './UpdateErrorMessage.js'
+import { axiosPrivate } from '../api/axios.js'
 
 const UpdatePassword = () => {
 
+  const axiosPrivate = useAxiosPrivate()
   const currentPasswordInput = useTextInput('')
   const newPasswordInput = useTextInput('')
   const confirmPasswordInput = useTextInput('')
   const actionResult = useActionData()
 
+  console.log('UpdatePassword action result: ', actionResult)
+
   const [ updateErrorMessage, setUpdateErrorMessage ] = useState({visible:false, message:null})
   const [ passwordMismatch, setPasswordMismatch ] = useState(false)
-  const [ currentPasswordFocus, setCurrentPasswordFocus ] = useState({focused:false})
-  const [ newPasswordFocus, setNewPasswordFocus ] = useState({focused:false})
-  const [ confirmPasswordFocus, setConfirmPasswordFocus ] = useState({focused:false})
 
-  if(actionResult?.error){
-    setUpdateErrorMessage({ visible:true, message: actionResult.error })
-  }
+  // if(actionResult?.error){
+  //   setUpdateErrorMessage({ visible:true, message: actionResult.error })
+  // }
 
   // MAY NEED TO GO INTO A USE_EFFECT
   /*
   && !newPasswordFocus.focused && !confirmPasswordFocus.focused && newPasswordInput.value != '' && confirmPasswordInput.value != '')
   */
   useEffect( () => {
-    if((newPasswordInput.value = confirmPasswordInput.value)) {
-      setPasswordMismatch(false)
-    }else if((newPasswordInput.value = confirmPasswordInput.value)){
-      setPasswordMismatch(true)
-    }
+    if(newPasswordInput.value != confirmPasswordInput.value && !newPasswordInput.infocus && !confirmPasswordInput.infocus && newPasswordInput.value && confirmPasswordInput.value) {
+        setPasswordMismatch(true)
+      }else{
+        setPasswordMismatch(false)
+      }
   },[newPasswordInput, confirmPasswordInput])
- 
+
+  // console.log('Password mismatch: ', passwordMismatch)
 
   return (
     <div className='w-full flex flex-col relative'>
       <UpdateErrorMessage visible={updateErrorMessage.visible} message={updateErrorMessage.message}/>
       Update Password
-      <Form className='text-black' method='post' action='/updatePassword'>
-        <label>
-          Current Password
-          <input type='text' name='currentPassword' {...currentPasswordInput} />
+      <Form className='text-black w-full flex flex-col' method='post' action='/updatePassword'>
+        <label className='w-full flex flex-col items-start'>
+          <div className='flex w-full'>Current Password</div>
+          <input className='w-full' type='text' name='currentPassword' {...currentPasswordInput} />
         </label>
-        <label>
-          New Password
-          <input type='text' name='newPassword' {...newPasswordInput} onBlur={() => setNewPasswordFocus({ focused:false })} onFocus={() => setNewPasswordFocus({ focused:true })} />
+        <label className='w-full flex flex-col items-start'>
+          <div className='flex w-full'>New Password</div>
+          <input className='w-full' type='text' name='newPassword' {...newPasswordInput} />
         </label>
-        <label>
-          Confirm Password
-          <input type='text' name='confirmPassword' {...confirmPasswordInput}  onBlur={() => setConfirmPasswordFocus({ focused:false })} onFocus={() => setConfirmPasswordFocus({ focused:true })}/>
+        <label className='w-full flex flex-col items-start'>
+          <div className='flex w-full'>Confirm Password</div>
+          <input className='w-full' type='text' name='confirmPassword' {...confirmPasswordInput} />
         </label>
         <div className={`${passwordMismatch? 'visible':'invisible'}` } >
           Passwords must match
@@ -61,7 +63,7 @@ const UpdatePassword = () => {
 }
 
 export const action = async({ request }) => {
-  const formData = request.formData()
+  const formData = await request.formData()
   const currentPassword = formData.get('currentPassword')
   const newPassword = formData.get('newPassword')
   const confirmPassword = formData.get('confirmPassword')
@@ -70,10 +72,13 @@ export const action = async({ request }) => {
     return {error:'Passwords do not match!'}
   }
 
-  /* VALIDATE PASSWORDS */
+  if(!newPassword || !currentPassword || !confirmPassword){
+    return { error: 'All fields are required'}
+  }
 
   try{
     await axiosPrivate.post('/account/updatePassword',{currentPassword, newPassword})
+    console.log('Axios request made...')
     return {success:'Password successfully updated!'}
   }catch(e){
     return {error:e}

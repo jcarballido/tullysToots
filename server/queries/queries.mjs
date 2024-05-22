@@ -332,6 +332,15 @@ const updateActivity = async(updatedActivityArray) => {
   // return result.rowCount
 }
 
+const updatePassword = async(ownerId, hashedPassword) => {
+  try{
+    await pool.query(sqlText.updatePassword, [ hashedPassword, ownerId ])
+    return true
+  }catch(e){
+    return e
+  }
+}
+
 // 'Remove' operations
 const deactivatePetOwnerLink = async( ownerId,petId ) => {
   const result = await pool.query(sqlText.deactivatePetOwnerLinkText(),[ownerId,petId])
@@ -487,9 +496,9 @@ const getPetActivityByOwner = async(ownerData) => {
   // const dateToday = ownerData.dateToday
   // Example referenceDate format: 'YYYY-MM-DD'
   const referenceDate = ownerData.referenceDate
+  // Get owner ID
   // Assign number of days before and after referenced date
   const daysBeforeAndAfter = 7
-  // Get owner ID
   const ownerId = await getOwnerId(email)
   // Query 'pet_owners' table to identify all active pet links
   const ownerPetIdsArray = await getOwnersPetIds(ownerId)
@@ -631,6 +640,7 @@ export default {
   updateOwner,
   updatePet,
   updateActivity,
+  updatePassword,
   setInvitationAccessedAtTimestamp,
   setResetAccessedAtTimestamp,
   setNewRefreshToken,
