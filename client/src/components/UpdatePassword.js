@@ -4,6 +4,7 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate.js'
 import useTextInput from '../hooks/useTextInput.js'
 import UpdateErrorMessage from './UpdateErrorMessage.js'
 import { axiosPrivate } from '../api/axios.js'
+import Toast from './Toast.js'
 
 const UpdatePassword = () => {
 
@@ -13,14 +14,18 @@ const UpdatePassword = () => {
   const confirmPasswordInput = useTextInput('')
   const actionResult = useActionData()
 
-  console.log('UpdatePassword action result: ', actionResult)
+  // console.log('UpdatePassword action result: ', actionResult)
 
-  const [ updateErrorMessage, setUpdateErrorMessage ] = useState({visible:false, message:null})
+  const [ toast, setToast ] = useState({visible:false, message:null})
   const [ passwordMismatch, setPasswordMismatch ] = useState(false)
 
-  // if(actionResult?.error){
-  //   setUpdateErrorMessage({ visible:true, message: actionResult.error })
-  // }
+  useEffect( () => {
+    if(actionResult.error){
+      setToast({ visible:true, message: actionResult.error })
+    }else if(actionResult.success){
+      setToast({ visible:true, message: actionResult.success })
+    }
+  },[actionResult])
 
   // MAY NEED TO GO INTO A USE_EFFECT
   /*
@@ -38,7 +43,7 @@ const UpdatePassword = () => {
 
   return (
     <div className='w-full flex flex-col relative'>
-      <UpdateErrorMessage visible={updateErrorMessage.visible} message={updateErrorMessage.message}/>
+      <Toast visible={toast.visible} message={toast.message}/>
       Update Password
       <Form className='text-black w-full flex flex-col' method='post' action='/updatePassword'>
         <label className='w-full flex flex-col items-start'>
