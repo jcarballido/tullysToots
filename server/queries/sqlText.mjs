@@ -1,3 +1,5 @@
+// import UpdateUsername from "../../client/src/components/UpdateUsername"
+
 const activityColumns = ['pet_id','entered_by','timestamp_received', 'timestamp_utc_offset','pee','poo']
 
 const insertIntoText = (tableName,newValuesArr) => {
@@ -85,6 +87,13 @@ const updatePassword = `
   WHERE owner_id = $2
 `
 
+const updateUsername = `
+  UPDATE owners
+  SET username = $2,
+  WHERE owner_id = $1
+`
+
+
 const deactivatePetOwnerLinkText = () => { 
   return `
     UPDATE pet_owners
@@ -93,7 +102,7 @@ const deactivatePetOwnerLinkText = () => {
   `
 }
 
-// Get Commands
+//     Commands
 // const getActivityText = (numDays) => {
 //   // referenceDate example: 'YYYY-MM-DD HH24:MM'
 //   return `
@@ -145,6 +154,13 @@ const getPetIdText = `
   SELECT pet_id
   FROM pets
   WHERE pet_name = $1 AND dob = $2 AND sex = $3;
+`
+
+const getPets = `
+  SELECT pets.*
+  FROM pets
+  INNER JOIN pet_owners ON pet_owners.pet_id = pets.pet_id
+  WHERE pet_owners.owner_id = $1
 `
 
 // const getOwnersPetIdsText = () => {
@@ -217,6 +233,12 @@ const getPasswordHashText = `
   FROM owners
   WHERE owner_id = $1
 `
+const getUsernameText = `
+  SELECT username
+  FROM owners
+  WHERE owner_id = $1
+`
+
 // const getInvitationTokenText
 
 const setInvitationAccessedAtTimestampText = () => {
@@ -260,6 +282,8 @@ export default {
   insertIntoText,
   updateText,
   updatePassword,
+  updateUsername,
+  // updatePet,
   deactivatePetOwnerLinkText,
   getActivityText,
   getSingleDayActivityText,
@@ -267,11 +291,13 @@ export default {
   getEmail,
   getActivePetLinksText,
   getPetIdText,
+  getPets,
   getOwnersPetIdsText,
   getInvitationTokenComparisonText,
   getLastAccessedTimestampText,
   getInvitedOwnerIdFromInviteText,
   getPasswordHashText,
+  getUsernameText,
   getInvitationTokenComparisonText,
   getRefreshTokenFromOwnerIdText,
   getRefreshTokenFromUsernameText,

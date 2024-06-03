@@ -14,6 +14,14 @@ const getDateCharacteristics = (referenceDate) => {
   const dayIndex = workingDate.getDay()
   const dayName = dayNames[dayIndex]
 
+  const paddedMonth = monthIndex < 10 
+    ? `0${monthIndex+1}`
+    : `${monthIndex+1}`
+
+  const paddedDate = date < 10 
+    ? `0${date}`
+    : `${date}`
+
   const referenceDateFormatted = `${fullYear}-${monthIndex}-${date}`
   const isToday = referenceDateFormatted == `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`
   const isYesterday = referenceDateFormatted == `${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`
@@ -23,6 +31,8 @@ const getDateCharacteristics = (referenceDate) => {
     isYesterday,
     fullYear,
     monthName,
+    paddedMonth,
+    paddedDate,
     monthIndex,
     date,
     dayName

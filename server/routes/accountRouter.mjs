@@ -406,6 +406,19 @@ router.get('/getSinglePetId', async(req, res)=>{
   }
 })
 
+router.post('/addPet', async(req,res) => {
+  //CHORE: Need to incorporate ownerId when adding pet
+  const ownerId = req.ownerId
+  const { pet_name, dob, sex } = req.body
+  try{
+    const result = await queries.addPet(pet_name,dob,sex)
+    return res.status(200)
+  }catch(e){
+    console.log('Error occured adding pet: ', e)
+    return res.status(400).json(new Error('Error adding pet on backend'))
+  } 
+})
+
 // router.post('/test', (req,res) => {
 //   console.log('New Access Token: ', req.newAccessToken)
 //   console.log('New Refresh Token: ', req.newRefreshToken)
@@ -468,36 +481,36 @@ router.post('/addPets', async(req,res,next) => {
 })
 
 
-router.post('/updatePet', async(req,res,next) => {
+router.put('/updatePet', async(req,res) => {
   const ownerId = req.ownerId
+  console.log('Owner ID: ', ownerId)
   // if (!ownerId) return res.send('User is not logged in or does not have an account')
   // Check the request object inlcudes all the correct keys
-  const updatedData = Object.keys(req.body.updatePetData)
-  const expectedKeys = ['petId','fields','newValues']
-  const validateUpdateData = expectedKeys.map( key => {
-    const test = updatedData.includes(key)
-    return test
-  })
-  if(validateUpdateData.includes(false)) {
-    res.locals.error = 'ERROR: Invalid update request'
-    return next()
-  }
+  console.log('Request body: ', req.body)
+  const updatedData = req.body
+  // const expectedKeys = ['petId','fields','newValues']
+  // const validateUpdateData = expectedKeys.map( key => {
+  //   const test = updatedData.includes(key)
+  //   return test
+  // })
+  // if(validateUpdateData.includes(false)) {
+  //   res.locals.error = 'ERROR: Invalid update request'
+  //   return next()
+  // }
   // Confirm pet IDs belong to owner making the request
-  const petId = req.body.updatePetData.petId
-  console.log('petId passed into route: ', petId)
+  const petId = updatedData.petId
+  console.log('petId passed into request body: ', petId)
   const ownerLinkIsActive = await queries.checkOwnerLink(ownerId,petId)
-  console.log('OwnerLinkIsActive result: ',ownerLinkIsActive)
+  console.log('Is link between owner making request and the pet active?: ',ownerLinkIsActive)
   if(!ownerLinkIsActive) {
-    res.locals.error = 'Account not registered with pet.'
-    return next()
+    return res.status(400).json(new Error('Account not registered with pet.'))
   }
-  const result = await queries.updatePet(req.body.updatePetData)
-  if(result.rowCount) {
-    res.locals.message = 'Successfully updated pet data'
-    return next()
-  }else{
-    res.locals.error = 'Error adding pet data'
-    return next()
+  try{
+    const result = await queries.updatePet(updatedData)
+    return res.status(200).json(result)
+  }catch(e){
+    console.log('Error occured in accountRouter attempting to update pet: ', e)
+    return res.status(400).json(new Error('Error saving new pet data on server. See server for details'))
   }
 })
 
@@ -632,6 +645,37 @@ router.post('/updatePassword', async (req, res) => {
     return res.status(400).json({updatePasswordError: e})
   }
   
+})
+
+router.post('/updateUsername', async (req, res) => {
+  const { currentUsername, newUsername } = req.body
+  console.log('Update username endpoint hit; currentUsername/newUsername received: ', currentUsername,'/', newUsername)
+  const ownerId = req.ownerId
+  console.log('Owner ID: ', ownerId)
+
+  try{
+    const savedUsername = await queries.getUsername(ownerId)
+    const usernameMatch = currentUsername == savedUsername
+    if(!usernameMatch) throw new Error('Incorrect Username')
+    const result = await queries.updateUsername(ownerId,newUsername)
+    return res.status(200).json({ successful:'Username Updated' })
+  }catch(e){
+    console.log('Error with update username query: ', e)
+    return res.status(400).json({updateUsernameError: e})
+  }
+  
+})
+
+router.get('/getPets', async(req,res) => {
+  const ownerId = req.ownerId
+  try{
+    const getPets = await queries.getPets(ownerId)
+    console.log('getPets endpoint, result: ', getPets)
+    return res.status(200).json({success: getPets})
+  }catch(e){
+    console.log('Error querying for pets: ', e)
+    return res.status(400).json({error:'Error querying for pets'})
+  }
 })
 
 // router.use(postProcessing)

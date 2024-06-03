@@ -1,29 +1,34 @@
 import React, { useEffect, useState } from 'react'
-import { Form, useActionData } from 'react-router-dom'
+import { Form, useActionData, useNavigate } from 'react-router-dom'
 import useAxiosPrivate from '../hooks/useAxiosPrivate.js'
 import useTextInput from '../hooks/useTextInput.js'
-import UpdateErrorMessage from './UpdateErrorMessage.js'
-import { axiosPrivate } from '../api/axios.js'
+// import UpdateErrorMessage from './UpdateErrorMessage.js'
+// import { axiosPrivate } from '../api/xios.js'
 import Toast from './Toast.js'
+import { axiosPrivate } from '../api/axios.js'
 
 const UpdatePassword = () => {
 
-  const axiosPrivate = useAxiosPrivate()
+    const axiosPrivate = useAxiosPrivate()
+
   const currentPasswordInput = useTextInput('')
   const newPasswordInput = useTextInput('')
   const confirmPasswordInput = useTextInput('')
   const actionResult = useActionData()
-
-  // console.log('UpdatePassword action result: ', actionResult)
+  const navigate = useNavigate()
 
   const [ toast, setToast ] = useState({visible:false, message:null})
   const [ passwordMismatch, setPasswordMismatch ] = useState(false)
 
   useEffect( () => {
-    if(actionResult.error){
-      setToast({ visible:true, message: actionResult.error })
-    }else if(actionResult.success){
-      setToast({ visible:true, message: actionResult.success })
+    if(actionResult?.error){
+      setToast({ visible:true, message: 'Error', result:'-' })  
+    }else if(actionResult?.success){
+      setToast({ visible:true, message: actionResult.success, result:'+' })
+      const redirectTimer = setTimeout( () => {
+        navigate('/account')
+      },5000)
+      return () => clearTimeout(redirectTimer)
     }
   },[actionResult])
 
@@ -42,8 +47,8 @@ const UpdatePassword = () => {
   // console.log('Password mismatch: ', passwordMismatch)
 
   return (
-    <div className='w-full flex flex-col relative'>
-      <Toast visible={toast.visible} message={toast.message}/>
+    <div className='w-full flex flex-col'>
+      <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast }/>
       Update Password
       <Form className='text-black w-full flex flex-col' method='post' action='/updatePassword'>
         <label className='w-full flex flex-col items-start'>
@@ -68,6 +73,9 @@ const UpdatePassword = () => {
 }
 
 export const action = async({ request }) => {
+
+  // const axiosPrivate = useAxiosPrivate()
+
   const formData = await request.formData()
   const currentPassword = formData.get('currentPassword')
   const newPassword = formData.get('newPassword')

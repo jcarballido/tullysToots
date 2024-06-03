@@ -165,6 +165,17 @@ const getOwnerId = async(identifierNameString, identifier) => {
   }
 }
 
+const getUsername = async(ownerId) => {
+  try{
+    const result = await pool.query(sqlText.getUsernameText, [ownerId])
+    const savedUsername = result.rows[0].username
+    return savedUsername
+  }catch(e){
+    console.log('Error caught during getting the saved username: ', e)
+    return e
+  }
+}
+
 const getOwnerIdFromEmail = async(email) => {
   //const email = ownerData.email
   //console.log('Line 62 Queries',email)
@@ -200,18 +211,27 @@ const getRefreshToken = async(ownerId) => {
   }
 }
 
-const getResetToken = async(resetToken) => {
+// const getResetToken = async(resetToken) => {
+//   try{
+//     const result = await query.pool(sqlText.getResetTokenText,[ resetToken ])
+//     return result
+//   }catch(e){
+//     return e
+//   }
+// }
+
+// const getEmail = async(ownerId) => {
+//   const result = await query.pool(sqlText.getEmail, [ ownerId ])
+//   return result.rows[0].email
+// }
+
+const getPets = async(ownerId) => {
   try{
-    const result = await query.pool(sqlText.getResetTokenText,[ resetToken ])
-    return result
+    const result = await pool.query(sqlText.getPets,[ ownerId ])
+    return result.rows
   }catch(e){
     return e
   }
-}
-
-const getEmail = async(ownerId) => {
-  const result = await query.pool(sqlText.getEmail, [ ownerId ])
-  return result.rows[0].email
 }
 
 const getPetId = async(petName,dob,sex) => {
@@ -260,14 +280,23 @@ const updateOwner = async(updatedData) => {
 }
 
 const updatePet = async(updatedData) => {
-  const petId = updatedData.petId
+  // const petId = updatedData.petId
   // const email = updatedData.email
-  const [ ...fields ] = updatedData.fields
+  // const [ ...fields ] = updatedData.fields
   // console.log('Fields => ',fields)
-  const [ ...newValues ] = updatedData.newValues
+  // const [ ...newValues ] = updatedData.newValues
   //console.log('newValues => ',newValues)
 
-  // Two queries:
+  const { petId, pet_name, dob, sex } = updatedData
+  try{
+    const result = await pool.query(sqlText.updateText('pets',['pet_name','dob','sex'],'pet_id'),[pet_name,dob,sex, petId])
+    return result
+  }catch(e){
+    console.log('Error in updatePet query: ', e)
+    return e
+  }
+
+  //,[pet_name,dob,sex, petId]) Two queries:
   // 1. Get petIdcarballidoj92@gmail.com
   //const resultOwner = await pool.query(sqlText.getOwnerText(),[email])
   //const ownerId = resultOwner.rows[0].owner_id
@@ -335,6 +364,15 @@ const updateActivity = async(updatedActivityArray) => {
 const updatePassword = async(ownerId, hashedPassword) => {
   try{
     await pool.query(sqlText.updatePassword, [ hashedPassword, ownerId ])
+    return true
+  }catch(e){
+    return e
+  }
+}
+
+const updateUsername = async(ownerId, newUsername) => {
+  try{
+    await pool.query(sqlText.updateUsername,[ownerId, newUsername])
     return true
   }catch(e){
     return e
@@ -593,9 +631,9 @@ const checkExistingCredentials = async(username,email) => {
 const checkOwnerLink = async(ownerId,petId) => {
   try{
     // console.log(petId)
-    // console.log('petId received in line 410 of queires.js: ', parseInt(petId))
+    console.log('petId received in line 410 of queires.js: ', parseInt(petId))
     const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
-    // console.log('Result from checking owner link: ',result)
+    console.log('Result from checking owner link: ',result)
     const petIdArray = result.rows.map( row => row.pet_id) 
     // console.log('petIdArray result: ', petIdArray)
     // console.log(petIdArray)
@@ -622,9 +660,11 @@ export default {
   addActivity,
   getPasswordHash,
   getOwnerId,
+  getUsername,
   getRefreshToken,
-  getResetToken,
-  getEmail,
+  // getResetToken,
+  // getEmail,
+  getPets,
   getPetId,
   getInvitedOwnerIdFromInvite,
   getOwnersPetIds,
@@ -641,6 +681,7 @@ export default {
   updatePet,
   updateActivity,
   updatePassword,
+  updateUsername,
   setInvitationAccessedAtTimestamp,
   setResetAccessedAtTimestamp,
   setNewRefreshToken,
