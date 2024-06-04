@@ -7,7 +7,7 @@ const Pet = ({ pet, editMode, disabled, handleEditMode,setPetsArray, setEditMode
   const axiosPrivate = useAxiosPrivate()
   console.log("Pet info: ", pet);
   const { fullYear, paddedMonth, paddedDate } = getDateCharacteristics(pet.dob);
-  const petNameInput = useTextInput(pet.pet_name);
+  const petNameInput = useTextInput(`${pet.pet_name}`);
 
   // const [year, setYear] = useState(fullYear);
   // const [month, setMonth] = useState(monthIndex + 1);

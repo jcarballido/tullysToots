@@ -3,10 +3,10 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import getDateCharacteristics from '../util/getDateCharacteristics';
 import useTextInput from '../hooks/useTextInput';
 
-const NewPetModal = ({ newPetModal, setNewPetModal }) => {
+const NewPetModal = ({ newPetModal, setNewPetModal, setPetsArray }) => {
 
-  const { fullYear, paddedMonth, padedDate } = getDateCharacteristics(new Date())
-  const [ dateValue, setDateValue ] = useState(`${fullYear}-${paddedMonth}-${padedDate}`)
+  const { fullYear, paddedMonth, paddedDate } = getDateCharacteristics(new Date())
+  const [ dateValue, setDateValue ] = useState(`${fullYear}-${paddedMonth}-${paddedDate}`)
   const [ sexValue, setSexValue ] = useState('')
 
   const axiosPrivate = useAxiosPrivate()
@@ -45,7 +45,7 @@ const NewPetModal = ({ newPetModal, setNewPetModal }) => {
   };
 
   return (
-    <div className={` text-black top-[150px] transition duration-300 ease-in ${newPetModal.visible? 'opaque-100 scale-y-100':'opaque-0 scale-y-0'} `}>
+    <div className={`z-50 bg-gray-400 text-black top-[150px] transition duration-300 ease-in ${newPetModal.visible? 'opaque-100 scale-y-100':'opaque-0 scale-y-0'} `}>
       <input type="text" className="text-black" {...newPetInput} />
       <fieldset className="flex max-w-full">
         Birthday:

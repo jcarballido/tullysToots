@@ -27,10 +27,10 @@ const insertIntoText = (tableName,newValuesArr) => {
 
   const multiplePetOwnersEntryText = (columnsArr) => {
       const valuesTextArray = newValuesArr.map( (_,index) => {return `($1,$${index+3},$2)`})
-      return `getActivity
+      return `
       INSERT INTO ${tableName} (${columnsArr.join()}) 
       VALUES ${valuesTextArray.join()} 
-      RETURNING activity_id`
+      RETURNING *`
   }
 
   switch(tableName){

@@ -74,8 +74,13 @@ const pool = new Pool()
 const addPetOwnerLink = async(ownerId,petIdsArray) => {
   //const seeText = sqlText.insertIntoText('pet_owners')
   //console.log(seeText)
-  const result = await pool.query(sqlText.insertIntoText('pet_owners',petIdsArray),[ownerId,true,...petIdsArray])
-  return result
+  try{
+    const result = await pool.query(sqlText.insertIntoText('pet_owners',petIdsArray),[ownerId,true,...petIdsArray])
+    return result
+  }catch(e){
+    console.log('Error at addPetOwnerLink query: ',e)
+    return e 
+  }
 }
 
 const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee, poo) => {

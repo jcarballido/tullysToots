@@ -407,12 +407,14 @@ router.get('/getSinglePetId', async(req, res)=>{
 })
 
 router.post('/addPet', async(req,res) => {
-  //CHORE: Need to incorporate ownerId when adding pet
   const ownerId = req.ownerId
   const { pet_name, dob, sex } = req.body
   try{
     const result = await queries.addPet(pet_name,dob,sex)
-    return res.status(200)
+    console.log('Result from adding pet: ', result)
+    const petOwnerLink = await queries.addPetOwnerLink(ownerId,[result])
+    console.log('Pet owner link: ', petOwnerLink)
+    return res.status(200).send('Successfully added pet')
   }catch(e){
     console.log('Error occured adding pet: ', e)
     return res.status(400).json(new Error('Error adding pet on backend'))

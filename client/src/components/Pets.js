@@ -68,7 +68,7 @@ function Pets() {
   return (
     <div className='w-full'>
       <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } />       
-      <NewPetModal newPetModal={newPetModal} setNewPetModal={setNewPetModal} />
+      <NewPetModal newPetModal={newPetModal} setNewPetModal={setNewPetModal} setPetsArray={setPetsArray} />
       Pets
       {petsArray?.map( pet => {
         if(editMode?.petId == pet.pet_id){
