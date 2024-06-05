@@ -599,6 +599,80 @@ router.post('/sendInvite', async(req, res, next) => {
     return next()
   }
 })
+
+router.post('/sendInvite', async(req,res) => {
+  // Capture owner id from request
+  const sendingOwnerId = req.ownerId
+  // Capture the invitee's email
+  const invitedEmail = req.body.email
+  // Capture the pet(s) IDs that are being shared
+  const petIdsArray = req.body.petIdsArray
+
+  if(!sendingOwnerId || !invitedEmail || !petIdsArray) return res.status(400).json({error: new Error('Missing critical info to send invite')})
+
+  /* LOGIC */
+  // Confirm active link between the sender and pet id(s) included in req.body
+  try{
+    const isPetOwnerLinkActive = await queries.checkOwnerLink(sendingOwnerId, petIdsArray)
+  }catch(e){
+    console.log('Error checking for active links between pet and owners: ', e )
+    return res.status(400).json({ error: new Error('One or more of the pets being shared is not linked to yourr account')})
+  }
+
+  // Check if invitee is already registered
+  try{
+    const invitedOwnerId = await queries.getOwnerIdFromEmail(invitedEmail)
+    if(invitedOwnerId){
+      // Create jwt with payload: sendingOwnerId, invitedOwnerId, pet id(s)
+      try{
+        // add token to invite table
+      }catch(e){
+        throw new Error('Could not send invitation at this time')
+      }
+    }else{
+      // Create jwt with payload: sendingOwnerId, pet id(s)       
+      try{
+        // add token to invite table
+      }catch(e){
+        throw new Error('Could not send invitation at this time')
+      }
+    }
+  }catch(e){
+    console.log('Error attempting to add invitation token to table: ', e)
+    return res.status(400).json({error: new Error('Could not send invite at this time.')})
+  }
+  // Send email using transporter object
+  const invitationSecret = process.env.INVITATION_SECRET
+  const invitationForm = (link) => {
+    return `
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>HTML Form</title>
+    </head>
+    <body>
+        <h1>Someone wants share their pet's activity with you!</h1>
+        <h2>If you are ready to accept, click the link below.</h2>
+        <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
+        <a href=${link} target="_blank">Show me the activity</a>
+    </body>
+  `}
+  const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
+  try{
+    const info = await transporter.sendMail({
+      from: companyEmail, // sender address
+      to: receivingOwnerEmail, // list of receivers
+      subject: "A Tully's Toots Member is Inviting You!", // Subject line
+      html: invitationForm(addPetOwnerLink), // html body
+    });
+    console.log('Line 101 => ', info)
+    return res.locals.message = 'Link sent'
+  }catch(e){
+    res.locals.error = e
+    return next()
+  }
+})
+
 // Need to test with front end
 router.post('/acceptInvite', async(req,res,next) => {
   const invitationToken = req.query.invitationToken
