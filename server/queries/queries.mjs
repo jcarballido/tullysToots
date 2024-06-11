@@ -79,7 +79,7 @@ const addPetOwnerLink = async(ownerId,petIdsArray) => {
     return result
   }catch(e){
     console.log('Error at addPetOwnerLink query: ',e)
-    return e 
+    return e                                                                    
   }
 }
 
@@ -103,6 +103,15 @@ const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee
   // const { year,monthIndex,date,convertedHour,convertedMinute, meridian } = (timestampWithoutTZ)
   // const timestamp = `${year}-${monthIndex+1}-${date} ${convertedHour}:${convertedMinute} ${meridian}`
   // console.log('**Queries** addActivity timestamp: ', timestamp)
+}
+
+const addInvitationToken = async(sendingOwnerId, invitationToken) => {
+  try{
+    const result = await pool.query(sqlText.addInvitationToken)
+  }catch(e){
+    console.log('Error in queries, adding invitation token. Error: ',e)
+    return e
+  }
 }
 
 const getPasswordHash = async(ownerId) => {
@@ -636,9 +645,9 @@ const checkExistingCredentials = async(username,email) => {
 const checkOwnerLink = async(ownerId,petId) => {
   try{
     // console.log(petId)
-    console.log('petId received in line 410 of queires.js: ', parseInt(petId))
+    // console.log('petId received in line 410 of queires.js: ', parseInt(petId))
     const result = await pool.query(sqlText.checkOwnerLinkText,[ownerId])
-    console.log('Result from checking owner link: ',result)
+    // console.log('Result from checking owner link: ',result)
     const petIdArray = result.rows.map( row => row.pet_id) 
     // console.log('petIdArray result: ', petIdArray)
     // console.log(petIdArray)
@@ -663,6 +672,7 @@ export default {
   addInvitationLink,
   addPetOwnerLink,
   addActivity,
+  addInvitationToken,
   getPasswordHash,
   getOwnerId,
   getUsername,

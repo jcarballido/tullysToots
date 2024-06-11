@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react'
 import {
   useActionData,
-  useLoaderData
+  useLoaderData,
+  useNavigate
 } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 import ActivityCarousel from '../components/ActivityCarousel'
@@ -11,8 +12,9 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate'
 
 const Activity = () => { 
 
-  // const { auth } = useAuth()
+  const { auth } = useAuth()
   const axiosPrivate = useAxiosPrivate()
+  const navigate = useNavigate()
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData()
 
@@ -23,6 +25,10 @@ const Activity = () => {
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
   const [ petIdArray, setPetIdArray ] = useState([])
+
+  useEffect( () => {
+    if(!auth?.accessToken) navigate('/')
+  },[])
 
   useEffect( () => {
     const getActivity = async() => {

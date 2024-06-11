@@ -31,7 +31,7 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route element={<HomeLayout />} >
-        <Route path="/" element={<Login />} action={ loginAction } loader={ loginLoader }/>
+        <Route path="/" element={<Login />} action={ loginAction } loader={loginLoader} />
         <Route path="signup" element={<SignUp />} action={ signUpAction } />
         <Route path="forgotPassword" element={<ForgotPassword/>} />
         <Route element={<RequireAuth />}>
@@ -43,18 +43,21 @@ const router = createBrowserRouter(
           {/* <Route path="dashboard" element={<Dashboard />} > */}
           <Route path="dashboard" element={<DashboardNavigation />} />
           <Route path="account" element={<Account />} />
-          <Route path="invite" element={<Invite />} />
+          <Route path="sendInvite" element={<Invite />} />
           <Route path="pets" element={<Pets />} loader={petsLoader}/>
           <Route path="acceptInvite" element={<AcceptInvite />} />
           <Route path="updatePassword" element={<UpdatePassword />} action={updatePasswordAction} />
           <Route path="updateUsername" element={<UpdateUsername />} action={updateUsernameAction}/>
           {/* </Route>  */}
+          {/* </Route> */}
         </Route>
       </Route> 
       <Route path='*' element={<NotFound />} />
     </>
   )
 )
+
+// acceptInvite?invite=testToken
 
 root.render(
   <AuthProvider>

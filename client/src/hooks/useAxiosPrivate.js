@@ -27,9 +27,10 @@ const useAxiosPrivate = () => {
         return response
       },
       async (err) => {
+        console.log('Error caught in response interceptor: ',err)
         const previousRequest = err.config
-        console.log('Error config received in intercepted response interceptor: ', err.config)
-        console.log('Config.sent? ', previousRequest.sent)
+        // console.log('Error config received in intercepted response interceptor: ', err.config)
+        // console.log('Config.sent? ', previousRequest.sent)
         if(err.response.status == 400 && !previousRequest.sent){
           previousRequest.sent = true
           const newAccessToken = await refreshAccessToken()

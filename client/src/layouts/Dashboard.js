@@ -7,6 +7,8 @@ import useAuth from '../hooks/useAuth.js';
 // import { axiosPrivate } from '../api/axios.js';
 
 export const Dashboard = () => {
+
+  console.log('Dashboard layout mounted')
   
   const [ previousLocation, setPreviousLocation ] = useState('')
 

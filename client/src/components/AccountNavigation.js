@@ -1,25 +1,31 @@
 import React from 'react'
 import useAuth from '../hooks/useAuth'
-import {axiosPrivate} from '../api/axios'
-import { Link, useLocation } from 'react-router-dom'
+// import {axiosPrivate} from '../api/axios'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+// import useAxiosPrivate from '../hooks/useAxiosPrivate'
+import { axiosPrivate } from '../api/axios'
 
 function AccountNavigation({ slide, setSlide }) {
   const location = useLocation()
+  const navigate = useNavigate()
 
   const { setAuth } = useAuth() 
+  // const axiosPrivate = useAxiosPrivate()
 
   const handleClose = (e) => {
     e.preventDefault()
     setSlide(false)
   }
-  const handleLogout = (e) => {
+  const handleLogout = async(e) => {
     e.preventDefault()
-    axiosPrivate
-      .get('/account/logout')
-      .then( res => {
-        console.log(res)
-        return setAuth(prev => {return {...prev, accessToken:null, isLoggedIn:false}})
-      }).catch( e => console.log(e))
+    try{
+      await axiosPrivate.get('/account/logout')
+      return setAuth({})
+      // navigate('/')
+    }catch(e){
+      console.log('Error sending logout request')
+      console.log(e)
+    }
   }
 
   return (

@@ -18,10 +18,10 @@ const SignUp = () => {
   const navigate = useNavigate()
   const loaderData = useLoaderData()
   const actionData = useActionData()
-  const [ searchParams, ...rest ] = useSearchParams()
+  const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get('invite')
   const [ error, setError ] = useState(null)
-  console.log('Invitation token from URL: ', invitationToken)
+  console.log('(SignUp.js)Invitation token from URL: ', invitationToken)
 
 
   useEffect(() => {
@@ -43,7 +43,7 @@ const SignUp = () => {
   useEffect(() => {
     auth?.isLoggedIn 
       ? (invitationToken 
-          ? navigate(`/dashboard/acceptInvite?invite=${invitationToken}`)
+          ? navigate(`/acceptInvite?invite=${invitationToken}`)
           : navigate('/activity')
         ) 
       : null;

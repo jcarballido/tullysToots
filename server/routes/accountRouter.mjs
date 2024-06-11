@@ -58,11 +58,11 @@ router.get('/refreshAccessToken', async (req,res) => {
     }  
   } catch(err){
       if(err instanceof jwt.TokenExpiredError){
-        return res.status(401).json({ err })
+        return res.status(400).json({ err })
       }else if(err instanceof jwt.JsonWebTokenError && err.message == 'invalid signature'){
-        return res.status(403).json({ err })
+        return res.status(400).json({ err })
       }else if(err instanceof RefreshTokenMismatchError){
-        return res.status(401).json({ err })
+        return res.status(400).json({ err })
       }else{
         return res.status(400).json({error: "Undesignated error"})
       }
@@ -71,11 +71,11 @@ router.get('/refreshAccessToken', async (req,res) => {
 
 router.get('/checkLoginSession', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if( !refreshToken ) return res.status(401).json({ detail:'New session' })
+  if( !refreshToken ) return res.status(200).json({ error:'New session' })
   const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
   if( decodedJwt instanceof Error ){
     console.log('decodedJwt returned an error')
-    return res.status(401).json({ detail:'Session expired. Login required.' })
+    return res.status(200).json({ error:'Session expired. Login required.' })
   }else{
     console.log('decodedJwt: ', decodedJwt)
     const accessSecret = process.env.ACCESS_SECRET
@@ -87,14 +87,14 @@ router.get('/checkLoginSession', async(req,res) => {
 
 router.post('/sign-up', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(401).json({detail: 'User is currently logged in'})
+  if(refreshToken) return res.status(400).json({detail: 'User is currently logged in'})
   // Extract email and password from req.body
   const { username, email, password } = req.body
   // Validate
   // Confirm email is unique
   const uniqueCredentials = await queries.checkExistingCredentials(username,email)
   // If userExists returns false...
-  if(uniqueCredentials == true) return res.status(401).json({ detail: 'Email or username already exists. Please sign in or request a password reset'})
+  if(uniqueCredentials == true) return res.status(400).json({ detail: 'Email or username already exists. Please sign in or request a password reset'})
   
   // Hash raw password
   const saltRounds = 5
@@ -134,12 +134,12 @@ router.post('/sign-up', async(req,res) => {
 
 router.post('/sign-in', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(401).json({ error :'User is currently logged in' })
+  if(refreshToken) return res.status(400).json({ error :'User is currently logged in' })
   // Extract email and password from req.body 
   const { username, password } = req.body
   // Confirm user is registered
   const ownerId = await queries.getOwnerId('username',username)
-  if(!ownerId) return res.status(401).json({ error:'User does not exist'})
+  if(!ownerId) return res.status(400).json({ error:'User does not exist'})
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
   // Check password
@@ -620,29 +620,9 @@ router.post('/sendInvite', async(req,res) => {
   }
 
   // Check if invitee is already registered
-  try{
-    const invitedOwnerId = await queries.getOwnerIdFromEmail(invitedEmail)
-    if(invitedOwnerId){
-      // Create jwt with payload: sendingOwnerId, invitedOwnerId, pet id(s)
-      try{
-        // add token to invite table
-      }catch(e){
-        throw new Error('Could not send invitation at this time')
-      }
-    }else{
-      // Create jwt with payload: sendingOwnerId, pet id(s)       
-      try{
-        // add token to invite table
-      }catch(e){
-        throw new Error('Could not send invitation at this time')
-      }
-    }
-  }catch(e){
-    console.log('Error attempting to add invitation token to table: ', e)
-    return res.status(400).json({error: new Error('Could not send invite at this time.')})
-  }
-  // Send email using transporter object
   const invitationSecret = process.env.INVITATION_SECRET
+  const invitationToken = jwt.sign({ sendingOwnerId, petIdsArray }, invitationSecret, { expiresIn: '1d'})
+  const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
   const invitationForm = (link) => {
     return `
     <head>
@@ -656,9 +636,10 @@ router.post('/sendInvite', async(req,res) => {
         <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
         <a href=${link} target="_blank">Show me the activity</a>
     </body>
-  `}
-  const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
+    `}
   try{
+    // add token to invite table
+    const addTokenResult = await queries.addInvitationToken(sendingOwnerId,invitationToken)
     const info = await transporter.sendMail({
       from: companyEmail, // sender address
       to: receivingOwnerEmail, // list of receivers
@@ -666,10 +647,10 @@ router.post('/sendInvite', async(req,res) => {
       html: invitationForm(addPetOwnerLink), // html body
     });
     console.log('Line 101 => ', info)
-    return res.locals.message = 'Link sent'
+    return res.status(200).json({ success: 'Email invitation sent' })
   }catch(e){
-    res.locals.error = e
-    return next()
+    console.log('Error attempting to add invitation token to table: ', e)
+    return res.status(400).json({error: new Error('Could not send invite at this time.')})
   }
 })
 

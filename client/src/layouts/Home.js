@@ -57,7 +57,7 @@ export const Home = () => {
     
       <div className='max-w-screen min-h-screen bg-violet-800 flex flex-col justify-start items-center relative text-white overflow-hidden'>
         <Banner setSlide={setSlide} auth={auth} />
-        { auth.isLoggedIn
+        { auth?.isLoggedIn
           ? <AccountNavigation slide={slide} setSlide={setSlide} />
           : null
         }

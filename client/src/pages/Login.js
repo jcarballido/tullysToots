@@ -18,16 +18,28 @@ const Login = () => {
   const navigate = useNavigate();
   const actionData = useActionData();
   const loaderData = useLoaderData()
-  const [searchParams, ...rest] = useSearchParams()
+  const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get("invite")
   const [ error, setError ] = useState(null)
 
-  useEffect(() => {
-    const { accessToken, isLoggedIn, error } = loaderData
-    error 
-    ? setAuth({ accessToken:null, isLoggedIn:false })
-    : setAuth({ accessToken,isLoggedIn })
-  }, [])
+  console.log('Loader data in Login component: ', loaderData)
+
+  useEffect( () => {
+    if(auth?.isLoggedIn) return navigate('/activity')
+    const {accessToken} = loaderData
+    if(accessToken) return setAuth({accessToken,isLoggedIn:true})
+    console.log('useEffect ran and did not execute anything')
+  },[auth])
+
+  // useEffect(() => {
+  //   const { accessToken, error } = loaderData
+  //   // if(error) {
+  //   //   console.log('Error in useEffect for loader data: ', error)
+  //   //   return
+  //   // }
+  //   if(accessToken) setAuth({accessToken,isLoggedIn:true})
+  //   console.log('Loader Data: ', loaderData)
+  // }, [loaderData])
   
   useEffect(() => {
     if( actionData?.isLoggedIn ){
@@ -38,14 +50,14 @@ const Login = () => {
     }
   }, [actionData])
 
-  useEffect(() => {
-    auth?.isLoggedIn 
-      ? (invitationToken 
-          ? navigate(`/dashboard/acceptInvite?invite=${invitationToken}`)
-          : navigate('/activity')
-        ) 
-      : null;
-  }, [auth])
+  // useEffect(() => {
+  //   auth?.isLoggedIn 
+  //     ? (invitationToken 
+  //         ? navigate(`/acceptInvite?invite=${invitationToken}`)
+  //         : navigate('/activity')
+  //       ) 
+  //     : null;
+  // }, [auth])
 
   // useEffect(() => {
   //   console.log('Testing to see if loaderData causes a re-render; loaderData useEffect ran.')
@@ -112,13 +124,38 @@ export const action = async ({ request }) => {
 }
 
 export const loader = async () => {
+
   try{
     const response = await axiosPrivate.get('/account/checkLoginSession')
-    const accessToken = response.data.accessToken
-    return { accessToken, isLoggedIn:true }
+    if(response.data.accessToken) return response.data
+    if(response.data.error) return response.data.error
+    return response.data
+  
   }catch(e){
-    return {error: e.response}
+    console.log('Error in loader: ', e)
+    throw new Error('Some error in loader')
   }
+  // try{
+  //   const response = await axiosPrivate.get('/account/checkLoginSession')
+  //   console.log('Loader response: ', response)
+  //   return response
+  // }catch(e){
+  //   console.log('Error caught in Login loader: ', e)
+  //   throw e
+  // }
+
+  // return 'some data'
+    
+    // const accessToken = response?.data?.accessToken
+    // const error = response?.data?.error
+    // if(response.data.accessToken) return { accessToken,isLoggedIn:true }
+    // // const accessToken = resp, isLoggedIn:true }
+    // // else if(error) return {error:'New session started'}
+    // else return null
+    // console.log('Response: ', response)
+    // return { accessToken, isLoggedIn:true }
+    // return response
+
 }
 
 export default Login;
