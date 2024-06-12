@@ -31,7 +31,7 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route element={<HomeLayout />} >
-        <Route path="/" element={<Login />} action={ loginAction } loader={loginLoader} />
+        <Route path="/" element={<Login />} action={ loginAction }  />
         <Route path="signup" element={<SignUp />} action={ signUpAction } />
         <Route path="forgotPassword" element={<ForgotPassword/>} />
         <Route element={<RequireAuth />}>

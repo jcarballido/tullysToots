@@ -30,6 +30,7 @@ router.use(cookieParser())
 
 router.get('/logout', (req,res) => {
   res.clearCookie('jwt')
+  // CHORE: Remove refresh token from db
   return res.status(200).send('Cleared')
 })
 
@@ -531,74 +532,74 @@ router.post('/breakOwnerLink', async(req,res,next) => {
   }
 })
 // Need to test with front end
-router.post('/sendInvite', async(req, res, next) => {
-  // Utility function
-  const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
-    const result = requestedPetIds.every(id => linkedPetIds.includes(id))
-    return result
-  }
-  const ownerId = req.ownerId
-  const { receivingOwnerEmail, newPetIdsArray } = req.body
-  if(!(receivingOwnerEmail && newPetIdsArray)) return res.locals.error = 'Invalid request'
-  const verifiedLinkedPetIds = await queries.getOwnersPetIds( ownerId )
-  console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
-  const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
-  if(!verifiedIdsExist) return res.locals.error = 'Can\'t find a link to one or more of these pets'
-  const receivingOwnerId = await queries.getOwnerId('email',receivingOwnerEmail);
-  const invitationSecret = process.env.INVITATION_SECRET
-  const invitationForm = (link) => {
-    return `
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>HTML Form</title>
-    </head>
-    <body>
-        <h1>Someone wants share their pet's activity with you!</h1>
-        <h2>If you are ready to accept, click the link below.</h2>
-        <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
-        <a href=${link} target="_blank">Show me the activity</a>
-    </body>
-  `}
-  const payload = {
-    ownerId, 
-    // receivingOwnerId, 
-    newPetIdsArray
-  }
-  const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
+// router.post('/sendInvite', async(req, res, next) => {
+//   // Utility function
+//   const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
+//     const result = requestedPetIds.every(id => linkedPetIds.includes(id))
+//     return result
+//   }
+//   const ownerId = req.ownerId
+//   const { receivingOwnerEmail, newPetIdsArray } = req.body
+//   if(!(receivingOwnerEmail && newPetIdsArray)) return res.locals.error = 'Invalid request'
+//   const verifiedLinkedPetIds = await queries.getOwnersPetIds( ownerId )
+//   console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
+//   const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
+//   if(!verifiedIdsExist) return res.locals.error = 'Can\'t find a link to one or more of these pets'
+//   const receivingOwnerId = await queries.getOwnerId('email',receivingOwnerEmail);
+//   const invitationSecret = process.env.INVITATION_SECRET
+//   const invitationForm = (link) => {
+//     return `
+//     <head>
+//         <meta charset="UTF-8">
+//         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//         <title>HTML Form</title>
+//     </head>
+//     <body>
+//         <h1>Someone wants share their pet's activity with you!</h1>
+//         <h2>If you are ready to accept, click the link below.</h2>
+//         <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
+//         <a href=${link} target="_blank">Show me the activity</a>
+//     </body>
+//   `}
+//   const payload = {
+//     ownerId, 
+//     // receivingOwnerId, 
+//     newPetIdsArray
+//   }
+//   const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
 
-  if(receivingOwnerId){
-    try{
-      const result = await queries.addInvitationLink(ownerId, receivingOwnerId,invitationToken)
-      // 4. Create a link that contains this JWT in the URL.
-    }catch(e){
-      res.locals.error = e
-      return next()
-    }
-  }else{
-    try{
-      const result = await queries.addInvitationLink(ownerId, invitationToken)
-    }catch(e){
-      res.locals.error = e
-      return next()
-    }
-  }
+//   if(receivingOwnerId){
+//     try{
+//       const result = await queries.addInvitationLink(ownerId, receivingOwnerId,invitationToken)
+//       // 4. Create a link that contains this JWT in the URL.
+//     }catch(e){
+//       res.locals.error = e
+//       return next()
+//     }
+//   }else{
+//     try{
+//       const result = await queries.addInvitationLink(ownerId, invitationToken)
+//     }catch(e){
+//       res.locals.error = e
+//       return next()
+//     }
+//   }
 
-  const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
-  try{
-    const info = await transporter.sendMail({
-      from: companyEmail, // sender address
-      to: receivingOwnerEmail, // list of receivers
-      subject: "A Tully's Toots Member is Inviting You!", // Subject line
-      html: invitationForm(addPetOwnerLink), // html body
-    });
-    console.log('Line 101 => ', info)
-    return res.locals.message = 'Link sent'
-  }catch(e){
-    res.locals.error = e
-    return next()
-  }
-})
+//   const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
+//   try{
+//     const info = await transporter.sendMail({
+//       from: companyEmail, // sender address
+//       to: receivingOwnerEmail, // list of receivers
+//       subject: "A Tully's Toots Member is Inviting You!", // Subject line
+//       html: invitationForm(addPetOwnerLink), // html body
+//     });
+//     console.log('Line 101 => ', info)
+//     return res.locals.message = 'Link sent'
+//   }catch(e){
+//     res.locals.error = e
+//     return next()
+//   }
+// })
 
 router.post('/sendInvite', async(req,res) => {
   // Capture owner id from request
@@ -622,7 +623,7 @@ router.post('/sendInvite', async(req,res) => {
   // Check if invitee is already registered
   const invitationSecret = process.env.INVITATION_SECRET
   const invitationToken = jwt.sign({ sendingOwnerId, petIdsArray }, invitationSecret, { expiresIn: '1d'})
-  const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
+  const addPetOwnerLink = `http://localhost:3000/?invite=${invitationToken}`
   const invitationForm = (link) => {
     return `
     <head>

@@ -17,17 +17,40 @@ const Login = () => {
   const { auth, setAuth } = useAuth();
   const navigate = useNavigate();
   const actionData = useActionData();
-  const loaderData = useLoaderData()
+  // const loaderData = useLoaderData()
   const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get("invite")
+  console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
   const [ error, setError ] = useState(null)
 
-  console.log('Loader data in Login component: ', loaderData)
 
   useEffect( () => {
+
+    const checkLogin = async() => {
+      try{
+        const response = await axiosPrivate.get('/account/checkLoginSession')
+        if(response.data.accessToken) {
+          if(invitationToken) {
+            setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+            return navigate(`/acceptInvite?invite=${invitationToken}`)
+          }
+          return setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+        }
+        if(response.data.error) return 
+        return 
+      
+      }catch(e){
+        console.log('Error in loader: ', e)
+        return
+      }
+    }
+
+    checkLogin()
+  },[])
+
+  useEffect( () => {
+    if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
     if(auth?.isLoggedIn) return navigate('/activity')
-    const {accessToken} = loaderData
-    if(accessToken) return setAuth({accessToken,isLoggedIn:true})
     console.log('useEffect ran and did not execute anything')
   },[auth])
 

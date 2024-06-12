@@ -11,6 +11,8 @@ const RequireAuth = () => {
   const invitationToken = searchParams.get("invite")
   // const link = `/acceptInvite?invite=${invitationToken}`
 
+  console.log('Auth read in RequireAuth: ', auth)
+
   return(
       auth?.isLoggedIn
         ? <Outlet />

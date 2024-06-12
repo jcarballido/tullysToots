@@ -9,7 +9,7 @@ function AccountNavigation({ slide, setSlide }) {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { setAuth } = useAuth() 
+  const { auth,setAuth } = useAuth() 
   // const axiosPrivate = useAxiosPrivate()
 
   const handleClose = (e) => {
@@ -19,9 +19,11 @@ function AccountNavigation({ slide, setSlide }) {
   const handleLogout = async(e) => {
     e.preventDefault()
     try{
+      console.log('Auth read in Account Navigation: ', auth)
       await axiosPrivate.get('/account/logout')
-      return setAuth({})
-      // navigate('/')
+      setAuth({})
+      setSlide(false)
+      return navigate('/')
     }catch(e){
       console.log('Error sending logout request')
       console.log(e)
