@@ -9,19 +9,26 @@ function Invite() {
   const axiosPrivate = useAxiosPrivate()
   const [ checked, setChecked ] = useState(false)
   const [ toast, setToast ] = useState({ visible:false,result:null,message:'' })
+  const [ selectedPets, setSelectedPets ] = useState([])
 
-  const handleCheck = () => {
-    setChecked(!checked)
-  }
-
-  const handleInvite = async() => {
+  const handleInvite = async () => {
     try{
-      const result = await axiosPrivate.post('/account/sendInvite')
+      const result = await axiosPrivate.post('/account/sendInvite',{})
       setToast({ visible:true, result, message: result.message })
     }catch(e){
       console.log('Error sending invite: ',e)
       return
     }
+  }
+
+  const handleCheck = (e) => {
+    const target = e.target
+    const petId = target.id
+    if(selectedPets.includes(petId)) return setSelectedPets(previousArray => {
+      const newArray = previousArray.filter( petIdElement => petIdElement != petId )
+      return newArray
+    })
+    else return setSelectedPets( previousArray => [...previousArray, petId])
   }
 
   return (
@@ -33,6 +40,11 @@ function Invite() {
       <div>
         Send and invite to someone you want to share your pet's activity with.
       </div>
+      {
+        petsList.map( pet => {
+          <input key={pet.pet_id} id={pet.pet_id} type='checkbox' value={pet.pet_id} checked={selectedPets.includes(pet.pet_id)} onChange={ e => handleCheck(e)} />
+        })
+      }
       <input type='text' {...emailInviteeInput} />
       <div>
         The person you are inviting will have the same privileges to your pet, such as updating their info. Please only send this to a trusted individual.
