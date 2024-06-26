@@ -22,13 +22,14 @@ import invalidSignatureError from '../errors/invalidSignatureError.mjs'
 
 const verifyAccessToken = (req,res,next) => {
   console.log('VERIFYING ACCESS TOKEN')
+  console.log('Check request original URL: ',req.originalUrl)
   const accessToken = req.headers['authorization']
-  console.log('VerifyAcces token middleware. Access Token: ', accessToken)
+  // console.log('VerifyAcces token middleware. Access Token: ', accessToken)
   if(!accessToken) return res.status(400).json({error: new Error('Missing access token')})
   const accessSecret = process.env.ACCESS_SECRET
   try{
     const decodeJwt = jwt.verify(accessToken, accessSecret)
-    console.log('Decoded JWT: ', decodeJwt)
+    // console.log('Decoded JWT: ', decodeJwt)
     const ownerId = decodeJwt.ownerId
     if(!ownerId) return res.status(400).json({ error: new Error('Missing owner ID') })
     req.ownerId = ownerId

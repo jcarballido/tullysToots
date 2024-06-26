@@ -11,6 +11,7 @@ import {
   useSearchParams
 } from "react-router-dom";
 import { axiosPrivate } from '../api/axios.js'
+// import axios from 'axios'
 // import ErrorMessage from "../components/ErrorMessage.js";
 
 const Login = () => {
@@ -20,15 +21,14 @@ const Login = () => {
   // const loaderData = useLoaderData()
   const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get("invite")
-  console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
-  const [ error, setError ] = useState(null)
+  // console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
+  const [ error, setError ] = useState(null) 
 
 
   useEffect( () => {
-
     const checkLogin = async() => {
       try{
-        const response = await axiosPrivate.get('/account/checkLoginSession')
+        const response = await axiosPrivate.get('/account/checkLoginSession?test=true')
         if(response.data.accessToken) {
           if(invitationToken) {
             setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
@@ -46,6 +46,8 @@ const Login = () => {
     }
 
     checkLogin()
+    console.log('Check login fn executed')
+
   },[])
 
   useEffect( () => {
@@ -146,39 +148,39 @@ export const action = async ({ request }) => {
   }
 }
 
-export const loader = async () => {
+// export const loader = async () => {
 
-  try{
-    const response = await axiosPrivate.get('/account/checkLoginSession')
-    if(response.data.accessToken) return response.data
-    if(response.data.error) return response.data.error
-    return response.data
+//   try{
+//     const response = await axiosPrivate.get('/account/checkLoginSession')
+//     if(response.data.accessToken) return response.data
+//     if(response.data.error) return response.data.error
+//     return response.data
   
-  }catch(e){
-    console.log('Error in loader: ', e)
-    throw new Error('Some error in loader')
-  }
-  // try{
-  //   const response = await axiosPrivate.get('/account/checkLoginSession')
-  //   console.log('Loader response: ', response)
-  //   return response
-  // }catch(e){
-  //   console.log('Error caught in Login loader: ', e)
-  //   throw e
-  // }
+//   }catch(e){
+//     console.log('Error in loader: ', e)
+//     throw new Error('Some error in loader')
+//   }
+//   // try{
+//   //   const response = await axiosPrivate.get('/account/checkLoginSession')
+//   //   console.log('Loader response: ', response)
+//   //   return response
+//   // }catch(e){
+//   //   console.log('Error caught in Login loader: ', e)
+//   //   throw e
+//   // }
 
-  // return 'some data'
+//   // return 'some data'
     
-    // const accessToken = response?.data?.accessToken
-    // const error = response?.data?.error
-    // if(response.data.accessToken) return { accessToken,isLoggedIn:true }
-    // // const accessToken = resp, isLoggedIn:true }
-    // // else if(error) return {error:'New session started'}
-    // else return null
-    // console.log('Response: ', response)
-    // return { accessToken, isLoggedIn:true }
-    // return response
+//     // const accessToken = response?.data?.accessToken
+//     // const error = response?.data?.error
+//     // if(response.data.accessToken) return { accessToken,isLoggedIn:true }
+//     // // const accessToken = resp, isLoggedIn:true }
+//     // // else if(error) return {error:'New session started'}
+//     // else return null
+//     // console.log('Response: ', response)
+//     // return { accessToken, isLoggedIn:true }
+//     // return response
 
-}
+// }
 
 export default Login;

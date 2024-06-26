@@ -105,9 +105,10 @@ const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee
   // console.log('**Queries** addActivity timestamp: ', timestamp)
 }
 
-const addInvitationToken = async(sendingOwnerId, invitationToken) => {
+const addInvitationToken = async(sendingOwnerId, invitedEmail, invitationToken) => {
   try{
-    const result = await pool.query(sqlText.addInvitationToken)
+    const result = await pool.query(sqlText.addInvitationToken,[sendingOwnerId, invitedEmail, invitationToken])
+    return
   }catch(e){
     console.log('Error in queries, adding invitation token. Error: ',e)
     return e
@@ -218,7 +219,7 @@ const getSingleActivePetId = async( ownerId ) => {
 const getRefreshToken = async(ownerId) => {
   try{
     const result = await pool.query(sqlText.getRefreshTokenFromOwnerIdText, [ ownerId ])
-    console.log('Get refresh token query result: ', result)
+    // console.log('Get refresh token query result: ', result)
     return result.rows[0].refresh_token
   }catch(e){
     return null
@@ -603,6 +604,24 @@ const setNewRefreshToken = async(newRefreshToken,ownerId) => {
   }
 }
 
+const storeInvitationToken = async(invitationToken, ownerId) => {
+  try{
+    await pool.query(sqlText.storeInvitationTokenText, [invitationToken, ownerId])
+    return
+  }catch(e){
+    return e
+  }
+}
+
+const addAccessedTimestamp = async(invitationToken) => {
+  try{
+    await pool.query(sqlText.addAccessedTimestampText, [ invitationToken ])
+    return
+  }catch(e){
+    return e
+  }
+}
+
 const getLastAccessedTimestamp = async (invitationToken) => {
   const result = await pool.query(sqlText.getLastAccessedTimestampText(),[invitationToken])
   if(!result.rows[0].accessed_at) return true
@@ -667,6 +686,16 @@ const deleteActivityById = async (activityId) => {
   }
 }
 
+const getAccessedTimestamp = async(invitationToken) => {
+  try{
+    const result = await pool.query(sqlText.getAccessedTimestampText, [ invitationToken ])
+    if(result.rows == 0) return null
+    return result.rows
+  }catch(e){
+    return e
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -700,10 +729,13 @@ export default {
   setInvitationAccessedAtTimestamp,
   setResetAccessedAtTimestamp,
   setNewRefreshToken,
+  storeInvitationToken,
+  addAccessedTimestamp,
   addOwner,
   addReceivingOwnerIdToInvitation,
   checkExistingCredentials,
   checkOwnerLink,
-  deleteActivityById
+  deleteActivityById,
+  getAccessedTimestamp
 }
 

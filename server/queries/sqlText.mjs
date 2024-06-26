@@ -160,7 +160,7 @@ const getPets = `
   SELECT pets.*
   FROM pets
   INNER JOIN pet_owners ON pet_owners.pet_id = pets.pet_id
-  WHERE pet_owners.owner_id = $1
+  WHERE pet_owners.owner_id = $1 AND pet_owners.active = true
 `
 
 // const getOwnersPetIdsText = () => {
@@ -277,6 +277,31 @@ const deleteActivityByIdText = `
   WHERE activity_id = $1
 `
 
+const addInvitationToken = `
+  INSERT INTO invitations (sender_owner_id, email, invitation_token)
+  VALUES ($1, $2,$3)
+`
+
+const storeInvitationTokenText = `
+  INSERT INTO owners
+  SET invitations = array_append(invitations, $1)
+  WHERE owner_id = $2;
+`
+
+const addAccessedTimestampText = `
+  INSERT INTO invitations
+  SET accessed_at = NOW()
+  WHERE invitation_token = $1;
+  RETURNING *
+`
+
+const getAccessedTimestampText = `
+  SELECT accessed_at 
+  FROM invitations
+  WHERE invitation_token = $1
+  RETURNING *;
+`
+
 
 export default {
   insertIntoText,
@@ -309,7 +334,11 @@ export default {
   setNewRefreshTokenText,
   updateInvitationToken,
   checkOwnerLinkText,
-  deleteActivityByIdText
+  deleteActivityByIdText,
+  addInvitationToken,
+  storeInvitationTokenText,
+  addAccessedTimestampText,
+  getAccessedTimestampText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

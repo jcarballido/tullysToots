@@ -23,13 +23,29 @@ const SignUp = () => {
   const [ error, setError ] = useState(null)
   console.log('(SignUp.js)Invitation token from URL: ', invitationToken)
 
+  useEffect( () => {
 
-  useEffect(() => {
-    if( loaderData?.isLoggedIn ){
-      const { accessToken, isLoggedIn } = loaderData
-      setAuth({ accessToken,isLoggedIn })
+    const checkLogin = async() => {
+      try{
+        const response = await axiosPrivate.get('/account/checkLoginSession')
+        if(response.data.accessToken) {
+          // if(invitationToken) {
+          //   setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+          //   return navigate(`/acceptInvite?invite=${invitationToken}`)
+          // }
+          return setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+        }
+        if(response.data.error) return 
+        return 
+      
+      }catch(e){
+        console.log('Error in loader: ', e)
+        return
+      }
     }
-  }, [loaderData])
+
+    checkLogin()
+  },[])
 
   useEffect(() => {
     if( actionData?.isLoggedIn ){
@@ -72,7 +88,7 @@ export const action = async ({ request }) => {
   const newOwnerData = { email, username, password }
   try{
     const response = await axios.post("http://localhost:3000/account/sign-up",newOwnerData)
-    const accessToken = response.accessToken
+    const accessToken = response.data.accessToken
     return { accessToken, isLoggedIn: true }
   } catch(e){
     console.log('Sign Up action resulted in the following error: ',e)
@@ -81,18 +97,18 @@ export const action = async ({ request }) => {
   }
 }
 
-export const loader = () => {
-  const activeLogin = axios
-    .post('http://localhost:3000/checkLoginSession')
-    .then( res => {
-      const { accessToken } = res.data
-      return { accessToken, isLoggedIn:true }
-    }).catch( e => {
-      console.log('Loader request resulted in this error: ', e)
-      const error = e.response.data
-      return { isLoggedIn:false, error }
-  })
-  return activeLogin
-}
+// export const loader = () => {
+//   const activeLogin = axios
+//     .post('http://localhost:3000/checkLoginSession')
+//     .then( res => {
+//       const { accessToken } = res.data
+//       return { accessToken, isLoggedIn:true }
+//     }).catch( e => {
+//       console.log('Loader request resulted in this error: ', e)
+//       const error = e.response.data
+//       return { isLoggedIn:false, error }
+//   })
+//   return activeLogin
+// }
 
 export default SignUp

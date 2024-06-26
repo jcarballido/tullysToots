@@ -50,7 +50,7 @@ router.get('/refreshAccessToken', async (req,res) => {
     const compareRefreshTokens = refreshToken == storedRefreshToken
     if(compareRefreshTokens){
       // Generate new access token
-      const newAccessToken = jwt.sign({ ownerId }, accessSecret,{ expiresIn: '10s' })
+      const newAccessToken = jwt.sign({ ownerId }, accessSecret,{ expiresIn: '10m' })
       // Send the new access token and a HTTP status of 200    
       return res.status(200).json({newAccessToken}) 
     }else{
@@ -70,32 +70,76 @@ router.get('/refreshAccessToken', async (req,res) => {
   }
 })
 
-router.get('/checkLoginSession', async(req,res) => {
+router.get('/checkLoginSession', async(req,res, next) => {
   const refreshToken = req.cookies.jwt
   if( !refreshToken ) return res.status(200).json({ error:'New session' })
   const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
   if( decodedJwt instanceof Error ){
     console.log('decodedJwt returned an error')
     return res.status(200).json({ error:'Session expired. Login required.' })
-  }else{
-    console.log('decodedJwt: ', decodedJwt)
-    const accessSecret = process.env.ACCESS_SECRET
-    const ownerId = decodedJwt.ownerId
-    const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'10s' })
-    return res.status(200).json({ accessToken })
   }
+  const accessSecret = process.env.ACCESS_SECRET
+  const ownerId = decodedJwt.ownerId
+  const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
+  // req.accessToken = accessToken
+  const invitationToken = req.query.invite
+  if(!invitationToken){
+    return res.status(200).json({accessToken: accessToken})
+  }
+  req.invitationToken = invitationToken
+  req.accessToken = accessToken
+  req.ownerId = ownerId
+  next()
+  // return res.status(200).json({ accessToken })
 })
+
+const updateInvitationStatus = async(req,res, next) => {
+  if(req.invitationToken){
+    try{
+      const result = await queries.getAccessedTimestamp(req.invitationToken)
+      if(result != null) throw new Error('Invitation token has already been accessed')
+    }catch(e){
+      console.log('Error thrown checking if an accessed timestamp exists: ', e)
+      return res.status(200).json({ accessToken: req.accessToken, error:'Expired invite' })
+    }
+
+    const decodedJwt = jwt.verify( req.invitationToken, process.env.INVITATION_SECRET )
+    if(decodedJwt instanceof Error){
+      return res.status(200).json({ accessToken: req.accessToken, error:'Expired Invite' })
+    }
+    // Store invitations in OWNERS table, Need to add column for invites as array type
+    
+    try{
+      await queries.addAccessedTimestamp(req.invitationToken)
+    }catch(e){
+      console.log('Error returned from attempting to add timestamp to invite token: ',e)
+      return res.status(200).json({accessToken: req.accessToken, error:'Could not add accessed_at data for token'})
+    }
+
+    try{
+      await queries.storeInvitationToken(req.invitationToken, req.ownerId)
+    } catch(e){
+      console.log(e)
+      return res.status(200).json({accessToken: req.accessToken,error:'Could not attach token to owner'})
+    }
+    return res.status(200).json({ accessToken: req.accessToken })
+  }
+  next()
+}
+
+
 
 router.post('/sign-up', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(400).json({detail: 'User is currently logged in'})
+  if(refreshToken) return res.status(200).json({error: 'User is currently logged in'})
   // Extract email and password from req.body
   const { username, email, password } = req.body
+  if( !username || !email || !password) return res.status(200).json({error:'Missing credentials'})
   // Validate
   // Confirm email is unique
   const uniqueCredentials = await queries.checkExistingCredentials(username,email)
   // If userExists returns false...
-  if(uniqueCredentials == true) return res.status(400).json({ detail: 'Email or username already exists. Please sign in or request a password reset'})
+  if(uniqueCredentials == true) return res.status(200).json({ error: 'Email or username already exists. Please sign in or request a password reset'})
   
   // Hash raw password
   const saltRounds = 5
@@ -105,42 +149,53 @@ router.post('/sign-up', async(req,res) => {
     const tempRefreshToken = jwt.sign({temp:Date.now()},refreshSecret)
     //store user in DB
     const owner = await queries.addOwner({ email,passwordHash,refreshToken:`temp.${tempRefreshToken}`, username } )
+    if(owner == null || err) return res.status(200).json({error:'Error saving new sign-up.'})
     const ownerId = owner.ownerId
-    if(owner == null || err) return res.send('Error saving new sign-up.')
     const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
     // Create refresh token...
     const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
     const updateResult = await queries.updateOwner({ownerId, fields:['refreshToken'], newValues:[refreshToken]})
     // console.log('Result from attempting to update owner\'s refresh token: ', updateResult)
-    if(updateResult instanceof Error) return res.send('ERROR: Could not update new owner with refresh token during sign-up.')
+    if(updateResult instanceof Error) return res.status(200).json({error:'ERROR: Could not update new owner with refresh token during sign-up.'})
     // Create access token 
     const accessSecret = process.env.ACCESS_SECRET
     const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
     res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
-    const invitationToken = req.query.invitationToken
-    if(invitationToken){
-      try{
-        const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
-      }catch(e){
-        console.log('Error updating invitation token with new receiving owner id')
-      }
-      // Send access and invitation token
-      return res.status(200).json({ accessToken,invitationToken,ownerId,username:owner.ownerUsername })
-    }else{
-      // Send access token
-      return res.status(200).json({ accessToken, ownerId, username:owner.ownerUsername })
+    const invitationToken = req.query.invite
+    if(!invitationToken){
+      return res.status(200).json({accessToken: req.accessToken})
     }
+    req.invitationToken = invitationToken
+    req.accessToken = accessToken
+    req.ownerId = ownerId
+    // if(invitationToken){
+    //   try{
+    //     const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
+    //   }catch(e){
+    //     console.log('Error updating invitation token with new receiving owner id')
+    //   }
+    //   // Send access and invitation token
+    //   return res.status(200).json({ accessToken,invitationToken,ownerId,username:owner.ownerUsername })
+    // }else{
+    //   // Send access token
+    //   return res.status(200).json({ accessToken, ownerId, username:owner.ownerUsername })
+    // }
+    
   })
+  next()
 })
+
+
 
 router.post('/sign-in', async(req,res) => {
   const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(400).json({ error :'User is currently logged in' })
+  if(refreshToken) return res.status(200).json({ error :'User is currently logged in' })
   // Extract email and password from req.body 
   const { username, password } = req.body
+  if(!username || !password) return res.status(200).json({ error :'Missing credentials' })
   // Confirm user is registered
   const ownerId = await queries.getOwnerId('username',username)
-  if(!ownerId) return res.status(400).json({ error:'User does not exist'})
+  if(!ownerId) return res.status(200).json({ error:'User does not exist'})
   const passwordHash = await queries.getPasswordHash(ownerId)
   //const user = await queries.authorizeUser(email,password)
   // Check password
@@ -161,24 +216,36 @@ router.post('/sign-in', async(req,res) => {
       console.log('Result from attempting to set new refresh token on sign-in')
       return res.status(400).json({error: 'Could not update refresh token on sign-in'})
     }
-    const invitationToken = req.query.invitationToken
-    if(invitationToken){
-      //const result = await query.addReceivingOwnerIdToInvitation(ownerId)
-      try{
-        const result = await query.addReceivingOwnerIdToInvitation(ownerId)
-        // Send access token and invitation token
-        return res.json({accessToken,invitationToken})
-      }catch(e){
-        return res.send('ERROR: Could not add recipient to invitation token')
-      }
-    }else{
-      // Send access token
-      return res.status(200).json({ accessToken })
+    const invitationToken = req.query.invite
+    if(!invitationToken){
+      return res.status(200).json({accessToken: req.accessToken})
     }
+    req.invitationToken = invitationToken
+    req.accessToken = accessToken
+    req.ownerId = ownerId
+//     const invitationToken = req.query.invitationToken
+//     if(invitationToken){
+//       //const result = await query.addReceivingOwnerIdToInvitation(ownerId)
+//       try{
+//         const result = await query.addReceivingOwnerIdToInvitation(ownerId)
+//         // Send access token and invitation token
+//         return res.json({accessToken,invitationToken})
+//       }catch(e){
+//         return res.send('ERROR: Could not add recipient to invitation token')
+//       }
+//     }else{
+//       // Send access token
+//       return res.status(200).json({ accessToken })
+//     }
+//   }else{
+//     return res.status(400).json({ error: 'Wrong credentials' })
   }else{
     return res.status(400).json({ error: 'Wrong credentials' })
   }
+  next()
 })
+
+router.use(updateInvitationStatus)
 
 // Need to test with frontend
 router.get('/resetRequest', async(req,res) => {
@@ -607,9 +674,9 @@ router.post('/sendInvite', async(req,res) => {
   // Capture the invitee's email
   const invitedEmail = req.body.email
   // Capture the pet(s) IDs that are being shared
-  const petIdsArray = req.body.petIdsArray
+  const petIdsArray = req.body.petsToShareArray
 
-  if(!sendingOwnerId || !invitedEmail || !petIdsArray) return res.status(400).json({error: new Error('Missing critical info to send invite')})
+  if(!sendingOwnerId || !invitedEmail || !petIdsArray) return res.status(400).json({message: new Error('Missing critical info to send invite')})
 
   /* LOGIC */
   // Confirm active link between the sender and pet id(s) included in req.body
@@ -617,7 +684,7 @@ router.post('/sendInvite', async(req,res) => {
     const isPetOwnerLinkActive = await queries.checkOwnerLink(sendingOwnerId, petIdsArray)
   }catch(e){
     console.log('Error checking for active links between pet and owners: ', e )
-    return res.status(400).json({ error: new Error('One or more of the pets being shared is not linked to yourr account')})
+    return res.status(400).json({ message: 'One or more of the pets being shared is not linked to your account'})
   }
 
   // Check if invitee is already registered
@@ -640,18 +707,18 @@ router.post('/sendInvite', async(req,res) => {
     `}
   try{
     // add token to invite table
-    const addTokenResult = await queries.addInvitationToken(sendingOwnerId,invitationToken)
+    const addTokenResult = await queries.addInvitationToken(sendingOwnerId, invitedEmail, invitationToken)
     const info = await transporter.sendMail({
       from: companyEmail, // sender address
-      to: receivingOwnerEmail, // list of receivers
+      to: invitedEmail, // list of receivers
       subject: "A Tully's Toots Member is Inviting You!", // Subject line
       html: invitationForm(addPetOwnerLink), // html body
     });
     console.log('Line 101 => ', info)
-    return res.status(200).json({ success: 'Email invitation sent' })
+    return res.status(200).json({ message: 'Email invitation sent' })
   }catch(e){
     console.log('Error attempting to add invitation token to table: ', e)
-    return res.status(400).json({error: new Error('Could not send invite at this time.')})
+    return res.status(400).json({message: 'Could not send invite at this time.'})
   }
 })
 
@@ -727,9 +794,10 @@ router.post('/updateUsername', async (req, res) => {
 router.get('/getPets', async(req,res) => {
   const ownerId = req.ownerId
   try{
-    const getPets = await queries.getPets(ownerId)
-    console.log('getPets endpoint, result: ', getPets)
-    return res.status(200).json({success: getPets})
+    // const confirmedActivePetLinks = await queries.getActivePetLinks(ownerId)
+    const pets = await queries.getPets(ownerId)
+    // console.log('getPets endpoint, result: ', pets)
+    return res.status(200).json(pets)
   }catch(e){
     console.log('Error querying for pets: ', e)
     return res.status(400).json({error:'Error querying for pets'})

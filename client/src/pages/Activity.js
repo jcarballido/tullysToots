@@ -9,12 +9,17 @@ import ActivityCarousel from '../components/ActivityCarousel'
 import PetSelector from '../components/PetSelector'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 // import timestampParser from '../util/timestampParser'
+// import axios from 'axios'
 
 const Activity = () => { 
 
   const { auth } = useAuth()
   const axiosPrivate = useAxiosPrivate()
   const navigate = useNavigate()
+  // const instance = axios.create({
+  //   baseURL:'http://localhost:3000'
+  // })
+  // instance.defaults.headers.common['Authorization']
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData()
 
@@ -44,11 +49,8 @@ const Activity = () => {
         const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
-        console.log(rawActivity)
-
         // Extract the petId array from the response
         const responsePetIdArray = response.data.petIdArray      
-
         setActivity(rawActivity)
         setPetIdArray(responsePetIdArray)
         return 
@@ -74,6 +76,7 @@ const Activity = () => {
       getActivity()
       localStorage.setItem('referencePetId', JSON.stringify(referencePetId))
     }
+
   },[referencePetId])
 
   useEffect( () => {
