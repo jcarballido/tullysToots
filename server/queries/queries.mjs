@@ -609,16 +609,18 @@ const storeInvitationToken = async(invitationToken, ownerId) => {
     await pool.query(sqlText.storeInvitationTokenText, [invitationToken, ownerId])
     return
   }catch(e){
-    return e
+    throw e
   }
 }
 
 const addAccessedTimestamp = async(invitationToken) => {
+  console.log('addAccessedTimestamp query, invitation token passed in: ', invitationToken)
+  console.log('Invitation type of: ', typeof(invitationToken))
   try{
     await pool.query(sqlText.addAccessedTimestampText, [ invitationToken ])
     return
   }catch(e){
-    return e
+    throw e
   }
 }
 
@@ -692,7 +694,36 @@ const getAccessedTimestamp = async(invitationToken) => {
     if(result.rows == 0) return null
     return result.rows
   }catch(e){
-    return e
+    throw e
+  }
+}
+
+const checkValidity = async(invitationToken) => {
+  console.log('checkValidity query, invitation token passed in: ', invitationToken)
+  console.log('Invitation type of: ', typeof(invitationToken))
+  try{
+    const result = await pool.query(sqlText.checkValidity,[ invitationToken ])
+    return result
+  }catch(e){
+    throw e
+  }
+}
+
+const setInvalidInvitationToken = async(invitationToken) => {
+  try {
+    await pool.query(sqlText.setInvalidInvitationToken, [ invitationToken ])
+    return
+  } catch (error) {
+    throw error
+  }
+}
+
+const logoutUser = async(ownerId) =>{
+  try {
+    await pool.query(sqlText.logoutUser,[ ownerId ])
+    return    
+  } catch (error) {
+    throw error
   }
 }
 
@@ -736,6 +767,9 @@ export default {
   checkExistingCredentials,
   checkOwnerLink,
   deleteActivityById,
-  getAccessedTimestamp
+  getAccessedTimestamp,
+  checkValidity,
+  setInvalidInvitationToken,
+  logoutUser
 }
 

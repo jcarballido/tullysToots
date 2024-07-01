@@ -11,12 +11,10 @@ import util from 'util'
 import RefreshTokenMismatchError from '../errors/RefreshTokenMismatchError.js'
 import nullRefreshTokenError from '../errors/nullRefreshTokenError.mjs'
 
-
 const router = express.Router()
 
 const companyEmail = `"Tully's Toots" <${process.env.APP_USERNAME}>`
 const companyEmailPassword = process.env.APP_PASSWORD
-
 
 const transporter = nodemailer.createTransport({
   service:"gmail",
@@ -28,11 +26,7 @@ const transporter = nodemailer.createTransport({
 
 router.use(cookieParser())
 
-router.get('/logout', (req,res) => {
-  res.clearCookie('jwt')
-  // CHORE: Remove refresh token from db
-  return res.status(200).send('Cleared')
-})
+
 
 router.get('/refreshAccessToken', async (req,res) => {
   // Validate refresh token
@@ -71,8 +65,17 @@ router.get('/refreshAccessToken', async (req,res) => {
 })
 
 router.get('/checkLoginSession', async(req,res, next) => {
+  console.log('checkLoginSession request received')
+  const invitationToken = req.query.invite
+  if(invitationToken) console.log('Invitation token detected')
   const refreshToken = req.cookies.jwt
-  if( !refreshToken ) return res.status(200).json({ error:'New session' })
+  if( !refreshToken && invitationToken ) {
+    req.invitationToken = invitationToken
+    req.newSession = true
+    return next()
+  }else if(!refreshToken && !invitationToken){
+    return res.status(200).json({message:'New Session'})
+  }
   const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
   if( decodedJwt instanceof Error ){
     console.log('decodedJwt returned an error')
@@ -82,9 +85,8 @@ router.get('/checkLoginSession', async(req,res, next) => {
   const ownerId = decodedJwt.ownerId
   const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
   // req.accessToken = accessToken
-  const invitationToken = req.query.invite
   if(!invitationToken){
-    return res.status(200).json({accessToken: accessToken})
+    return res.status(200).json({accessToken})
   }
   req.invitationToken = invitationToken
   req.accessToken = accessToken
@@ -94,10 +96,30 @@ router.get('/checkLoginSession', async(req,res, next) => {
 })
 
 const updateInvitationStatus = async(req,res, next) => {
-  if(req.invitationToken){
+  console.log('UpdateInvitationStatus middleware ran')
+  if(req.newSession){
+    console.log('Inivtation token detected in middleware AND it\'s a new session')
     try{
-      const result = await queries.getAccessedTimestamp(req.invitationToken)
-      if(result != null) throw new Error('Invitation token has already been accessed')
+      const result = await queries.checkValidity(req.invitationToken)
+      if(result) throw new Error('Invitation token has already been accessed')
+    }catch(e){
+      console.log('Error thrown, invite is invalid: ', e)
+      return res.status(200).json({ error:'Expired invite' })
+    }
+    try{
+      await queries.addAccessedTimestamp(req.invitationToken)
+      await queries.setInvalidInvitationToken(req.invitationToken)
+      return res.status(200).json({ message:'Valid invite and new session'})
+    }catch(e){
+      console.log('Error returned from attempting to add timestamp to invite token: ',e)
+      return res.status(200).json({ error:'Could not add accessed_at data for token'})
+    }
+  }
+  if(req.invitationToken){
+    console.log('Inivtation token detected in middleware')
+    try{
+      const result = await queries.checkValidity(req.invitationToken)
+      if(result) throw new Error('Invitation token has already been accessed')
     }catch(e){
       console.log('Error thrown checking if an accessed timestamp exists: ', e)
       return res.status(200).json({ accessToken: req.accessToken, error:'Expired invite' })
@@ -105,12 +127,15 @@ const updateInvitationStatus = async(req,res, next) => {
 
     const decodedJwt = jwt.verify( req.invitationToken, process.env.INVITATION_SECRET )
     if(decodedJwt instanceof Error){
+      console.log('Error decoding invitation JWT token: ', decodedJwt)
+      await queries.setInvalidInvitationToken(req.invitationToken)
       return res.status(200).json({ accessToken: req.accessToken, error:'Expired Invite' })
     }
     // Store invitations in OWNERS table, Need to add column for invites as array type
     
     try{
       await queries.addAccessedTimestamp(req.invitationToken)
+      await queries.setInvalidInvitationToken(req.invitationToken)
     }catch(e){
       console.log('Error returned from attempting to add timestamp to invite token: ',e)
       return res.status(200).json({accessToken: req.accessToken, error:'Could not add accessed_at data for token'})
@@ -119,7 +144,7 @@ const updateInvitationStatus = async(req,res, next) => {
     try{
       await queries.storeInvitationToken(req.invitationToken, req.ownerId)
     } catch(e){
-      console.log(e)
+      console.log('Error returned from trying to store the invitation token to the user: ', e)
       return res.status(200).json({accessToken: req.accessToken,error:'Could not attach token to owner'})
     }
     return res.status(200).json({ accessToken: req.accessToken })
@@ -127,9 +152,7 @@ const updateInvitationStatus = async(req,res, next) => {
   next()
 }
 
-
-
-router.post('/sign-up', async(req,res) => {
+router.post('/sign-up', async(req,res,next) => {
   const refreshToken = req.cookies.jwt
   if(refreshToken) return res.status(200).json({error: 'User is currently logged in'})
   // Extract email and password from req.body
@@ -185,10 +208,11 @@ router.post('/sign-up', async(req,res) => {
   next()
 })
 
-
-
 router.post('/sign-in', async(req,res) => {
+  console.log('Sign in request received')
+  // console.log('Sign in request body: ', req.body)
   const refreshToken = req.cookies.jwt
+
   if(refreshToken) return res.status(200).json({ error :'User is currently logged in' })
   // Extract email and password from req.body 
   const { username, password } = req.body
@@ -202,6 +226,7 @@ router.post('/sign-in', async(req,res) => {
   const passwordMatch = await bcrypt.compare(password, passwordHash)
   // If passwords match:
   if(passwordMatch){
+    // console.log('Passwords matched!')
     const accessSecret = process.env.ACCESS_SECRET
     const refreshSecret = process.env.REFRESH_SECRET
     // Create access token
@@ -218,7 +243,8 @@ router.post('/sign-in', async(req,res) => {
     }
     const invitationToken = req.query.invite
     if(!invitationToken){
-      return res.status(200).json({accessToken: req.accessToken})
+      // console.log('Sign-in does not have an invitation token. Access token to be sent is: ', accessToken)
+      return res.status(200).json({accessToken: accessToken})
     }
     req.invitationToken = invitationToken
     req.accessToken = accessToken
@@ -464,6 +490,23 @@ router.get('/invitation', async(req,res) => {
 
 router.use(verifyAccessToken)
 
+router.get('/logout', async (req,res) => {
+  console.log('Logout request receieved')
+  const ownerId = req.ownerId
+  console.log(`Logging out owner ID: ${ownerId}`)
+  res.clearCookie('jwt')
+  // CHORE: Remove refresh token from db
+  try {
+    await queries.logoutUser(ownerId)
+    console.log('Successfuly removed refresh token from DB')
+    return res.status(200).send('Cleared')
+  } catch (error) {
+    console.log('Error logging user out:',error)
+    return res.status(400).json({ error: 'Did not successfully log user out' })
+  }
+  
+})
+
 router.get('/getSinglePetId', async(req, res)=>{
   const ownerId=req.ownerId
   try{
@@ -549,7 +592,6 @@ router.post('/addPets', async(req,res,next) => {
   res.locals.data = result
   return next()
 })
-
 
 router.put('/updatePet', async(req,res) => {
   const ownerId = req.ownerId
@@ -690,7 +732,7 @@ router.post('/sendInvite', async(req,res) => {
   // Check if invitee is already registered
   const invitationSecret = process.env.INVITATION_SECRET
   const invitationToken = jwt.sign({ sendingOwnerId, petIdsArray }, invitationSecret, { expiresIn: '1d'})
-  const addPetOwnerLink = `http://localhost:3000/?invite=${invitationToken}`
+  const addPetOwnerLink = `http://localhost:3001/?invite=${invitationToken}`
   const invitationForm = (link) => {
     return `
     <head>
@@ -804,14 +846,12 @@ router.get('/getPets', async(req,res) => {
   }
 })
 
+export default router
 // router.use(postProcessing)
 
-router.use((error,req,res,next) => {
-  console.log('Error handler received the following error: ', error)
-})
-
-export default router
-
+// router.use((error,req,res,next) => {
+//   console.log('Error handler received the following error: ', error)
+// })
 // router.get('/refreshAccessToken', (req,res) => {
 //   const checkExpiration = (token) => {
 //     const payload = jwt.decode(token)

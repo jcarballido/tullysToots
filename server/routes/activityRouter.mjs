@@ -47,9 +47,10 @@ router.get("/get", async (req, res) => {
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
   // console.log("**Activity Router ** type of petId: ",typeof(referencePetId))
+  // console.log('Referene date parsed from encoded data: ', referenceDate)
   const petIdString = referencePetId.replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
-  console.log('**Activity Router** timeWindowObj: ', timeWindowObj)
+  // console.log('**Activity Router** timeWindowObj: ', timeWindowObj)
   if (petId) {
     // Confirm active link between owner and pet.
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
@@ -59,7 +60,7 @@ router.get("/get", async (req, res) => {
       // return res.status(200).json({activityArray, petIdArray});
       return res.status(200).json({ activityArray, petIdArray })
     } else {
-      return res.status(401).json({ error: confirmActiveLink });
+      return res.status(201).json({ error: 'Pet and owner are not linked' });
     }
   } else {
       try {
@@ -74,6 +75,7 @@ router.get("/get", async (req, res) => {
         return res.status(200).json({activityArray, petIdArray, singlePetId });
       
       } catch (e) {
+        console.log('Some error caught: ', e)
         return res.status(400).json({ error: e });
       } 
   }

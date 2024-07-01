@@ -12,7 +12,7 @@ const useAxiosPrivate = () => {
     const requestInterceptor = axiosPrivate.interceptors.request.use(  
       config  => {
         if(!config.headers['Authorization'] ){
-          console.log('Request intercepted. Access token added: ', auth.accessToken)
+          // console.log('Request intercepted. Access token added: ', auth.accessToken)
           config.headers['Authorization'] = auth.accessToken
         } 
         return config 
@@ -29,6 +29,8 @@ const useAxiosPrivate = () => {
       async (err) => {
         console.log('Error caught in response interceptor: ',err)
         const previousRequest = err?.config
+        console.log('Previous request: ', previousRequest)
+        if(err.name == 'CanceledError') return Promise.reject(err)
         // console.log('Error config received in intercepted response interceptor: ', err.config)
         // console.log('Config.sent? ', previousRequest.sent)
         if(!previousRequest?.sent){

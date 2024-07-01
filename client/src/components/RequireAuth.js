@@ -11,10 +11,10 @@ const RequireAuth = () => {
   const invitationToken = searchParams.get("invite")
   // const link = `/acceptInvite?invite=${invitationToken}`
 
-  console.log('Auth read in RequireAuth: ', auth)
+  // console.log('Require auth mounted')
 
   return(
-      auth?.isLoggedIn
+      auth?.accessToken
         ? <Outlet />
         : <Navigate to={`/`} state={{from: location}} replace />
     

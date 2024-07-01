@@ -21,8 +21,8 @@ import invalidSignatureError from '../errors/invalidSignatureError.mjs'
 // }
 
 const verifyAccessToken = (req,res,next) => {
-  console.log('VERIFYING ACCESS TOKEN')
-  console.log('Check request original URL: ',req.originalUrl)
+  // console.log('VERIFYING ACCESS TOKEN')
+  // console.log('Check request original URL: ',req.originalUrl)
   const accessToken = req.headers['authorization']
   // console.log('VerifyAcces token middleware. Access Token: ', accessToken)
   if(!accessToken) return res.status(400).json({error: new Error('Missing access token')})
@@ -33,6 +33,7 @@ const verifyAccessToken = (req,res,next) => {
     const ownerId = decodeJwt.ownerId
     if(!ownerId) return res.status(400).json({ error: new Error('Missing owner ID') })
     req.ownerId = ownerId
+    console.log('Access token was verified')
     next()
   }catch(e){
     console.log('ERROR VERIFYING: ', e)

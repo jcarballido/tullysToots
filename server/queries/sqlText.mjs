@@ -283,15 +283,15 @@ const addInvitationToken = `
 `
 
 const storeInvitationTokenText = `
-  INSERT INTO owners
+  UPDATE owners
   SET invitations = array_append(invitations, $1)
   WHERE owner_id = $2;
 `
 
 const addAccessedTimestampText = `
-  INSERT INTO invitations
+  UPDATE invitations
   SET accessed_at = NOW()
-  WHERE invitation_token = $1;
+  WHERE invitation_token = $1
   RETURNING *
 `
 
@@ -301,7 +301,24 @@ const getAccessedTimestampText = `
   WHERE invitation_token = $1
   RETURNING *;
 `
-
+const checkValidity = `
+  SELECT invalid
+  FROM invitations
+  WHERE invitation_token = $1
+`
+const setInvalidInvitationToken = `
+  UPDATE invitations
+  SET accepted = false,
+      rejected = false,
+      pending = false,
+      invalid = true
+  WHERE invitation_token = $1
+`
+const logoutUser = `
+  UPDATE owners
+  SET refresh_token = null
+  WHERE owner_id = $1
+`
 
 export default {
   insertIntoText,
@@ -338,7 +355,10 @@ export default {
   addInvitationToken,
   storeInvitationTokenText,
   addAccessedTimestampText,
-  getAccessedTimestampText
+  getAccessedTimestampText,
+  checkValidity, 
+  setInvalidInvitationToken,
+  logoutUser
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

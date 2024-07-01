@@ -22,6 +22,15 @@ const Activity = () => {
   // instance.defaults.headers.common['Authorization']
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData()
+  // let lsReferenceDate = localStorage.getItem('referenceDate') || null
+  // if(!lsReferenceDate){
+  //   lsReferenceDate = new Date()
+  //   localStorage.setItem('referenceDate', JSON.stringify(lsReferenceDate.toLocaleString().split(',')[0]))
+  // }
+
+  // // Get exisiting reference pet ID from local storage or set to null
+  // const lsReferencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null 
+
 
   const [ activity, setActivity ] = useState([])
   const [ dateMap, setDateMap ] = useState(new Map())
@@ -32,10 +41,25 @@ const Activity = () => {
   const [ petIdArray, setPetIdArray ] = useState([])
 
   useEffect( () => {
+    const abortController = new AbortController()
     if(!auth?.accessToken) navigate('/')
+    const getSinglePetId = async() => {
+      try{
+        const response = await axiosPrivate.get('/account/getSinglePetId',{ signal:abortController.signal })
+        localStorage.setItem('referencePetId', JSON.stringify(response.data.singlePetId))
+        setReferencePetId(response.data.singlePetId)
+      }catch(e){
+        console.log('Error getting single pet id: ',e)
+      }
+    }
+    if(!referencePetId) getSinglePetId()
+    return () => abortController.abort()
   },[])
 
   useEffect( () => {
+    console.log('ReferencePetId useEffect ran')
+    const abortController = new AbortController()
+
     const getActivity = async() => {
       const timeWindowObj = { daysBefore:3, daysAfter:3 }
       const parameters = {
@@ -46,7 +70,7 @@ const Activity = () => {
       const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
       // Fetch activity for the reference date and pet ID
       try{
-        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
+        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`,{ signal:abortController.signal })
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
         // Extract the petId array from the response
@@ -55,27 +79,17 @@ const Activity = () => {
         setPetIdArray(responsePetIdArray)
         return 
       }catch(e){
-        console.log(e)
+        console.log('Error from attempting to get data with encoded parameters: ',e)
         return e
       }
 
     }
-    const getSinglePetId = async() => {
-      try{
-        const response = await axiosPrivate.get('/account/getSinglePetId')
-        setReferencePetId(response.data.singlePetId)
-      }catch(e){
-        console.log(e)
-      }
-    }
-    if(!referencePetId){
-      console.log('Null reference pet Id detected, making call to back end to retrieve one and set state')
-      getSinglePetId()
-    }else{
-      console.log('ReferencePetId detected, set state to: ', referencePetId)
+    if(referencePetId){
+
       getActivity()
-      localStorage.setItem('referencePetId', JSON.stringify(referencePetId))
     }
+
+    return () => abortController.abort()
 
   },[referencePetId])
 
@@ -103,6 +117,7 @@ const Activity = () => {
 
   },[activity])
 
+
   // console.log('**Activity** activity array: ',activity)
 
   return(
@@ -116,7 +131,7 @@ const Activity = () => {
 
 export default Activity
 
-export const loader = async() => {
+export const loader = () => {
   // Get exisiting reference date from local storage or set to the current date
   let referenceDate = localStorage.getItem('referenceDate') || null
   if(!referenceDate){

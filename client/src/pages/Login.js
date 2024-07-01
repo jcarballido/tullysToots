@@ -16,6 +16,7 @@ import { axiosPrivate } from '../api/axios.js'
 
 const Login = () => {
   const { auth, setAuth } = useAuth();
+  const [ mounted, setMounted ] = useState(false)
   const navigate = useNavigate();
   const actionData = useActionData();
   // const loaderData = useLoaderData()
@@ -25,35 +26,37 @@ const Login = () => {
   const [ error, setError ] = useState(null) 
 
 
+  // useEffect( () => {
+  //   console.log('Login useEffect first render useEffect. Auth is: ', auth)
+  // })
+
   useEffect( () => {
     const checkLogin = async() => {
+      // console.log('Check login useEffect ran')
       try{
-        const response = await axiosPrivate.get('/account/checkLoginSession?test=true')
+        const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${invitationToken}`)
+        // console.log('Response in Login component: ', response.data)
         if(response.data.accessToken) {
-          if(invitationToken) {
-            setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
-            return navigate(`/acceptInvite?invite=${invitationToken}`)
-          }
-          return setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
-        }
-        if(response.data.error) return 
+          setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+        }          
+        if(response.data.error) console.log('Error checking for login session: ', response.data.error)
         return 
-      
       }catch(e){
-        console.log('Error in loader: ', e)
+        console.log('Error in checkLogin useEffect: ', e)
         return
       }
     }
 
-    checkLogin()
-    console.log('Check login fn executed')
+    auth?.isLoggedIn 
+      ? (invitationToken
+        ? navigate(`/acceptInvite?invite=${invitationToken}`)
+        : navigate('/activity'))
+      : checkLogin()
 
-  },[])
-
-  useEffect( () => {
-    if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
-    if(auth?.isLoggedIn) return navigate('/activity')
-    console.log('useEffect ran and did not execute anything')
+    // if(!auth?.isLoggedIn) checkLogin()
+    // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
+    // if(auth?.isLoggedIn) return navigate('/activity')
+    // console.log('useEffect ran and did not execute anything')
   },[auth])
 
   // useEffect(() => {
@@ -67,9 +70,10 @@ const Login = () => {
   // }, [loaderData])
   
   useEffect(() => {
-    if( actionData?.isLoggedIn ){
+    // console.log('Action Data from useEffect: ', actionData)
+    if( actionData?.accessToken ){
       const { accessToken, isLoggedIn } = actionData
-      setAuth(prev => {return {...prev, accessToken, isLoggedIn }})
+      setAuth({ accessToken, isLoggedIn })
     } else if(actionData?.error) {
       setError(actionData.error)
     }
@@ -140,6 +144,7 @@ export const action = async ({ request }) => {
   try{
     const response = await axiosPrivate
     .post('/account/sign-in', credentials)
+    // console.log('Response received from sign-in request: ', response)
     const accessToken = response.data.accessToken
     return { accessToken, isLoggedIn: true }
   }catch(e){
