@@ -34,7 +34,8 @@ const Login = () => {
     const checkLogin = async() => {
       // console.log('Check login useEffect ran')
       try{
-        const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${invitationToken}`)
+        const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
+        const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
         // console.log('Response in Login component: ', response.data)
         if(response.data.accessToken) {
           setAuth({accessToken:response.data.accessToken,isLoggedIn:true})

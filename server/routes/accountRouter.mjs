@@ -66,8 +66,11 @@ router.get('/refreshAccessToken', async (req,res) => {
 
 router.get('/checkLoginSession', async(req,res, next) => {
   console.log('checkLoginSession request received')
-  const invitationToken = req.query.invite
+  const encodedInvitationToken = req.query.invite
+  const decodedInvitationToken = decodeURIComponent(encodedInvitationToken)
+  console.log('Request query for checkLoginSession: ', JSON.parse(req.query))
   if(invitationToken) console.log('Invitation token detected')
+  else console.log('Invitation was NULL')
   const refreshToken = req.cookies.jwt
   if( !refreshToken && invitationToken ) {
     req.invitationToken = invitationToken
