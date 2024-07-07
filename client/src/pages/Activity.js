@@ -97,7 +97,7 @@ const Activity = () => {
     const workingDateMap = new Map()
     const workingActivityMap = new Map()
     // activity = [ {date1: [{...act1},...]}, { date2: [ {...act2},...]} ]
-    if(activity.length > 0){
+    if(activity?.length > 0){
       activity.forEach( date => {
       const [ dateString, activityArray ] = Object.entries(date)[0]
       if(activityArray.length == 0){

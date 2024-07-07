@@ -217,9 +217,10 @@ const getSingleActivePetId = async( ownerId ) => {
 }
 
 const getRefreshToken = async(ownerId) => {
+  console.log('getRefreshToken query ownerID recieved: ', ownerId)
   try{
     const result = await pool.query(sqlText.getRefreshTokenFromOwnerIdText, [ ownerId ])
-    // console.log('Get refresh token query result: ', result)
+    console.log('Get refresh token query result: ', result)
     return result.rows[0].refresh_token
   }catch(e){
     return null
@@ -577,9 +578,14 @@ const getPetActivityByOwner = async(ownerData) => {
 const setInvitationAccessedAtTimestamp = async(invitationToken) => {
   // const currTimestampUTC = new Date().toUTCString()
   // console.log('Current timestamp: ', currTimestampUTC)
-  const result = await pool.query(sqlText.setInvitationAccessedAtTimestampText(),[ invitationToken ])
+  try {
+    const result = await pool.query(sqlText.setInvitationAccessedAtTimestampText(),[ invitationToken ])
+    return result.rowCount
+  } catch (error) {
+    console.log('Error in setting \'accessed\' timestamp: ',e)
+    throw error
+  }
   //console.log('Queries, line 158: ', result)
-  return result.rowCount
 }
 
 const setResetAccessedAtTimestamp = async(resetToken) => {
@@ -692,18 +698,19 @@ const getAccessedTimestamp = async(invitationToken) => {
   try{
     const result = await pool.query(sqlText.getAccessedTimestampText, [ invitationToken ])
     if(result.rows == 0) return null
-    return result.rows
+    return result.rows[0].accessed_at
   }catch(e){
     throw e
   }
 }
 
+
 const checkValidity = async(invitationToken) => {
-  console.log('checkValidity query, invitation token passed in: ', invitationToken)
-  console.log('Invitation type of: ', typeof(invitationToken))
   try{
     const result = await pool.query(sqlText.checkValidity,[ invitationToken ])
-    return result
+    console.log('Result from check validity query: ', result)
+    if(result.rows.accessed_at) return result.rows.accessed_at
+    else throw new Error('Invite is invalid')
   }catch(e){
     throw e
   }

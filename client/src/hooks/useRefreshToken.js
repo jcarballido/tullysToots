@@ -13,11 +13,11 @@ const useRefreshToken = () => {
       })
       return response.data.newAccessToken
     }catch(e){
-      setAuth( prevAuth => {
-        return { ...prevAuth, accessToken:null, isLoggedIn:false}
-      })
+      console.log('Error getting refresh token: ',e)
+      return
     }
   }
+
   return refreshAccessToken
 }
 

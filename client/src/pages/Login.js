@@ -16,12 +16,13 @@ import { axiosPrivate } from '../api/axios.js'
 
 const Login = () => {
   const { auth, setAuth } = useAuth();
-  const [ mounted, setMounted ] = useState(false)
+  // const [ mounted, setMounted ] = useState(false)
   const navigate = useNavigate();
   const actionData = useActionData();
   // const loaderData = useLoaderData()
   const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get("invite")
+  const parsedInvitationToken = invitationToken == 'null'? JSON.parse(invitationToken):invitationToken
   // console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
   const [ error, setError ] = useState(null) 
 
@@ -40,7 +41,12 @@ const Login = () => {
         if(response.data.accessToken) {
           setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
         }          
-        if(response.data.error) console.log('Error checking for login session: ', response.data.error)
+        if(response.data.error) {
+          console.log('Error checking for login session: ', response.data.error)
+          const cleanUrl = window.location.pathname;
+          navigate(cleanUrl, { replace: true });
+        }
+        if(response.data.message) console.log('Message from checking login session: ', response.data.message)
         return 
       }catch(e){
         console.log('Error in checkLogin useEffect: ', e)
@@ -49,9 +55,11 @@ const Login = () => {
     }
 
     auth?.isLoggedIn 
-      ? (invitationToken
-        ? navigate(`/acceptInvite?invite=${invitationToken}`)
-        : navigate('/activity'))
+      ? (auth?.expiredInvite)
+        ? navigate('/activity')
+        : (parsedInvitationToken
+          ? navigate(`/acceptInvite?invite=${invitationToken}`)
+          : navigate('/activity'))
       : checkLogin()
 
     // if(!auth?.isLoggedIn) checkLogin()
@@ -72,7 +80,11 @@ const Login = () => {
   
   useEffect(() => {
     // console.log('Action Data from useEffect: ', actionData)
-    if( actionData?.accessToken ){
+    if( actionData?.accessToken && actionData?.expiredInvite ){
+      console.log('Invite expired')
+      const { accessToken, isLoggedIn, expiredInvite } = actionData
+      setAuth({ accessToken, isLoggedIn, expiredInvite })
+    } else if(actionData?.accessToken){
       const { accessToken, isLoggedIn } = actionData
       setAuth({ accessToken, isLoggedIn })
     } else if(actionData?.error) {
@@ -118,7 +130,7 @@ const Login = () => {
   return (
     <CredentialsModal>
       <div className="flex justify-center items-center my-4">LOGIN</div>
-      <LoginForm error={ error } setError={ setError } />
+      <LoginForm error={ error } setError={ setError } invitationToken={ invitationToken } />
       <div className="flex justify-center items-center my-4">
         <div className="flex justify-center items-center mr-1">
           New to Tully's Toots?
@@ -141,17 +153,30 @@ export const action = async ({ request }) => {
   const password = formData.get("password");
   // Package credentials to send to backend
   const credentials = { username, password };
+  // Capture the invitation token
+  const url = new URL(request.url);
+  const queryParams = new URLSearchParams(url.search);
+  // console.log('Action request URL: ', url)
+  const invitationToken = queryParams.get("invite")
+  // console.log('Query params: ', test)
   // Send to backend for verification; Expect to get back an access token
   try{
-    const response = await axiosPrivate
-    .post('/account/sign-in', credentials)
-    // console.log('Response received from sign-in request: ', response)
-    const accessToken = response.data.accessToken
-    return { accessToken, isLoggedIn: true }
+      const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
+      const response = await axiosPrivate
+      .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
+      // console.log('Response received from sign-in request: ', response)
+      const accessToken = response.data.accessToken
+      const expiredToken = response.data.error
+      if(expiredToken){
+        return { accessToken, isLoggedIn:true, expiredInvite: true }
+      }
+      return { accessToken, isLoggedIn: true }
   }catch(e){
     const error = e.response
     return { error:error.data.error }
   }
+
+
 }
 
 // export const loader = async () => {

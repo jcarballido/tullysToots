@@ -16,12 +16,13 @@ const SignUp = () => {
 
   const { auth,setAuth } = useAuth()
   const navigate = useNavigate()
-  const loaderData = useLoaderData()
+  // const loaderData = useLoaderData()
   const actionData = useActionData()
   const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get('invite')
+  const parsedInvitationToken = invitationToken == 'null'? JSON.parse(invitationToken):invitationToken
+
   const [ error, setError ] = useState(null)
-  console.log('(SignUp.js)Invitation token from URL: ', invitationToken)
 
   useEffect( () => {
 

@@ -246,6 +246,7 @@ const setInvitationAccessedAtTimestampText = () => {
     UPDATE invitations 
     SET accessed_at = now() AT TIME ZONE 'UTC'
     WHERE invitation_token = $1  
+    RETURNING *
   `
 }
 const setResetAccessedAtTimestampText = `
@@ -299,10 +300,9 @@ const getAccessedTimestampText = `
   SELECT accessed_at 
   FROM invitations
   WHERE invitation_token = $1
-  RETURNING *;
 `
 const checkValidity = `
-  SELECT invalid
+  SELECT accessed_at
   FROM invitations
   WHERE invitation_token = $1
 `

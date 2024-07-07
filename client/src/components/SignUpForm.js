@@ -6,7 +6,7 @@ import PasswordInput from "./PasswordInput"
 import UsernameInput from "./UsernameInput"
 import ErrorMessage from "./ErrorMessage"
 
-const SignUpForm = ({ error, setError }) => {
+const SignUpForm = ({ error, setError, invitationToken }) => {
 
   const [ invalidEmail, setInvalidEmail ] = useState(true)
   const [ invalidUsername, setInvalidUsername ] = useState(true)
@@ -14,7 +14,7 @@ const SignUpForm = ({ error, setError }) => {
 
 
   return(
-    <Form className='flex flex-col w-full px-8 mb-4' method='post' action='/signup'>
+    <Form className='flex flex-col w-full px-8 mb-4' method='post' action={ `/signup?invite=${invitationToken}`}>
       <ErrorMessage error={ error } setError={ setError } />
       <EmailInput setInvalidField={setInvalidEmail}/>
       <UsernameInput setInvalidField={ setInvalidUsername } />
