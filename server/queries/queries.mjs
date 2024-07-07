@@ -270,29 +270,38 @@ const getInvitationId = async(invitationToken) => {
   const result = await query.pool(sqlText.getInvitationTokenText, [ invitationToken ])
 }
  
-// 'Update' operations
-const updateOwner = async(updatedData) => {
-  try{
-    const ownerId = updatedData.ownerId
-    const [ ...fields ] = updatedData.fields
-    console.log('Fields => ',fields)
-    const [ ...newValues ] = updatedData.newValues
-    console.log('newValues => ',newValues)
+// 'Update' operations  
+// const updateOwner = async(updatedData) => {
+//   try{
+//     const ownerId = updatedData.ownerId
+//     const [ ...fields ] = updatedData.fields
+//     console.log('Fields => ',fields)
+//     const [ ...newValues ] = updatedData.newValues
+//     console.log('newValues => ',newValues)
 
-    // Two queries:
-    // 1. Get ownerId
-    // const resultOwner = await pool.query(sqlText.getOwnerText(),[ identifier ])
-    // const ownerId = resultOwner.rows[0].owner_id
-    console.log('ownerId =>', ownerId)
-    //2. Pass in owner ID that needs updating
-    // console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
-    const result = await pool.query(sqlText.updateText('owners',fields,'ownerId'),[...newValues,ownerId])
-    console.log("Result from attempting to update owner: ",result)
-    return result
-  }catch(e){
-    return e
-  }
+//     // Two queries:
+//     // 1. Get ownerId
+//     // const resultOwner = await pool.query(sqlText.getOwnerText(),[ identifier ])
+//     // const ownerId = resultOwner.rows[0].owner_id
+//     console.log('ownerId =>', ownerId)
+//     //2. Pass in owner ID that needs updating
+//     // console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
+//     const result = await pool.query(sqlText.updateText('owners',fields,'owner_id'),[...newValues,ownerId])
+//     console.log("Result from attempting to update owner: ",result)
+//     return result
+//   }catch(e){
+//     throw e
+//   }
   
+// }
+
+const updateOwner = async(refreshToken, ownerId) => {
+  try {
+    const result = await pool.query(sqlText.updateOwner,[refreshToken,ownerId])
+    return result
+  } catch (error) {
+    throw e
+  }
 }
 
 const updatePet = async(updatedData) => {
@@ -639,9 +648,9 @@ const getLastAccessedTimestamp = async (invitationToken) => {
 //
 const addOwner = async(ownerData) => {
   try{
-    const { email, passwordHash, refreshToken, username } = ownerData
+    const { email, tempPassword, username } = ownerData
     // Single query
-    const result = await pool.query(sqlText.insertIntoText('owners'),[email,passwordHash,refreshToken, username])
+    const result = await pool.query(sqlText.addOwnerText,[email,tempPassword, username])
     const ownerId = result.rows[0].owner_id
     const ownerUsername = result.rows[0].username
     return { ownerId, ownerUsername }
@@ -663,10 +672,11 @@ const checkExistingCredentials = async(username,email) => {
   console.log('ownerIdFromEmail: ',ownerIdFromEmail)
   if(ownerIdFromUsername == null && ownerIdFromEmail == null ){
     console.log('Both username and email are available')
-    return false
+    return true
   }
   console.log('Either username or email are already existing')
-  return true
+  return false
+
 }
 
 const checkOwnerLink = async(ownerId,petId) => {

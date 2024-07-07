@@ -81,6 +81,12 @@ const updateText = (tableName, fieldsArr, identifier) => {
   )
 }
 
+const updateOwner = `
+  UPDATE owners
+  SET refresh_token=$1
+  WHERE owner_id=$2
+`
+
 const updatePassword = `
   UPDATE owners
   SET password_hash = $1
@@ -320,6 +326,12 @@ const logoutUser = `
   WHERE owner_id = $1
 `
 
+const addOwnerText = `
+  INSERT INTO owners(email,password_hash,username)
+  VALUES($1,$2,$3)
+  RETURNING *
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -358,7 +370,9 @@ export default {
   getAccessedTimestampText,
   checkValidity, 
   setInvalidInvitationToken,
-  logoutUser
+  logoutUser,
+  updateOwner,
+  addOwnerText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

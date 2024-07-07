@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser'
 import util from 'util'
 import RefreshTokenMismatchError from '../errors/RefreshTokenMismatchError.js'
 import nullRefreshTokenError from '../errors/nullRefreshTokenError.mjs'
+import crypto from 'crypto'
 
 const router = express.Router()
 
@@ -242,7 +243,7 @@ const updateInvitationStatus = async(req,res,next) => {
 }
 
 router.post('/sign-up', async(req,res,next) => {
-  console.log('Sign up request received')
+  console.log('Sign-up request received')
   //Capture the invitation token
   const encodedInviteToken = req.query.invite
   const decodedInviteToken = JSON.parse(decodeURIComponent(encodedInviteToken))
@@ -250,8 +251,8 @@ router.post('/sign-up', async(req,res,next) => {
   if(decodedInviteToken) console.log('Invitation token detected: ', decodedInviteToken)
   else console.log('Invitation was NULL')
   // Check to see if a session is currently active
-  const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(200).json({error: 'User is currently logged in'})
+  const requestRefreshToken = req.cookies.jwt
+  if(requestRefreshToken) return res.status(200).json({error: 'User is currently logged in'})
   // Extract email and password from req.body
   const { username, email, password } = req.body
   if( !username || !email || !password) return res.status(200).json({error:'Missing credentials'})
@@ -264,57 +265,59 @@ router.post('/sign-up', async(req,res,next) => {
     console.log('Error checking credentials :', error)
     return res.status(200).json({error:'Error checking credentials'})
   }
-  // Hash raw password
+
+  // New Flow:
+  /*
+  // Add new owner to DB with: provided email and username AND auto generated password (temporary)
+  // Take the new owner ID, attach it to the request body and generate an access token and refresh token.
+  // Send responses and attach other variables to request body
+  // Hash password and update owner entry with bcrypt.
+  */
+  const generateTempPassword = (length) => {
+    return crypto.randomBytes(length).toString('hex').slice(0, length);
+  } 
+  try {
+    const tempPassword = generateTempPassword(16);
+    const owner = await queries.addOwner({ email,tempPassword, username } )
+    console.log('Owner info receievd from query: ', owner)
+    req.ownerId = owner.ownerId
+  } catch (error) {
+    console.log('Error adding new owner: ', error)      
+    return res.status(200).json({error:'Error saving new sign-up.'})
+  }
+
+  const ownerId = req.ownerId
+  const refreshSecret = process.env.REFRESH_SECRET
+  const refreshToken = jwt.sign({ownerId},refreshSecret,{ expiresIn:'14d' })
+  const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
+  const accessSecret = process.env.ACCESS_SECRET
+  const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
+  //store user in DB
+  res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+
+  try {
+    const updateResult = await queries.updateOwner(refreshToken,ownerId)
+    console.log('Updated owner refresh token.')
+  } catch (error) {
+    console.log('Error in updating new owner info: ', error)
+    return res.status(200).json({error:'ERROR: Could not update new owner with refresh token during sign-up.'})
+  }
+  if(!decodedInviteToken){
+    console.log('An invite token was not detected, access token sent in response.')
+    return res.status(200).json({accessToken: req.accessToken})
+  }
   const saltRounds = 5
   bcrypt.hash(password, saltRounds, async(err,passwordHash) => {
-    // Temp refresh token
-    const refreshSecret = process.env.REFRESH_SECRET
-    const tempRefreshToken = jwt.sign({temp:Date.now()},refreshSecret)
-    //store user in DB
-    try {
-      const owner = await queries.addOwner({ email,passwordHash,refreshToken:`temp.${tempRefreshToken}`, username } )
-      req.ownerInfo = owner
-    } catch (error) {
-      console.log('Error adding new owner: ', error)      
-      return res.status(200).json({error:'Error saving new sign-up.'})
+    console.log('Refresh cookie attached')
+    try{
+      await queries.updatePassword(ownerId,passwordHash)
+    }catch(e){
+      console.log('Error updating password from the temp password to the provided password.')
+      return res.status(400).json({error:'Error finalzing adding owner.'})
     }
-    const ownerId = req.ownerInfo.ownerId
-    const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 14;
-    // Create refresh token...
-    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn:'14d' })
-    try {
-      const updateResult = await queries.updateOwner({ownerId, fields:['refreshToken'], newValues:[refreshToken]})
-      
-    } catch (error) {
-      console.log('Error in updating new owner info: ', error)
-      return res.status(200).json({error:'ERROR: Could not update new owner with refresh token during sign-up.'})
-      
-    }
-    // console.log('Result from attempting to update owner\'s refresh token: ', updateResult)
-    // Create access token 
-    const accessSecret = process.env.ACCESS_SECRET
-    const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
-    res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
-    if(!decodedInviteToken){
-      return res.status(200).json({accessToken: req.accessToken})
-    }
-    req.invitationToken = decodedInviteToken
-    req.accessToken = accessToken
-    req.ownerId = ownerId
-    // if(invitationToken){
-    //   try{
-    //     const result = await query.addReceivingOwnerIdToInvitation(ownerId,invitationToken)
-    //   }catch(e){
-    //     console.log('Error updating invitation token with new receiving owner id')
-    //   }
-    //   // Send access and invitation token
-    //   return res.status(200).json({ accessToken,invitationToken,ownerId,username:owner.ownerUsername })
-    // }else{
-    //   // Send access token
-    //   return res.status(200).json({ accessToken, ownerId, username:owner.ownerUsername })
-    // }
-    
   })
+  req.invitationToken = decodedInviteToken
+  req.accessToken = accessToken
   next()
 })
 

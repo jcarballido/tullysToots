@@ -172,6 +172,7 @@ export const action = async ({ request }) => {
       }
       return { accessToken, isLoggedIn: true }
   }catch(e){
+    console.log('Sign In action resulted in the following error: ',e)
     const error = e.response
     return { error:error.data.error }
   }
