@@ -705,11 +705,15 @@ const deleteActivityById = async (activityId) => {
 }
 
 const getAccessedTimestamp = async(invitationToken) => {
+  // console.log('attempting to get accessedTimestamp')
   try{
     const result = await pool.query(sqlText.getAccessedTimestampText, [ invitationToken ])
+    // console.log('Result from query: ', result)
+
     if(result.rows == 0) return null
     return result.rows[0].accessed_at
   }catch(e){
+    console.log('Error querying for accessed timestamp: ', e)
     throw e
   }
 }
@@ -718,7 +722,7 @@ const getAccessedTimestamp = async(invitationToken) => {
 const checkValidity = async(invitationToken) => {
   try{
     const result = await pool.query(sqlText.checkValidity,[ invitationToken ])
-    console.log('Result from check validity query: ', result)
+    // console.log('Result from check validity query: ', result)
     if(result.rows.accessed_at) return result.rows.accessed_at
     else throw new Error('Invite is invalid')
   }catch(e){
@@ -727,10 +731,13 @@ const checkValidity = async(invitationToken) => {
 }
 
 const setInvalidInvitationToken = async(invitationToken) => {
+  console.log('Queries: Invite being set to invalid...')
   try {
+    console.log('Invalidation successful')
     await pool.query(sqlText.setInvalidInvitationToken, [ invitationToken ])
     return
   } catch (error) {
+    console.log('Invalidation failed')
     throw error
   }
 }
