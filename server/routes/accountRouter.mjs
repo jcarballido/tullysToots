@@ -636,8 +636,42 @@ router.use(verifyAccessToken)
 
 router.get('/verifyInvite', async(req,res) => {
   // Check if owner Id has an invite associated with it
-  // Check if invite is still valid (not expired)
+  const ownerId = req.ownerId
+  const invitationSecret = process.env.INVITATION_SECRET
+
+  const processInvitations = async(invitationsArray) => {
+    const promiseArray = invitationsArray.map( async(invite)=> {
+      try {
+        const decodeInvite = jwt.verify(invite,invitationSecret)
+        return decodeInvite
+      } catch (error) {
+        console.log('Error decoding invitation. Removing from owner.')
+        await queries.removeInvitationToken(ownerId,invite)
+        return null
+      }
+    })
+    try {
+      const decodedInvitations = await Promise.allSettled(promiseArray)
+      const filteredDecodedInvitations = decodedInvitations.filter( decodedInvitate => decodedInvitate != null)
+      return filteredDecodedInvitations
+    } catch (error) {
+      console.log('Error processing invitations: ', error)
+    }
+  }
+
+  try {
+    const invitations = await queries.getInvtationToken(ownerId)
+    req.invitations = invitations
+    if(invitations?.length == 0) return res.status(200).json({ emptyInvitations:true })
+  } catch (error) {
+    console.log('Error querying for invites: ', error)
+    return res.status(400).json({queryError:`Error querying for invites: ${error}`})
+  }
+  // Check if invite(s) is still valid (not expired)
+  const invitations = [...req.invitations]
+  const decodedInvitations = processInvitations(invitations)
   // Parse the invite to capture the pet IDs being shared
+  
   // Get the pet info for the pet IDs shared.
   // Response with the pet info
 
