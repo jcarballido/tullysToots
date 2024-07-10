@@ -645,33 +645,86 @@ router.get('/verifyInvite', async(req,res) => {
         const decodeInvite = jwt.verify(invite,invitationSecret)
         return decodeInvite
       } catch (error) {
-        console.log('Error decoding invitation. Removing from owner.')
-        await queries.removeInvitationToken(ownerId,invite)
+        console.log('Error decoding invitation. Attempting to remove from owner.')
+        try{
+          await queries.removeInvitationToken(ownerId,invite)
+        }catch(error){
+          console.log('Error in removing the invitation token from the owner.')
+        }
+        console.log('Successfully removed the invite.')
         return null
       }
     })
     try {
       const decodedInvitations = await Promise.allSettled(promiseArray)
-      const filteredDecodedInvitations = decodedInvitations.filter( decodedInvitate => decodedInvitate != null)
-      return filteredDecodedInvitations
+      const filteredDecodedInvitations = decodedInvitations?.filter( decodedInvitate => decodedInvitate != null)
+      return filteredDecodedInvitations 
     } catch (error) {
       console.log('Error processing invitations: ', error)
     }
   }
+  // GET PET INFO
+  const processPetIds = async(petIdsArray) => {
+    // Create Promise array of fetching pet info
+    const promiseArray = petIdsArray.map( async( petId ) => {
+      try {
+        const result = await queries.getPetInfo(petId)
+        return result.rows[0]
+      } catch (error) {
+        console.log(`Error getting pet Info for petId ${petId}: `, error)
+        return null
+      }
+    })
+
+    try {
+      const result = await Promise.allSettled(promiseArray)
+      const filteredResult = result.filter( petInfo => petInfo != null )
+      return filteredResult
+    } catch (error) {
+      console.log('Error in awating promises settling: ', error)
+      return null
+    }
+
+  }
+  // GET pet info from pet IDs array
+  const processPetIdsArray = async(arrayPetIdArrays) => {
+    // arrayPetIdsArray: [ [1,2,3], [4,5], [7] ]
+    const promiseArray = arrayPetIdArrays.map( async(petIdArray) => {
+      try {
+        console.log('Processing pet ID array: ', petIdArray)
+        const petInfo = await processPetIds(petIdArray)
+        console.log('Received the folowing pet id: ', petInfo)
+        return petInfo
+      } catch (error) {
+        console.log('Error ocurred processing the array of pet ID arrays: ', error)
+        return null
+      }
+    })
+
+    try {
+      const petInfo = await Promise.allSettled(promiseArray)  
+      return petInfo    
+    } catch (error) {
+      console.log('Error getting pet info: ', error)
+      return null
+    }
+
+  }
 
   try {
-    const invitations = await queries.getInvtationToken(ownerId)
-    req.invitations = invitations
-    if(invitations?.length == 0) return res.status(200).json({ emptyInvitations:true })
+    const invitationTokens = await queries.getInvtationTokens(ownerId)
+    req.invitationTokens = invitationTokens
   } catch (error) {
     console.log('Error querying for invites: ', error)
     return res.status(400).json({queryError:`Error querying for invites: ${error}`})
   }
+  if(req.invitationTokens?.length == 0) return res.status(200).json({ emptyInvitations:true })
   // Check if invite(s) is still valid (not expired)
   const invitations = [...req.invitations]
-  const decodedInvitations = processInvitations(invitations)
+  const decodedInvitations = await processInvitations(invitations)
   // Parse the invite to capture the pet IDs being shared
-  
+  const petInfo = await processPetIdsArray(decodedInvitations)
+
   // Get the pet info for the pet IDs shared.
   // Response with the pet info
 
