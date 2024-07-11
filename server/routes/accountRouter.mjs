@@ -25,6 +25,23 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const petIdArray1 = [32,27]
+const petIdArray2 = [37]
+const petIdArray3 = [23]
+
+const petIdArrays = [petIdArray1,petIdArray2,petIdArray3]
+
+const inviteSecret = process.env.INVITATION_SECRET
+
+
+const token1 = jwt.sign( { petIdArray1 }, inviteSecret, {expiresIn: '3d'} )
+const token2 = jwt.sign( { petIdArray2 }, inviteSecret, {expiresIn: '1m'} )
+const token3 = jwt.sign( { petIdArray3 }, inviteSecret, {expiresIn: '5d'} )
+
+console.log('Token1: ', token1)
+console.log('Token2: ', token3)
+console.log('Token3: ', token3)
+
 router.use(cookieParser())
 
 router.get('/refreshAccessToken', async (req,res) => {
@@ -639,11 +656,12 @@ router.get('/verifyInvite', async(req,res) => {
   const ownerId = req.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
 
-  const processInvitations = async(invitationsArray) => {
+  const getArrayPetIdArrays = async(invitationsArray) => {
     const promiseArray = invitationsArray.map( async(invite)=> {
       try {
         const decodeInvite = jwt.verify(invite,invitationSecret)
-        return decodeInvite
+        console.log('Decoded Invite: ', decodeInvite)
+        return decodeInvite.petIdsArray
       } catch (error) {
         console.log('Error decoding invitation. Attempting to remove from owner.')
         try{
@@ -656,9 +674,9 @@ router.get('/verifyInvite', async(req,res) => {
       }
     })
     try {
-      const decodedInvitations = await Promise.allSettled(promiseArray)
-      const filteredDecodedInvitations = decodedInvitations?.filter( decodedInvitate => decodedInvitate != null)
-      return filteredDecodedInvitations 
+      const arrayPetIdArrays = await Promise.allSettled(promiseArray)
+      const filteredArrayPetIdArrays = decodedInvitations?.filter( decodedInvitate => decodedInvitate != null)
+      return filteredArrayPetIdArrays 
     } catch (error) {
       console.log('Error processing invitations: ', error)
     }
@@ -687,7 +705,7 @@ router.get('/verifyInvite', async(req,res) => {
 
   }
   // GET pet info from pet IDs array
-  const processPetIdsArray = async(arrayPetIdArrays) => {
+  const getArrayPetInfoArrays = async(arrayPetIdArrays) => {
     // arrayPetIdsArray: [ [1,2,3], [4,5], [7] ]
     const promiseArray = arrayPetIdArrays.map( async(petIdArray) => {
       try {
@@ -721,9 +739,13 @@ router.get('/verifyInvite', async(req,res) => {
   if(req.invitationTokens?.length == 0) return res.status(200).json({ emptyInvitations:true })
   // Check if invite(s) is still valid (not expired)
   const invitations = [...req.invitations]
-  const decodedInvitations = await processInvitations(invitations)
+  if(invitations.length == 0) return res.status(400).json({nullInvites:true})
+  const arrayPetIdArrays = await getArrayPetIdArrays(invitations)
+  console.log('Array of pet ID arrays: ', arrayPetIdArrays)
   // Parse the invite to capture the pet IDs being shared
-  const petInfo = await processPetIdsArray(decodedInvitations)
+  const petInfo = await getArrayPetInfoArrays(arrayPetIdArrays)
+  console.log('Pet info successfully processed.')
+  return res.status(200).json(petInfo)
 
   // Get the pet info for the pet IDs shared.
   // Response with the pet info
