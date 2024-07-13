@@ -751,6 +751,33 @@ const logoutUser = async(ownerId) =>{
   }
 }
 
+const removeInvitationToken = async(ownerId, invite) => {
+  try {
+    await pool.query(sqlText.removeInvitationToken, [ invite, ownerId ])
+  } catch (error) {
+    console.log('Error when attempting to remove the invitation token: ', error)
+    throw error
+  }
+}
+
+const getPetInfo = async( petId ) => {
+  try {
+    const result = await pool.query(sqlText.getPetInfo,[ petId ])
+    return result
+  } catch (error) {
+    throw error
+  }
+}
+
+const getInvitationTokens = async(ownerId) => {
+  try {
+    const result = await pool.query(sqlText.getInvitationTokenText,[ ownerId ])
+    return result.rows[0].invitations
+  } catch (error) {
+    return error
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -794,6 +821,9 @@ export default {
   getAccessedTimestamp,
   checkValidity,
   setInvalidInvitationToken,
-  logoutUser
+  logoutUser,
+  removeInvitationToken,
+  getPetInfo,
+  getInvitationTokens
 }
 

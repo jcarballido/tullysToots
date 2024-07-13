@@ -245,7 +245,11 @@ const getUsernameText = `
   WHERE owner_id = $1
 `
 
-// const getInvitationTokenText
+const getInvitationTokenText = `
+  SELECT invitations
+  FROM owners
+  WHERE owner_id = $1
+`
 
 const setInvitationAccessedAtTimestampText = () => {
   return `
@@ -332,6 +336,18 @@ const addOwnerText = `
   RETURNING *
 `
 
+const removeInvitationToken = `
+  UPDATE owners
+  SET invitations = array_remove(invitations, $1)
+  WHERE owner_id = $2
+`
+
+const getPetInfo = `
+  SELECT * 
+  FROM pets
+  WHERE pet_id = $1
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -372,7 +388,10 @@ export default {
   setInvalidInvitationToken,
   logoutUser,
   updateOwner,
-  addOwnerText
+  addOwnerText,
+  removeInvitationToken,
+  getPetInfo,
+  getInvitationTokenText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
