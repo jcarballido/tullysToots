@@ -775,34 +775,69 @@ router.get('/verifyInvite', async(req,res) => {
 })
 
 router.post('/acceptInvite', async(req,res) => {
-  const invitationIdArray = req.body.invitationIdArray
-  // Confirm invitations are in pending state in DB
-  const validateInviteToken = async(workingIdArray) => {
-    const result = workingIdArray.map( async(inviteId) => {
-      try {
-        await queries.checkInviteStatus(inviteId)
-      } catch (error) {
-        console.log('Error caught in \'checkInviteStatus\' query: ', error)
-        try {
-          // Remove the invite from the user and change the status to invalid
-          await queries.setInvalidInvitationToken(inviteId)
-        } catch (error) {
-          console.log('Error setting the token\'s status to invalid: ',error)
-        }
-        return null
+  const invitationId = req.body.invitationId
+  const petIdArray = req.body.petIdArray
 
+  try {
+    await queries.checkInviteValidity(invitationId)
+  } catch (error) {
+    console.log('Error with invite validity: ', error)
+    return res.status(400).json({error:'Error in invite\'s validity'})
+  }
+
+  const getLinkStatusArray = async(petIdsArray) => {
+    const promiseArray = petIdsArray.map( async(petId) => {
+      try {
+        const link = await queries.checkExistingLink(petId,ownerId)
+        return {petId,link}
+      } catch (error) {
+        console.log('Error querying owner link: ', error)
+        return {petId,link:null}
       }
     })
 
-    return result
+    try {
+      const linkStatusResolvedPromiseArray = await Promise.allSettled(promiseArray)
+      // returns [ {'status':fufilled, value: { petId,link }} ]
+      const linkStatusArray = linkStatusResolvedPromiseArray.map( promise => {
+        return promise.value
+      })
+      return linkStatusArray
+    } catch (error) {
+      console.log('Error resolving link status promise: ', error)
+      return new Error()
+    }
   }
 
-  const validInviteTokenPromiseArray = validInviteIdArray(invitationIdArray)
-
-  const validInviteIdArray = Promise.allSettled(validInviteTokenPromiseArray)
-  // Change state to 'accepted'
-  // Create link between owner and pet(s) in invitationIdArray
+  const updateLinkStatus = async(linkStatusArray) => {
+    const promiseArray = linkStatusArray.map( async(linkStatus) => {
+      if(!!linkStatus.link){
+        try {
+          await queries.updateLinkStatus()
+        } catch (error) {
+          
+        }
+      }else{
+        return
+      }
+    })
+  }
   
+  try {
+    const linkStatusArray = await getLinkStatusArray(petIdArray)
+    req.linkStatusArray = linkStatusArray
+  } catch (error) {
+    console.log('Error getting link status array: ', error)
+    return res.status(400).json({error:'Error processing accepting invite'})
+  }
+
+  try {
+    const linkStatusArray = req.linkStatusArray
+
+  } catch (error) {
+    
+  }
+
 })
 
 
