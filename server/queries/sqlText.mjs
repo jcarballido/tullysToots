@@ -348,6 +348,36 @@ const getPetInfo = `
   WHERE pet_id = $1
 `
 
+const checkInvitePending = `
+  SELECT pending
+  FROM invitations
+  WHERE invitation_id = $1
+`
+
+const checkExistingLink = `
+  SELECT active
+  FROM pet_owners
+  WHERE pet_id = $1 AND owner_id = $2
+`
+
+const updateLinkStatus = `
+  UPDATE pet_owners
+  SET active=true
+  WHERE pet_id = $1 AND owner_id = $2
+`
+
+const getInvitationToken = `
+  SELECT invitation_token
+  FROM invitations
+  WHERE invitation_id = $1
+` 
+
+const setInviteTokenAcceptedText = `
+  UPDATE invitations
+  SET invalid = false, pending = false, accepted = true, rejected=false
+  WHERE invitation_id = $1
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -391,7 +421,12 @@ export default {
   addOwnerText,
   removeInvitationToken,
   getPetInfo,
-  getInvitationTokenText
+  getInvitationTokenText,
+  checkInvitePending,
+  checkExistingLink,
+  updateLinkStatus,
+  getInvitationToken,
+  setInviteTokenAcceptedText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

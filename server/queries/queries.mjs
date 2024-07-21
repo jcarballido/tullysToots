@@ -733,8 +733,8 @@ const checkValidity = async(invitationToken) => {
 const setInvalidInvitationToken = async(invitationToken) => {
   console.log('Queries: Invite being set to invalid...')
   try {
-    console.log('Invalidation successful')
     await pool.query(sqlText.setInvalidInvitationToken, [ invitationToken ])
+    console.log('Invalidation successful')
     return
   } catch (error) {
     console.log('Invalidation failed')
@@ -775,6 +775,54 @@ const getInvitationTokens = async(ownerId) => {
     return result.rows[0].invitations
   } catch (error) {
     return error
+  }
+}
+
+const checkInvitePending = async(invitationId) => {
+  try {
+    const result = await pool.query(sqlText.checkInvitePending,[ invitationId ])
+    const pending = result.rows[0].pending
+    if(pending) return
+    else throw new Error('Invite is not valid')
+  } catch (error) {
+    throw new Error(`${error}`)
+  }
+}
+
+const checkExistingLink = async(petId, ownerId) => {
+  try {
+    const result = await pool.query(sqlText.checkExistingLink, [ petId,ownerId ])
+    const activeStatus = result.rows[0].active
+    return activeStatus
+  } catch (error) {
+    throw new Error(`${error}`)
+  }
+}
+
+const updateLinkStatus = async(petId, ownerId) => {
+  try {
+    await pool.query(sqlText.updateLinkStatus,[ petId, ownerId ])
+  } catch (error) {
+    throw new Error(`${error}`)
+  }
+}
+
+const getInvitationToken = async(invitationId) => {
+  try {
+    const result = await pool.query(sqlText.getInvitationToken, [ invitationId ])
+    const invitationToken = result.rows[0].invitation_token
+    if(!invitationToken) throw new Error('Invitation Token is null')
+    return invitationToken
+  } catch (error) {
+    throw new Error(`${error}`)
+  }
+}
+
+const setInviteTokenAccepted = async(invitationId) => {
+  try {
+    await pool.query(sqlText.setInviteTokenAcceptedText, [ invitationId ])
+  } catch (error) {
+    throw error
   }
 }
 
@@ -824,6 +872,11 @@ export default {
   logoutUser,
   removeInvitationToken,
   getPetInfo,
-  getInvitationTokens
+  getInvitationTokens,
+  checkInvitePending,
+  checkExistingLink,
+  updateLinkStatus,
+  getInvitationToken,
+  setInviteTokenAccepted
 }
 
