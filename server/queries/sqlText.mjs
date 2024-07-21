@@ -355,7 +355,7 @@ const checkInvitePending = `
 `
 
 const checkExistingLink = `
-  SELECT active
+  SELECT *
   FROM pet_owners
   WHERE pet_id = $1 AND owner_id = $2
 `
@@ -377,6 +377,12 @@ const setInviteTokenAcceptedText = `
   SET invalid = false, pending = false, accepted = true, rejected=false
   WHERE invitation_id = $1
 `
+
+const addPetOwnerText = `
+  INSERT INTO pet_owners(pet_id,owner_id,active)
+  VALUES($1,$2, true)
+` 
+
 
 export default {
   insertIntoText,
@@ -426,7 +432,8 @@ export default {
   checkExistingLink,
   updateLinkStatus,
   getInvitationToken,
-  setInviteTokenAcceptedText
+  setInviteTokenAcceptedText,
+  addPetOwnerText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

@@ -71,17 +71,25 @@ const pool = new Pool()
 //   return result
 // }
 
-const addPetOwnerLink = async(ownerId,petIdsArray) => {
-  //const seeText = sqlText.insertIntoText('pet_owners')
-  //console.log(seeText)
-  try{
-    const result = await pool.query(sqlText.insertIntoText('pet_owners',petIdsArray),[ownerId,true,...petIdsArray])
-    return result
-  }catch(e){
-    console.log('Error at addPetOwnerLink query: ',e)
-    return e                                                                    
+// const addPetOwnerLink = async(ownerId,petIdsArray) => {
+//   //const seeText = sqlText.insertIntoText('pet_owners')
+//   //console.log(seeText)
+//   try{
+//     const result = await pool.query(sqlText.insertIntoText('pet_owners',petIdsArray),[ownerId,true,...petIdsArray])
+//     return result
+//   }catch(e){
+//     console.log('Error at addPetOwnerLink query: ',e)
+//     return e                                                                    
+//   }
+// }
+const addPetOwnerLink = async(petId,ownerId) => {
+  try {
+    await pool.query(sqlText.addPetOwnerText, [ petId,ownerId ])
+  } catch (error) {
+    throw error
   }
 }
+
 
 const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee, poo) => {
   // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
@@ -792,10 +800,10 @@ const checkInvitePending = async(invitationId) => {
 const checkExistingLink = async(petId, ownerId) => {
   try {
     const result = await pool.query(sqlText.checkExistingLink, [ petId,ownerId ])
-    const activeStatus = result.rows[0].active
-    return activeStatus
+    if(result.rowCount == 0) return {new: true, link: false}
+    if(result.rowCount > 0) return {new: false, link: result.rows[0].active}
   } catch (error) {
-    throw new Error(`${error}`)
+    throw error
   }
 }
 
@@ -803,7 +811,7 @@ const updateLinkStatus = async(petId, ownerId) => {
   try {
     await pool.query(sqlText.updateLinkStatus,[ petId, ownerId ])
   } catch (error) {
-    throw new Error(`${error}`)
+    throw error
   }
 }
 
@@ -877,6 +885,7 @@ export default {
   checkExistingLink,
   updateLinkStatus,
   getInvitationToken,
-  setInviteTokenAccepted
+  setInviteTokenAccepted,
+  
 }
 
