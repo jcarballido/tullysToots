@@ -831,7 +831,39 @@ router.post('/acceptInvite', async(req,res) => {
    
 })
 
+router.post('/rejectInvite', async(req,res) => {
+  // Remove invite from owner table, need owner id, need invite token
+  // const ownerId = req.ownerId
+  const ownerId = req.body.ownerId
+  const inviteId = req.body.invitationId
+  if(!ownerId || !inviteId) {
+    return res.status(400).json({ error: 'Missing critical info' })
+  }
 
+  try {
+    const inviteToken = await queries.getInvitationToken(inviteId)
+    req.inviteToken = inviteToken 
+  } catch (error) {
+    console.log('Error querying for invite token: ', error)
+    return res.status(400).json({ error: 'Could not query for invitation token.' })
+  }
+
+  try{
+    await queries.removeInvitationToken(req.inviteToken,ownerId)
+  }catch(error){
+    console.log('Error removing token from owner :', error)
+    return res.status(400).json({ error: 'Failed to remove invitation token from owner.' })
+  }
+  // Update invite in invite table so rejected is true
+  try {
+    await queries.rejectInvitation(inviteId)
+    return res.status(200).json({success: 'Rejected invitation'})
+  } catch (error) {
+    console.log('Error rejecting invitation: ', error)
+    return res.status(400).json({ error:'Failed to update invitation to \'rejected\' ' })
+  }
+  
+})
 
 router.get('/logout', async (req,res) => {
   console.log('Logout request receieved')

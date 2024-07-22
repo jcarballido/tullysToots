@@ -759,11 +759,10 @@ const logoutUser = async(ownerId) =>{
   }
 }
 
-const removeInvitationToken = async(ownerId, invite) => {
+const removeInvitationToken = async(invite,ownerId) => {
   try {
     await pool.query(sqlText.removeInvitationToken, [ invite, ownerId ])
   } catch (error) {
-    console.log('Error when attempting to remove the invitation token: ', error)
     throw error
   }
 }
@@ -822,13 +821,21 @@ const getInvitationToken = async(invitationId) => {
     if(!invitationToken) throw new Error('Invitation Token is null')
     return invitationToken
   } catch (error) {
-    throw new Error(`${error}`)
+    throw error
   }
 }
 
 const setInviteTokenAccepted = async(invitationId) => {
   try {
     await pool.query(sqlText.setInviteTokenAcceptedText, [ invitationId ])
+  } catch (error) {
+    throw error
+  }
+}
+
+const rejectInvitation = async(invitationId) => {
+  try {
+    await pool.query(sqlText.rejectInvitation, [ invitationId ])
   } catch (error) {
     throw error
   }
@@ -886,6 +893,7 @@ export default {
   updateLinkStatus,
   getInvitationToken,
   setInviteTokenAccepted,
-  
+  removeInvitationToken,
+  rejectInvitation
 }
 

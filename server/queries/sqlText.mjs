@@ -383,6 +383,12 @@ const addPetOwnerText = `
   VALUES($1,$2, true)
 ` 
 
+const rejectInvitation = `
+  UPDATE invitations
+  SET accepted=false,rejected=true,pending=false,invalid=false
+  WHERE invitation_id=$1
+`
+
 
 export default {
   insertIntoText,
@@ -433,7 +439,8 @@ export default {
   updateLinkStatus,
   getInvitationToken,
   setInviteTokenAcceptedText,
-  addPetOwnerText
+  addPetOwnerText,
+  rejectInvitation
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
