@@ -25,6 +25,23 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// const petIdArray1 = [32,27]
+// const petIdArray2 = [37]
+
+
+// // const petIdArrays = [petIdArray1,petIdArray2,petIdArray3]
+
+// const inviteSecret = process.env.INVITATION_SECRET
+
+
+// const token1 = jwt.sign( { sendingOwnerId: 37, petIdArray: petIdArray1 }, inviteSecret, {expiresIn: '5d'} )
+// const token2 = jwt.sign( { sendingOwnerId: 37, petIdArray:petIdArray2 }, inviteSecret, {expiresIn: '5d'} )
+// // const token3 = jwt.sign( { sendingOwnerId: 37, petIdArray:petIdArray3 }, inviteSecret, {expiresIn: '5d'} )
+
+// console.log('Token1: ', token1)
+// console.log('Token2: ', token2)
+// // console.log('Token3: ', token3)
+
 
 router.use(cookieParser())
 
@@ -583,30 +600,32 @@ router.get('/invitation', async(req,res) => {
   // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
 
-router.use(verifyAccessToken)
+// router.use(verifyAccessToken)
 
 router.get('/verifyInvite', async(req,res) => {
   // Check if owner Id has an invite associated with it
-  const ownerId = req.ownerId
-  // const ownerId = req.body.ownerId
+  // const ownerId = req.ownerId
+  const ownerId = req.body.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
 
   const getArrayPetIdArrays = async(invitationsArray) => {
     const promiseArray = invitationsArray.map( async(invite)=> {
+      console.log('Invite passed in to getArrayPetIdArray:', invite)
       try {
-        const decodeInvite = jwt.verify(invite,invitationSecret)
+        const decodeInvite = jwt.verify(invite.invitation_token,invitationSecret)
         // console.log('Decoded Invite: ', decodeInvite)
         const petIdArray = decodeInvite.petIdArray
         const sendingOwnerId = decodeInvite.sendingOwnerId
         const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
-        const inviteId = await queries.getInvitationId(invite)
+        const inviteId = await queries.getInvitationId(invite.invitation_token)
         return { inviteId, sendingOwnerUsername, petIdArray }
       } catch (error) {
         console.log('Error decoding invitation. Attempting to remove from owner: ', error)
         try{
-          await queries.removeInvitationToken(ownerId,invite) // NEED TO CLEAN UP TO ACCOUNT FOR INVITES BEING IDs AND NOT THE TOKEN STRING
+          await queries.removeInvitationToken(invite.invitation_token,ownerId) // NEED TO CLEAN UP TO ACCOUNT FOR INVITES BEING IDs AND NOT THE TOKEN STRING
         }catch(error){
-          console.log('Error in removing the invitation token from the owner.')
+          console.log('Error in removing the invitation token from the owner: ', error)
+          return null
         }
         console.log('Successfully removed the invite.')
         return null
@@ -707,7 +726,7 @@ router.get('/verifyInvite', async(req,res) => {
     console.log('Error querying for pet Ids: ', error)
     return res.status(400).json({queryError:`Error querying for pet Ids: ${error}`})
   }
-  if(arrayDecodedInvites?.length == 0) return res.status(400).json({invitesExpired:true})
+  if(req.arrayDecodedInvites?.length == 0) return res.status(400).json({invitesExpired:true})
   // console.log('Array of pet ID arrays: ', arrayDecodedInvites)
   // Parse the invite to capture the pet IDs being shared
   try {

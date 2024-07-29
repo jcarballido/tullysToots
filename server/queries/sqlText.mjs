@@ -349,7 +349,7 @@ const removeInvitationToken = `
     WHERE invitation_token = $1  
   )
   UPDATE owners
-  SET invitations = array_remove(invitations, (SELECT invitation_token FROM invitation_id_to_remove) )
+  SET invitations = array_remove(invitations, (SELECT invitation_id FROM invitation_id_to_remove)::VARCHAR )
   WHERE owner_id = $2
 `
 /*`

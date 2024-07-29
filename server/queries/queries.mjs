@@ -276,7 +276,7 @@ const getPetId = async(petName,dob,sex) => {
 
 const getInvitationId = async(invitationToken) => {
   try {
-    const result = await query.pool(sqlText.getInvitationIdText, [ invitationToken ])
+    const result = await pool.query(sqlText.getInvitationIdText, [ invitationToken ])
     if(result.rowCount == 0) throw new Error('Invitation token\'s id not found')
     const id = result.rows[0].invitation_id
     return id
