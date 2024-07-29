@@ -251,6 +251,12 @@ const getInvitationTokenText = `
   WHERE owner_id = $1
 `
 
+const getInvitationToken = `
+  SELECT invitation_token
+  FROM invitations
+  WHERE invitation_id = $1
+`
+
 const setInvitationAccessedAtTimestampText = () => {
   return `
     UPDATE invitations 
@@ -337,10 +343,21 @@ const addOwnerText = `
 `
 
 const removeInvitationToken = `
+  WITH invitation_id_to_remove AS (
+    SELECT invitation_id
+    FROM invitations
+    WHERE invitation_token = $1  
+  )
+  UPDATE owners
+  SET invitations = array_remove(invitations, (SELECT invitation_token FROM invitation_id_to_remove) )
+  WHERE owner_id = $2
+`
+/*`
   UPDATE owners
   SET invitations = array_remove(invitations, $1)
   WHERE owner_id = $2
 `
+*/
 
 const getPetInfo = `
   SELECT * 
@@ -366,11 +383,11 @@ const updateLinkStatus = `
   WHERE pet_id = $1 AND owner_id = $2
 `
 
-const getInvitationToken = `
-  SELECT invitation_token
-  FROM invitations
-  WHERE invitation_id = $1
-` 
+// const getInvitationIdsText = `
+//   SELECT invitation_token
+//   FROM invitations
+//   WHERE invitation_id = $1
+// ` 
 
 const setInviteTokenAcceptedText = `
   UPDATE invitations
@@ -389,6 +406,28 @@ const rejectInvitation = `
   WHERE invitation_id=$1
 `
 
+const getInvitationIdsText =  `
+  SELECT invitation_id 
+  FROM invitations
+  WHERE invitation_token = $1
+`
+
+const getInvitationTokens = `
+  SELECT i.invitation_token 
+  FROM 
+    owners o, 
+    UNNEST(o.invitations) AS key_array_element
+  INNER JOIN invitations i
+  ON
+    key_array_element::INT = i.invitation_id
+  WHERE o.owner_id = $1
+`
+
+const getInvitationIdText = `
+  SELECT invitation_id
+  FROM invitations 
+  WHERE invitation_token = $1 
+`
 
 export default {
   insertIntoText,
@@ -437,10 +476,13 @@ export default {
   checkInvitePending,
   checkExistingLink,
   updateLinkStatus,
-  getInvitationToken,
+  getInvitationIdsText,
   setInviteTokenAcceptedText,
   addPetOwnerText,
-  rejectInvitation
+  rejectInvitation,
+  getInvitationIdText,
+  getInvitationTokens,
+  getInvitationToken
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

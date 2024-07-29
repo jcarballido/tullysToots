@@ -25,22 +25,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// const petIdArray1 = [32,27]
-// const petIdArray2 = [37]
-// const petIdArray3 = [23]
-
-// const petIdArrays = [petIdArray1,petIdArray2,petIdArray3]
-
-// const inviteSecret = process.env.INVITATION_SECRET
-
-
-// const token1 = jwt.sign( { sendingOwnerId: 37, petIdArray: petIdArray1 }, inviteSecret, {expiresIn: '5d'} )
-// const token2 = jwt.sign( { sendingOwnerId: 37, petIdArray:petIdArray2 }, inviteSecret, {expiresIn: '1m'} )
-// const token3 = jwt.sign( { sendingOwnerId: 37, petIdArray:petIdArray3 }, inviteSecret, {expiresIn: '5d'} )
-
-// console.log('Token1: ', token1)
-// console.log('Token2: ', token2)
-// console.log('Token3: ', token3)
 
 router.use(cookieParser())
 
@@ -361,9 +345,17 @@ const updateInvitationStatus = async(req,res,next) => {
     //   return res.status(200).json({ accessToken:req.accessToken, error:'Error attempting to invalidate invite token. Request a new one' })      
     // }
 
+    try {
+      const invitationId = await queries.getInvitationId(req.invitationToken)
+      req.invitationId = invitationId
+    } catch (error) {
+      console.log('Error querying for invitation id: ', error);
+      return res.status(400).json({accessToken:req.accessToken, error:  'Error storing invitation token. Please request a new invite.' })
+    }
+
     try{
       console.log('Attempting to store token with owner')
-      await queries.storeInvitationToken(req.invitationToken, req.ownerId)
+      await queries.storeInvitationToken(req.invitationId, req.ownerId)
       return res.status(200).json({ accessToken: req.accessToken })
     } catch(e){
       console.log('Error returned from trying to store the invitation token to the user: ', e)
@@ -591,7 +583,7 @@ router.get('/invitation', async(req,res) => {
   // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
 
-// router.use(verifyAccessToken)
+router.use(verifyAccessToken)
 
 router.get('/verifyInvite', async(req,res) => {
   // Check if owner Id has an invite associated with it
@@ -606,13 +598,13 @@ router.get('/verifyInvite', async(req,res) => {
         // console.log('Decoded Invite: ', decodeInvite)
         const petIdArray = decodeInvite.petIdArray
         const sendingOwnerId = decodeInvite.sendingOwnerId
-        console.log('Sending owner ID: ', sendingOwnerId)
         const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
-        return { sendingOwnerUsername, petIdArray }
+        const inviteId = await queries.getInvitationId(invite)
+        return { inviteId, sendingOwnerUsername, petIdArray }
       } catch (error) {
         console.log('Error decoding invitation. Attempting to remove from owner: ', error)
         try{
-          await queries.removeInvitationToken(ownerId,invite)
+          await queries.removeInvitationToken(ownerId,invite) // NEED TO CLEAN UP TO ACCOUNT FOR INVITES BEING IDs AND NOT THE TOKEN STRING
         }catch(error){
           console.log('Error in removing the invitation token from the owner.')
         }
@@ -661,11 +653,12 @@ router.get('/verifyInvite', async(req,res) => {
     const promiseArray = arrayDecodedJWT.map( async(decodedInvite) => {
       const petIdArray = decodedInvite.petIdArray
       const sendingOwnerUsername = decodedInvite.sendingOwnerUsername
+      const inviteId = decodedInvite.inviteId
       try {
         // console.log('Processing pet ID array: ', petIdArray)
         const petInfo = await processPetIds(petIdArray)
         // console.log('Received the folowing pet id: ', petInfo)
-        return {sendingOwnerUsername, petInfo}
+        return {inviteId, sendingOwnerUsername, petInfo}
       } catch (error) {
         console.log('Error ocurred processing the array of pet ID arrays: ', error)
         return null
@@ -699,28 +692,39 @@ router.get('/verifyInvite', async(req,res) => {
     req.invitationTokens = invitationTokens
   } catch (error) {
     console.log('Error querying for invites: ', error)
-    return res.status(400).json({queryError:`Error querying for invites: ${error}`})
+   return res.status(400).json({queryError:`Error querying for invites: ${error}`})
   }
 
   if(req.invitationTokens?.length == 0) return res.status(200).json({ emptyInvitations:true })
+
   // Check if invite(s) is still valid (not expired)
   const invitations = [...req.invitationTokens]
   // if(invitations.length == 0) return res.status(400).json({nullInvites:true})
-  const arrayDecodedInvites = await getArrayPetIdArrays(invitations)
+  try {
+    const arrayDecodedInvites = await getArrayPetIdArrays(invitations)
+    req.arrayDecodedInvites = arrayDecodedInvites
+  } catch (error) {
+    console.log('Error querying for pet Ids: ', error)
+    return res.status(400).json({queryError:`Error querying for pet Ids: ${error}`})
+  }
   if(arrayDecodedInvites?.length == 0) return res.status(400).json({invitesExpired:true})
   // console.log('Array of pet ID arrays: ', arrayDecodedInvites)
   // Parse the invite to capture the pet IDs being shared
-  const petInfo = await getArrayPetInfoArrays(arrayDecodedInvites)
+  try {
+    const petInfo = await getArrayPetInfoArrays(req.arrayDecodedInvites)    
+    req.petInfo = petInfo 
+  } catch (error) {
+    console.log('Error getting pet info: ', error)
+    return res.status(400).json({queryError:`Error querying for pet info: ${error}`})
+  }
   // console.log('Pet Info returned: ', petInfo)
   console.log('Pet info successfully processed.')
-  return res.status(200).json(petInfo)
+  return res.status(200).json(req.petInfo)
 })
 
 router.post('/acceptInvite', async(req,res) => {
-  const invitationId = req.body.invitationId // Test: 22
-  // const petIdArray = req.body.petIdArray
-  // const ownerId = req.ownerId
-  const ownerId = req.body.ownerId
+  const invitationId = req.body.invitationId 
+  const ownerId = req.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
 
   try {
@@ -818,7 +822,9 @@ router.post('/acceptInvite', async(req,res) => {
     req.updatedLinks = updatedLinks 
   } catch (error) {
     console.log('Error updating status links: ', error)
+    
   }
+    
 
   try {
     await queries.setInviteTokenAccepted(invitationId)
@@ -833,8 +839,8 @@ router.post('/acceptInvite', async(req,res) => {
 
 router.post('/rejectInvite', async(req,res) => {
   // Remove invite from owner table, need owner id, need invite token
-  // const ownerId = req.ownerId
-  const ownerId = req.body.ownerId
+  const ownerId = req.ownerId
+  // const ownerId = req.body.ownerId
   const inviteId = req.body.invitationId
   if(!ownerId || !inviteId) {
     return res.status(400).json({ error: 'Missing critical info' })
@@ -1015,76 +1021,6 @@ router.post('/breakOwnerLink', async(req,res,next) => {
     return next()
   }
 })
-// Need to test with front end
-// router.post('/sendInvite', async(req, res, next) => {
-//   // Utility function
-//   const confirmIdsExist = (requestedPetIds,linkedPetIds) => {
-//     const result = requestedPetIds.every(id => linkedPetIds.includes(id))
-//     return result
-//   }
-//   const ownerId = req.ownerId
-//   const { receivingOwnerEmail, newPetIdsArray } = req.body
-//   if(!(receivingOwnerEmail && newPetIdsArray)) return res.locals.error = 'Invalid request'
-//   const verifiedLinkedPetIds = await queries.getOwnersPetIds( ownerId )
-//   console.log('Verified linked pet ids: ', verifiedLinkedPetIds)
-//   const verifiedIdsExist = confirmIdsExist(newPetIdsArray,verifiedLinkedPetIds)
-//   if(!verifiedIdsExist) return res.locals.error = 'Can\'t find a link to one or more of these pets'
-//   const receivingOwnerId = await queries.getOwnerId('email',receivingOwnerEmail);
-//   const invitationSecret = process.env.INVITATION_SECRET
-//   const invitationForm = (link) => {
-//     return `
-//     <head>
-//         <meta charset="UTF-8">
-//         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-//         <title>HTML Form</title>
-//     </head>
-//     <body>
-//         <h1>Someone wants share their pet's activity with you!</h1>
-//         <h2>If you are ready to accept, click the link below.</h2>
-//         <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
-//         <a href=${link} target="_blank">Show me the activity</a>
-//     </body>
-//   `}
-//   const payload = {
-//     ownerId, 
-//     // receivingOwnerId, 
-//     newPetIdsArray
-//   }
-//   const invitationToken = jwt.sign(payload, invitationSecret,{ expiresIn:'1d' })
-
-//   if(receivingOwnerId){
-//     try{
-//       const result = await queries.addInvitationLink(ownerId, receivingOwnerId,invitationToken)
-//       // 4. Create a link that contains this JWT in the URL.
-//     }catch(e){
-//       res.locals.error = e
-//       return next()
-//     }
-//   }else{
-//     try{
-//       const result = await queries.addInvitationLink(ownerId, invitationToken)
-//     }catch(e){
-//       res.locals.error = e
-//       return next()
-//     }
-//   }
-
-//   const addPetOwnerLink = `http://localhost:3000/invite=${invitationToken}`
-//   try{
-//     const info = await transporter.sendMail({
-//       from: companyEmail, // sender address
-//       to: receivingOwnerEmail, // list of receivers
-//       subject: "A Tully's Toots Member is Inviting You!", // Subject line
-//       html: invitationForm(addPetOwnerLink), // html body
-//     });
-//     console.log('Line 101 => ', info)
-//     return res.locals.message = 'Link sent'
-//   }catch(e){
-//     res.locals.error = e
-//     return next()
-//   }
-// })
-
 router.post('/sendInvite', async(req,res) => {
   // Capture owner id from request
   const sendingOwnerId = req.ownerId
@@ -1138,33 +1074,6 @@ router.post('/sendInvite', async(req,res) => {
     return res.status(400).json({message: 'Could not send invite at this time.'})
   }
 })
-
-// // Need to test with front end
-// router.post('/acceptInvite', async(req,res,next) => {
-//   const invitationToken = req.query.invitationToken
-//   if(!invitationToken) return res.locals.json({error:'ERROR: Missing invitation'})
-//   const invitationSecret = process.env.INVITATION_SECRET
-//   const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
-//   // Return error: Either expired token or tampered with
-//   if(invitationTokenPayload instanceof Error) return res.locals.error = new Error('Invalid link')
-
-//   const ownerId = req.ownerId
-//   const expectedReceivingOwnerId = await queries.getInvitedOwnerIdFromInvite(invitationToken)
-//   // Confirm the clinet attempting to use the invitation token matches with the invitation's target recepient.
-//   if(ownerId !== expectedReceivingOwnerId) return res.locals.error = 'Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.'
-//   // Expecting to receive the specific pet IDs the invite recepient is claiming.
-//   const petIdsArray = req.body.petsClaimed
-
-//   try{
-// 		await queries.setInvitationAccessedAtTimestamp(invitationToken)
-//     const result = await queries.addPetOwnerLink(ownerId,petIdsArray)
-//   }catch(e){
-//     res.locals.json({error:'ERROR: Could not link pets to owner'})
-//     return next()
-//   }
-//   res.locals.json({message:'Successfully added pets'})
-//   return next()
-// })
 
 //CHORE: Finalize and check
 router.post('/updatePassword', async (req, res) => {
@@ -1222,59 +1131,3 @@ router.get('/getPets', async(req,res) => {
 })
 
 export default router
-// router.use(postProcessing)
-
-// router.use((error,req,res,next) => {
-//   console.log('Error handler received the following error: ', error)
-// })
-// router.get('/refreshAccessToken', (req,res) => {
-//   const checkExpiration = (token) => {
-//     const payload = jwt.decode(token)
-//     return payload.exp < (Date.now() / 1000) // Date.now() must be converted to seconds 
-//   }
-//   // Validate refresh token
-//   const refreshToken = req.cookies.jwt
-//   const secret = process.env.REFRESH_SECRET
-//   try{
-//     const decodedJwt = jwt.verify(refreshToken,secret)
-//     // CHORE: Update response
-//     // return decodedJwt
-//   }catch(err){
-//     // Determine if the access token is expired.
-//     const expiredRefreshToken = checkExpiration(refreshToken)
-//     // If the access token is expired, confirm existence of and valdiate the refresh token.
-//     if(expiredAccessToken){
-//         // If a refresh token is not present, send a custom error.
-//         if(!refreshToken){
-//           return res.status(401).json({error: new nullRefreshTokenError('Refresh token was not provided; Requires sign-in')}) // Handled by frontend
-//         }
-//         console.log('The access token was expired. Checking to see if refresh token is valid...')
-//         const refreshTokenValidation = validateToken(refreshToken, 'refresh')
-//         // Return any error given after validation.
-//         if(refreshTokenValidation instanceof Error){
-//           const expiredRefreshToken = checkExpiration(refreshToken)
-//           if(expiredRefreshToken){
-//             console.log('Refresh token was not valid; expired. Error returned to client.')
-//             return res.status(401).json({error: new Error('Refresh token is expired; Requires sign-in')}) // Handled by frontend
-//           }else{
-//             console.log('Refresh token was not valid; tampered with. Error pushed to error handler in server.')
-//             return next(new invalidSignatureError('Invalid signature present on refresh token')) // Additional action required
-//           }
-//         }
-//         else req.refToken = refreshToken
-//         // Trigger the need for a new access token and refresh token.
-        
-//         // req.refreshTokenVerification = true
-//         // req.currentRefreshToken = refreshToken
-//         // req.tokenPayload = refreshTokenValidation
-//         // console.log('The access token was expired. Will pass the following data to the refresh token middleware...')
-//         // console.log('refresh token verification: ', req.refreshTokenVerification)
-//         // console.log('current refresh token: ', req.currentRefreshToken)
-//         // console.log('refresh token payload: ', req.tokenPayload)
-//         // return next()
-//     }else{
-//       // return next(new invalidSignatureError('Invalid signature present on access token')) // Additional action required
-//     }
-//     return res.status
-//   }
-// })

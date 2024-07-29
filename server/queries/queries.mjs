@@ -275,7 +275,14 @@ const getPetId = async(petName,dob,sex) => {
 }
 
 const getInvitationId = async(invitationToken) => {
-  const result = await query.pool(sqlText.getInvitationTokenText, [ invitationToken ])
+  try {
+    const result = await query.pool(sqlText.getInvitationIdText, [ invitationToken ])
+    if(result.rowCount == 0) throw new Error('Invitation token\'s id not found')
+    const id = result.rows[0].invitation_id
+    return id
+  } catch (error) {
+    throw error    
+  }
 }
  
 // 'Update' operations  
@@ -627,9 +634,9 @@ const setNewRefreshToken = async(newRefreshToken,ownerId) => {
   }
 }
 
-const storeInvitationToken = async(invitationToken, ownerId) => {
+const storeInvitationToken = async(invitationId, ownerId) => {
   try{
-    await pool.query(sqlText.storeInvitationTokenText, [invitationToken, ownerId])
+    await pool.query(sqlText.storeInvitationTokenText, [invitationId, ownerId])
     return
   }catch(e){
     throw e
@@ -776,9 +783,9 @@ const getPetInfo = async( petId ) => {
   }
 }
 
-const getInvitationTokens = async(ownerId) => {
+const getInvitationIds = async(ownerId) => {
   try {
-    const result = await pool.query(sqlText.getInvitationTokenText,[ ownerId ])
+    const result = await pool.query(sqlText.getInvitationIdsText,[ ownerId ])
     return result.rows[0].invitations
   } catch (error) {
     return error
@@ -814,12 +821,11 @@ const updateLinkStatus = async(petId, ownerId) => {
   }
 }
 
-const getInvitationToken = async(invitationId) => {
+const getInvitationTokens = async(ownerId) => {
   try {
-    const result = await pool.query(sqlText.getInvitationToken, [ invitationId ])
-    const invitationToken = result.rows[0].invitation_token
-    if(!invitationToken) throw new Error('Invitation Token is null')
-    return invitationToken
+    const result = await pool.query(sqlText.getInvitationTokens, [ ownerId ])
+    const invitationTokens = result.rows
+    return invitationTokens
   } catch (error) {
     throw error
   }
@@ -836,6 +842,16 @@ const setInviteTokenAccepted = async(invitationId) => {
 const rejectInvitation = async(invitationId) => {
   try {
     await pool.query(sqlText.rejectInvitation, [ invitationId ])
+  } catch (error) {
+    throw error
+  }
+}
+
+const getInvitationToken = async(invitationId) => {
+  try {
+    const result = await pool.query(sqlText.getInvitationToken, [ invitationId ])
+    const invitationToken = result.rows[0].invitation_token
+    return invitationToken
   } catch (error) {
     throw error
   }
@@ -887,13 +903,13 @@ export default {
   logoutUser,
   removeInvitationToken,
   getPetInfo,
-  getInvitationTokens,
+  getInvitationIds,
   checkInvitePending,
   checkExistingLink,
   updateLinkStatus,
+  getInvitationTokens,
   getInvitationToken,
   setInviteTokenAccepted,
-  removeInvitationToken,
   rejectInvitation
 }
 
