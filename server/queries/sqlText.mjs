@@ -429,6 +429,14 @@ const getInvitationIdText = `
   WHERE invitation_token = $1 
 `
 
+const checkInviteLink = `
+  SELECT *
+  FROM owners
+  WHERE 
+    $1 = ANY (invitations)
+    AND owner_id = $2
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -482,7 +490,8 @@ export default {
   rejectInvitation,
   getInvitationIdText,
   getInvitationTokens,
-  getInvitationToken
+  getInvitationToken,
+  checkInviteLink
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

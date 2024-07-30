@@ -622,7 +622,7 @@ router.get('/verifyInvite', async(req,res) => {
       } catch (error) {
         console.log('Error decoding invitation. Attempting to remove from owner: ', error)
         try{
-          await queries.removeInvitationToken(invite.invitation_token,ownerId) // NEED TO CLEAN UP TO ACCOUNT FOR INVITES BEING IDs AND NOT THE TOKEN STRING
+          await queries.removeInvitationToken(invite.invitation_tokenb,ownerId) // NEED TO CLEAN UP TO ACCOUNT FOR INVITES BEING IDs AND NOT THE TOKEN STRING
         }catch(error){
           console.log('Error in removing the invitation token from the owner: ', error)
           return null
@@ -742,118 +742,155 @@ router.get('/verifyInvite', async(req,res) => {
 })
 
 router.post('/acceptInvite', async(req,res) => {
-  const invitationId = req.body.invitationId 
+
+  const invitationIdArray = req.body.invitationIdArray
   const ownerId = req.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
 
-  try {
-    await queries.checkInvitePending(invitationId)
-  } catch (error) {
-    console.log('Error with invite validity: ', error)
-    return res.status(400).json({error:'Error in invite\'s validity'})
-  }
-
-  try {
-    const invitationToken = await queries.getInvitationToken(invitationId)
-    req.invitationToken = invitationToken
-  } catch (error) {
-    console.log('Error locating invite: ', error)
-    return res.status(400).json({error:'Error in locating invite'})
-  }
-
-  try {
-    const decodedInvite = jwt.verify(req.invitationToken, invitationSecret)
-    req.petIdArray = decodedInvite.petIdArray
-  } catch (error) {
-    console.log('Error decoding the invite token: ', error)
-    return res.status(400).json({error:'Invite is expired'})
-  }
-
-  const getLinkStatusArray = async(petIdsArray) => {
-    const promiseArray = petIdsArray.map( async(petId) => {
+  const updatedInvitePromiseArray = async(invitationArray) => {
+    const promiseArray = invitationArray.map( async(invitationId) => {
       try {
-        const result = await queries.checkExistingLink(petId,ownerId)
-        return {petId,link:result.link, new:result.new}
+        await queries.checkInviteLink(invitationId,ownerId)
       } catch (error) {
-        console.log(`Error querying owner link for pet id ${petId} and owner id ${ownerId}: `, error)
-        return {petId,link:null, new:null}
+        console.log('Error querying invitation id in owner table: ', error)
+        return res.status(400).json({ error: 'Error checking for existing invitation id and owner id association.'})
       }
+    
+      try {
+        await queries.checkInvitePending(invitationId)
+      } catch (error) {
+        console.log('Error with invite validity: ', error)
+        return res.status(400).json({error:'Error in invite\'s validity'})
+      }
+    
+      try {
+        const invitationToken = await queries.getInvitationToken(invitationId)
+        req.invitationToken = invitationToken
+      } catch (error) {
+        console.log('Error locating invite: ', error)
+        return res.status(400).json({error:'Error in locating invite'})
+      }
+    
+      try {
+        const decodedInvite = jwt.verify(req.invitationToken, invitationSecret)
+        req.petIdArray = decodedInvite.petIdArray
+      } catch (error) {
+        console.log('Error decoding the invite token: ', error)
+        return res.status(400).json({error:'Invite is expired'})
+      }
+    
+      const getLinkStatusArray = async(petIdsArray) => {
+        const promiseArray = petIdsArray.map( async(petId) => {
+          try {
+            const result = await queries.checkExistingLink(petId,ownerId)
+            return {petId,link:result.link, new:result.new}
+          } catch (error) {
+            console.log(`Error querying owner link for pet id ${petId} and owner id ${ownerId}: `, error)
+            return {petId,link:null, new:null}
+          }
+        })
+    
+        try {
+          const linkStatusResolvedPromiseArray = await Promise.allSettled(promiseArray)
+          // returns [ {'status':fufilled, value: { petId,link }} ]
+          const linkStatusArray = linkStatusResolvedPromiseArray.map( promise => {
+            return promise.value
+          })
+          return linkStatusArray
+        } catch (error) {
+          console.log('Error resolving link status promise: ', error)
+          return new Error()
+        }
+      }
+    
+      const updateLinkStatus = async(linkStatusArray) => {
+        // linkStatusArray: [ { petId: number, link: boolean  }]
+        const promiseArray = linkStatusArray.map( async(linkStatus) => {
+          if(!linkStatus.link){
+            if(linkStatus.new){
+              try {
+                await queries.addPetOwnerLink(linkStatus.petId, ownerId)
+                return { petId: linkStatus.petId, updated: true } 
+              } catch (error) {
+                console.log(`Error updating link for ${linkStatus.petId}: `, error)
+                return { petId: linkStatus.petId, updated: false}
+              }
+            }else{
+              try {
+                await queries.updateLinkStatus(linkStatus.petId, ownerId)
+                return { petId: linkStatus.petId, updated: true } 
+              } catch (error) {
+                console.log(`Error updating link for ${linkStatus.petId}: `, error)
+                return { petId: linkStatus.petId, updated: false}
+              }
+            }
+          }else{
+            return { petId: linkStatus.petId, updated: false}
+          }
+        })
+        try{
+          const updatedLinksPromiseResultArray = await Promise.allSettled(promiseArray)
+          const updatedLinksArray = updatedLinksPromiseResultArray.map( updatedLinksPromiseResult => updatedLinksPromiseResult.value )
+          return updatedLinksArray
+        }catch(error){
+          console.log('Error updating link status: ', error)
+        }
+      }
+    
+      try {
+        const linkStatusArray = await getLinkStatusArray(req.petIdArray)
+        req.linkStatusArray = linkStatusArray
+      } catch (error) {
+        console.log('Error getting link status array: ', error)
+        return res.status(400).json({error:'Error processing accepting invite'})
+      }
+    
+      try {
+        const linkStatusArray = req.linkStatusArray
+        const updatedLinks = await updateLinkStatus(linkStatusArray)
+        req.updatedLinks = updatedLinks 
+      } catch (error) {
+        console.log('Error updating status links: ', error)
+        
+      }
+        
+    
+      try {
+        await queries.setInviteTokenAccepted(invitationId)
+      } catch (error) {
+        console.log('Error attempting to invalidate invite token: ', error)
+      }
+      
+      if(req.updatedLinks) return res.status(200).json(req.updatedLinks)
+      else return res.status(400).json({ error: 'Error updating links' })
+       
     })
 
     try {
-      const linkStatusResolvedPromiseArray = await Promise.allSettled(promiseArray)
-      // returns [ {'status':fufilled, value: { petId,link }} ]
-      const linkStatusArray = linkStatusResolvedPromiseArray.map( promise => {
+      const settledPromises = await Promise.allSettled(promiseArray)
+      const nonNullValues = settledPromises.filter( settledPromise => {
+        return settledPromise.value != null
+      })
+      const updatedInvites = nonNullValues.map( promise =>  {
         return promise.value
       })
-      return linkStatusArray
+      return updatedInvites
     } catch (error) {
-      console.log('Error resolving link status promise: ', error)
-      return new Error()
+      console.log('Error processing accepted invites: ', error)
+      return null
     }
-  }
-
-  const updateLinkStatus = async(linkStatusArray) => {
-    // linkStatusArray: [ { petId: number, link: boolean  }]
-    const promiseArray = linkStatusArray.map( async(linkStatus) => {
-      if(!linkStatus.link){
-        if(linkStatus.new){
-          try {
-            await queries.addPetOwnerLink(linkStatus.petId, ownerId)
-            return { petId: linkStatus.petId, updated: true } 
-          } catch (error) {
-            console.log(`Error updating link for ${linkStatus.petId}: `, error)
-            return { petId: linkStatus.petId, updated: false}
-          }
-        }else{
-          try {
-            await queries.updateLinkStatus(linkStatus.petId, ownerId)
-            return { petId: linkStatus.petId, updated: true } 
-          } catch (error) {
-            console.log(`Error updating link for ${linkStatus.petId}: `, error)
-            return { petId: linkStatus.petId, updated: false}
-          }
-        }
-      }else{
-        return { petId: linkStatus.petId, updated: false}
-      }
-    })
-    try{
-      const updatedLinksPromiseResultArray = await Promise.allSettled(promiseArray)
-      const updatedLinksArray = updatedLinksPromiseResultArray.map( updatedLinksPromiseResult => updatedLinksPromiseResult.value )
-      return updatedLinksArray
-    }catch(error){
-      console.log('Error updating link status: ', error)
-    }
-  }
-
-  try {
-    const linkStatusArray = await getLinkStatusArray(req.petIdArray)
-    req.linkStatusArray = linkStatusArray
-  } catch (error) {
-    console.log('Error getting link status array: ', error)
-    return res.status(400).json({error:'Error processing accepting invite'})
-  }
-
-  try {
-    const linkStatusArray = req.linkStatusArray
-    const updatedLinks = await updateLinkStatus(linkStatusArray)
-    req.updatedLinks = updatedLinks 
-  } catch (error) {
-    console.log('Error updating status links: ', error)
-    
-  }
+  } 
     
 
   try {
-    await queries.setInviteTokenAccepted(invitationId)
+    const updatedInviteArray = await updatedInvitePromiseArray(invitationIdArray)
+    if(updatedInviteArray == null) throw new Error('Processing accepted invites returned null.')
+    return res.status(200).json(updatedInviteArray)
   } catch (error) {
-    console.log('Error attempting to invalidate invite token: ', error)
+    console.log("Error updating invitations: ", error)
+    return res.status(400).json({error : 'Error attemting to accept invites.'})
   }
   
-  if(req.updatedLinks) return res.status(200).json(req.updatedLinks)
-  else return res.status(400).json({ error: 'Error updating links' })
-   
 })
 
 router.post('/rejectInvite', async(req,res) => {

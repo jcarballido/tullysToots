@@ -857,6 +857,16 @@ const getInvitationToken = async(invitationId) => {
   }
 }
 
+const checkInviteLink = async(inviteId, ownerId) => {
+  try {
+    const result = await pool.query(sqlText.checkInviteLink, [ inviteId,ownerId ])
+    if(result.rowCount == 0) throw new Error('Link does not exist')
+  } catch (error) {
+    throw error
+  }
+
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -910,6 +920,7 @@ export default {
   getInvitationTokens,
   getInvitationToken,
   setInviteTokenAccepted,
-  rejectInvitation
+  rejectInvitation,
+  checkInviteLink
 }
 
