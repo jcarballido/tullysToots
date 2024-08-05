@@ -437,6 +437,15 @@ const checkInviteLink = `
     AND owner_id = $2
 `
 
+const setInviteExpiredByToken = `
+  UPDATE invitations
+  SET accepted = false,
+    rejected = false,
+    pending = false,
+    expired = true
+  WHERE invitation_token = $1
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -491,7 +500,8 @@ export default {
   getInvitationIdText,
   getInvitationTokens,
   getInvitationToken,
-  checkInviteLink
+  checkInviteLink,
+  setInviteExpiredByToken
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

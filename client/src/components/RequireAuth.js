@@ -6,9 +6,9 @@ const RequireAuth = () => {
   
   const location = useLocation()
   const { auth } = useAuth()
-  const [ searchParams ] = useSearchParams()
+  // const [ searchParams ] = useSearchParams()
 
-  const invitationToken = searchParams.get("invite")
+  // const invitationToken = searchParams.get("invite")
   // const link = `/acceptInvite?invite=${invitationToken}`
 
   // console.log('Require auth mounted')

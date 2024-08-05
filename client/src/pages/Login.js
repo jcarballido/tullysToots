@@ -22,10 +22,9 @@ const Login = () => {
   // const loaderData = useLoaderData()
   const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get("invite")
-  const parsedInvitationToken = invitationToken == 'null'? JSON.parse(invitationToken):invitationToken
+  // const parsedInvitationToken = invitationToken == 'null'? invitationToken:JSON.parse(invitationToken)
   // console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
   const [ error, setError ] = useState(null) 
-
 
   // useEffect( () => {
   //   console.log('Login useEffect first render useEffect. Auth is: ', auth)
@@ -33,34 +32,33 @@ const Login = () => {
 
   useEffect( () => {
     const checkLogin = async() => {
-      // console.log('Check login useEffect ran')
       try{
-        const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
+        const encodedInvitationToken = encodeURIComponent(invitationToken)
         const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
         // console.log('Response in Login component: ', response.data)
-        if(response.data.accessToken) {
-          setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+        const { accessToken, error, message, activeInvite } = response.data
+        if(accessToken) {
+          if(activeInvite) setAuth({accessToken:accessToken,isLoggedIn:true, activeInvite})
+          return setAuth({accessToken:accessToken,isLoggedIn:true})
         }          
-        if(response.data.error) {
-          console.log('Error checking for login session: ', response.data.error)
-          const cleanUrl = window.location.pathname;
-          navigate(cleanUrl, { replace: true });
+        if(error) {
+          console.log('Error checking for login session: ', error)
+          // const cleanUrl = window.location.pathname;
+          // return navigate(cleanUrl, { replace: true });
         }
-        if(response.data.message) console.log('Message from checking login session: ', response.data.message)
-        return 
+        if(message) return console.log('Message from checking login session: ', message)
+        else return console.log('Response returned something unexpected: ', response.data)
       }catch(e){
-        console.log('Error in checkLogin useEffect: ', e)
+        console.log('Error in checkLogin useEffect\'s fetch: ', e)
         return
       }
     }
 
     auth?.isLoggedIn 
-      ? (auth?.expiredInvite)
-        ? navigate('/activity')
-        : (parsedInvitationToken
-          ? navigate(`/acceptInvite?invite=${invitationToken}`)
-          : navigate('/activity'))
-      : checkLogin()
+    ? ((auth?.activeInvite)
+      ? navigate(`/acceptInvite`) 
+      : navigate('/activity'))
+    : checkLogin()
 
     // if(!auth?.isLoggedIn) checkLogin()
     // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)

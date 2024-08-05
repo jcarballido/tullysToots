@@ -3,22 +3,23 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import { useNavigate } from 'react-router-dom'
 
 const AcceptInvite = () =>  {
-  // Check if an invite exists and if it's still active in DB
-    // If not, ensure the invite is invalidated and remove the link between the onwer and invite token
-  // If so, parse the info on the server and pass necessary data to client to render.
-  // Client will then present the owner with the option of accepting, rejecting the invite, or coming back to it at a later time.
-  // If returning at a later time, cycle will repeat itself (checking invite expiration, etc.) 
-  const [ invitedPets, setInvitedPets ] = useState([])
+
+  const [ activeInvites, setActiveInvites ] = useState([])
 
   const axiosPrivate = useAxiosPrivate()
   const navigate = useNavigate()
 
   useEffect(() => {
     const verifyInvitation = async() => {
-      const response = await axiosPrivate.get('/account/verifyInvitation')
-      if(response.data.nullInvite) navigate('/')
-      if(response.data.sharedPets){
-        setInvitedPets([...response.data.sharedPets])
+      try {
+        const response = await axiosPrivate.get('/account/verifyInvitation')        
+        const inviteInfo = response.data // Represented as an array
+        if(inviteInfo.error) throw new Error("Error fetching invites")
+        if(inviteInfo.length > 0) setActiveInvites([...inviteInfo])
+        else return
+      } catch (error) {
+        console.log(`${error}`)
+        return
       }
     }
 
@@ -30,22 +31,48 @@ const AcceptInvite = () =>  {
     <div>
       <div>AcceptInvite Component</div>
       {
-        invitedPets?.map( pet => {
-          <div className='w-full flex justify-center items-center'>{pet.name}</div>
-        })
+        activeInvites?.length > 0
+        ? <div className='w-full flex justify-center items-center'>
+            You have pending invites! 
+            {
+              activeInvites.map( invite => {
+                return (
+                  <div key={invite.invitationId} className=' w-full flex justify-center items-center'>
+                    <div>
+                      { invite.sendingOwnerUsername }
+                    </div> 
+                    {
+                      invite.petInfo.map( info => {
+                        const { name,sex,dob } = info
+                        return(
+                          <>
+                            <div>
+                              {name}
+                            </div> 
+                              <div>
+                              {sex}
+                            </div> 
+                              <div>
+                              {dob}
+                            </div> 
+                          </>
+                        )
+                        
+                      })
+                    }
+                    <button id={invite.invitationId} className='border-2 border-black rounded-lg bg-green-500' onClick={handleAccept}>ACCEPT</button>
+                    <button id={invite.invitationId} className='border-2 border-black rounded-lg bg-red-500' onClick={handleReject}>REJECT</button>
+                  </div>
+                )
+              })
+            }
+          </div>
+        : <>
+            <div>You currently have no pending invites. If you were expecting any, please ask for them to be re-sent.</div>
+          </>
       }
       {
-        invitedPets?.length > 0
-        ? <>
-            <div className='w-full flex justify-center items-center'>
-              Someone is sharing their pet's activity with you! 
-            </div>
-            <div className=' w-full flex justify-center items-center'>
-            <button className='border-2 border-black rounded-lg bg-green-500' onClick={handleAccept}>ACCEPT</button>
-            <button className='border-2 border-black rounded-lg bg-red-500' onClick={handleReject}>REJECT</button>
-            </div>
-          </>
-        : null
+        //History
       }
     </div>
   )

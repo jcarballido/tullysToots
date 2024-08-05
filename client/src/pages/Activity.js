@@ -45,6 +45,7 @@ const Activity = () => {
     if(!auth?.accessToken) navigate('/')
     const getSinglePetId = async() => {
       try{
+        console.log('Reference Pet Id: ', referencePetId)
         const response = await axiosPrivate.get('/account/getSinglePetId',{ signal:abortController.signal })
         localStorage.setItem('referencePetId', JSON.stringify(response.data.singlePetId))
         setReferencePetId(response.data.singlePetId)
@@ -140,7 +141,9 @@ export const loader = () => {
   }
 
   // Get exisiting reference pet ID from local storage or set to null
-  const referencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null  
+  const referencePetIdLocalStorage = localStorage.getItem('referencePetId') || null
+  console.log('Reference pet id in local storage type of: ', typeof(referencePetIdLocalStorage))
+  const referencePetId = referencePetIdLocalStorage == 'undefined' || referencePetIdLocalStorage == 'null'  ? null : JSON.parse(referencePetIdLocalStorage)  
   // if(!referencePetId) {
   //   const response = await axios
   //         .post('/activity/getSinglePetId', { referencePetId, referenceDate, timeWindow },{ headers: {authorization:auth.accessToken}})
