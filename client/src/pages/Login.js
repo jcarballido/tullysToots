@@ -25,6 +25,7 @@ const Login = () => {
   // const parsedInvitationToken = invitationToken == 'null'? invitationToken:JSON.parse(invitationToken)
   // console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
   const [ error, setError ] = useState(null) 
+  const [ activeInvite, setActiveInvite ] = useState(false)
 
   // useEffect( () => {
   //   console.log('Login useEffect first render useEffect. Auth is: ', auth)
@@ -37,9 +38,9 @@ const Login = () => {
         const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
         // console.log('Response in Login component: ', response.data)
         const { accessToken, error, message, activeInvite } = response.data
+        if(activeInvite) setActiveInvite(true)
         if(accessToken) {
-          if(activeInvite) setAuth({accessToken:accessToken,isLoggedIn:true, activeInvite})
-          return setAuth({accessToken:accessToken,isLoggedIn:true})
+          setAuth({accessToken:accessToken,isLoggedIn:true})
         }          
         if(error) {
           console.log('Error checking for login session: ', error)
@@ -55,9 +56,9 @@ const Login = () => {
     }
 
     auth?.isLoggedIn 
-    ? ((auth?.activeInvite)
+    ? activeInvite
       ? navigate(`/acceptInvite`) 
-      : navigate('/activity'))
+      : navigate('/activity')
     : checkLogin()
 
     // if(!auth?.isLoggedIn) checkLogin()
@@ -159,7 +160,7 @@ export const action = async ({ request }) => {
   // console.log('Query params: ', test)
   // Send to backend for verification; Expect to get back an access token
   try{
-      const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
+      const encodedInvitationToken = encodeURIComponent(invitationToken)
       const response = await axiosPrivate
       .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
       // console.log('Response received from sign-in request: ', response)

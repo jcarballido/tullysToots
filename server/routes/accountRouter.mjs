@@ -202,8 +202,9 @@ router.post('/sign-in', async(req,res, next) => {
   console.log('Sign in request received')
   //Capture the invitation token
   const encodedInviteToken = req.query.invite
-  const decodedInviteToken = JSON.parse(decodeURIComponent(encodedInviteToken))
-  // Alert if the token exists
+  let decodedInviteToken = decodeURIComponent(encodedInviteToken)
+  console.log('Decoded invite token: ', decodedInviteToken) // returns a string
+  if(decodedInviteToken === "null") decodedInviteToken = null  // Alert if the token exists
   if(decodedInviteToken) console.log('Invitation token detected: ', decodedInviteToken)
   else console.log('Invitation was NULL')
   // Check to see if a session is currently active
@@ -264,15 +265,16 @@ router.post('/sign-in', async(req,res, next) => {
   next()
 })
 
-const updateInvitationStatus = async(req,res) => {
+const updateInvitationStatus = async(req,res, next) => {
   console.log('UpdateInvitationStatus middleware ran')
-  if(req.guest){
+  if(req.invitationToken){
     console.log('Invitation token detected in middleware AND it\'s a guest user')
     try {
       const tokenData = await queries.getTokenData(req.invitationToken)
       const { accessed_at, expired } = tokenData
       if(accessed_at || expired){
-        res.status(400).json({ error: 'Token is expired.' })
+        if(req.guest) return res.status(400).json({ error: 'Token is expired.' })
+        else return res.status(400).json({ accessToken:req.accessToken, error: 'Token is expired.' })
       }
       if(!accessed_at){
         // Set a timestamp
@@ -297,118 +299,12 @@ const updateInvitationStatus = async(req,res) => {
       }
     } catch (error) {
       console.log('Error retrieving token data: ', error)
-      return res.status(400).json({ error:'Could not validate token'})      
+      if(req.guest) return res.status(400).json({ error:'Could not validate token'}) 
+      else res.status(400).json({ accessToken:req.accessToken,error: 'Token is expired.' })
+
     }
-    // try {
-    //   const decodedJwt = jwt.verify( req.invitationToken, process.env.INVITATION_SECRET )
-    // } catch (error) {
-    //   console.log('Error decoding invitation JWT token. ')
-    //   try {
-    //     const accessedTimestamp = await queries.getAccessedTimestamp(req.invitationToken)
-    //     if(!accessedTimestamp) {
-    //       console.log('An accessed timestamp does not exist. Attempt is made to add')
-    //       await queries.setInvitationAccessedAtTimestamp(req.invitationToken)
-    //       console.log('Accessed Timestamp successfully added.')
-    //     }
-    //   } catch (error) {
-    //     console.log('Error attempting to read or set an \'accessed\' timestamp.')
-    //     return res.status(200).json({ error:'Error attempting to read or set an \'accessed\' timestamp' })
-    //   }
-
-    //   return res.status(200).json({ error:'Expired Invite' })
-    // }
-    return res.status(200).json({ message:'Valid invite and new session'})
-  }
-  if(req.invitationToken){
-    console.log('Invitation token detected in middleware for an existing user')
-    try {
-      const tokenData = await queries.getTokenData(req.invitationToken)
-      const { accessed_at, expired } = tokenData
-      if(accessed_at || expired){
-        res.status(400).json({ accessToken:req.accessToken,error: 'Token is expired.' })
-      }
-      if(!accessed_at){
-        // Set a timestamp
-        try {
-          await queries.setInvitationAccessedAtTimestamp(req.invitationToken)
-        } catch (error) {
-          console.log('Failed to set expiration to true. Error returned: ', error)
-        }
-      }
-      if(!expired){
-        // Decode the invite to check for expiry
-        try {
-          jwt.verify(req.invitationToken, process.env.INVITATION_SECRET)
-        } catch (error) {
-          console.log('Token is expired.')
-          try {
-            await queries.setInviteExpiredByToken(req.invitationToken)
-          } catch (error) {
-            console.log('Failed to set expiration to true. Error returned: ', error)
-          }
-        }
-      }
-    } catch (error) {
-      console.log('Error retrieving token data: ', error)
-      return res.status(400).json({ accessToken:req.accessToken,error:'Could not validate token'})      
-    }
-    // try {
-    //   const decodedJwt = jwt.verify( req.invitationToken, process.env.INVITATION_SECRET )
-    //   console.log('Invite JWT successfully decoded.')
-    // } catch (error) {
-    //   console.log('Error decoding invitation JWT token: ', error)
-    //   try {
-    //     const accessedTimestamp = await queries.getAccessedTimestamp(req.invitationToken)
-    //     if(!accessedTimestamp) {
-    //       console.log('An accessed timestamp does not exist. Attempt is made to add')
-    //       await queries.setInvitationAccessedAtTimestamp(req.invitationToken)
-    //       console.log('Accessed Timestamp successfully added.')
-    //     }
-    //     // Need to INVALIDATE the invitation token IF TIMESTAMP IS PRESENT
-    //     // else await queries.setInvalidInvitationToken(req.invitationToken) //MAY NEED TO DELETE
-    //   } catch (error) {
-    //     console.log('Error attempting to read or set an \'accessed\' timestamp.')
-    //     return res.status(200).json({ accessToken:req.accessToken, error:'Error attempting to read or set an \'accessed\' timestamp' })
-    //   }
-
-    //   return res.status(200).json({ accessToken: req.accessToken,error:'Expired Invite' })
-    // }
-
-    // try {
-    //   const accessedTimestamp = await queries.getAccessedTimestamp(req.invitationToken)
-    //   console.log('Acessed timestamp result: ', accessedTimestamp)
-      
-    //   if(!accessedTimestamp) {
-    //     try {
-    //       console.log('An accessed timestamp does not exist. Attempt is made to add')
-    //       await queries.setInvitationAccessedAtTimestamp(req.invitationToken)
-    //       console.log('Attempting to invalidate the token.')
-    //       // await queries.setInvalidInvitationToken(req.invitationToken)
-    //       console.log('Accessed Timestamp successfully added and invalidated.')
-    //     } catch (error) {
-    //       console.log('Error caught when attempting to add a timestamp or invalidate the token: ', error)
-    //       return res.status(200).json({ accessToken: req.accessToken, error: 'Could not add timestamp or invalidate token' })
-    //     }
-    //   }
-    //   // Need to INVALIDATE the invitation token
-
-    //   // else {
-    //   //   console.log('Accessed timestamp returned in updateInvitationStatus: ', accessedTimestamp)
-    //   //   return res.status(200).json({ accessToken:req.accessToken, error:'Link has expired. Please request a new one.' })}
-    // } catch (error) {
-    //   console.log('Error attempting to read or set an \'accessed\' timestamp.')
-    //   return res.status(200).json({ accessToken:req.accessToken, error:'Error attempting to read or set an \'accessed\' timestamp. Request a new one' })
-    // }
-
-    // try {
-    //   console.log('Attempting to invalidate the token.')
-    //   await queries.setInvalidInvitationToken(req.invitationToken)
-    //   console.log('Accessed Timestamp successfully invalidated.')
-    // } catch (error) {
-    //   console.log('Failed to invalidate the token due to error: ', error)
-    //   return res.status(200).json({ accessToken:req.accessToken, error:'Error attempting to invalidate invite token. Request a new one' })      
-    // }
-
+ 
+    if(req.guest) return res.status(200).json({ message:'Valid invite and new session'})
     try {
       const invitationId = await queries.getInvitationId(req.invitationToken)
       req.invitationId = invitationId
@@ -425,10 +321,10 @@ const updateInvitationStatus = async(req,res) => {
       console.log('Error returned from trying to store the invitation token to the user: ', e)
       return res.status(200).json({accessToken: req.accessToken,error:'Could not attach token to owner'})
     }
-    // return res.status(200).json({ accessToken: req.accessToken })
   }
-  // next()
-  // return res.status(200).json({ accessToken: req.accessToken })
+
+  next()
+
 }
 
 router.use(updateInvitationStatus)
@@ -648,7 +544,7 @@ router.get('/invitation', async(req,res) => {
   // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
 })
 
-// router.use(verifyAccessToken)
+router.use(verifyAccessToken)
 
 router.get('/verifyInvite', async(req,res) => {
   // Check if owner Id has an invite associated with it
