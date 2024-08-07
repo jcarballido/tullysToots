@@ -90,7 +90,6 @@ router.get('/checkLoginSession', async(req,res, next) => {
   const encodedInviteToken = req.query.invite
   let decodedInviteToken = decodeURIComponent(encodedInviteToken) // returns a string
   if(decodedInviteToken === 'null') decodedInviteToken = null
-  console.log('Decoded invite for checkLoginSession: ', decodedInviteToken)
   const refreshToken = req.cookies.jwt
   if(!refreshToken){
     if(decodedInviteToken){
@@ -105,7 +104,7 @@ router.get('/checkLoginSession', async(req,res, next) => {
     req.decodedJwt = decodedJwt
   } catch (error) {
     console.log('decodedJwt returned an error: ', error)
-    return res.status(200).json({ error:'Session expired. Login required.' })
+    return res.status(400).json({ error:'Session expired. Login required.' })
   }
   const accessSecret = process.env.ACCESS_SECRET
   const ownerId = req.decodedJwt.ownerId
@@ -203,20 +202,16 @@ router.post('/sign-in', async(req,res, next) => {
   //Capture the invitation token
   const encodedInviteToken = req.query.invite
   let decodedInviteToken = decodeURIComponent(encodedInviteToken)
-  console.log('Decoded invite token: ', decodedInviteToken) // returns a string
   if(decodedInviteToken === "null") decodedInviteToken = null  // Alert if the token exists
-  if(decodedInviteToken) console.log('Invitation token detected: ', decodedInviteToken)
-  else console.log('Invitation was NULL')
   // Check to see if a session is currently active
-  const refreshToken = req.cookies.jwt
-  if(refreshToken) return res.status(200).json({ error :'User is currently logged in' })
+  const existingRefreshToken = req.cookies.jwt
+  if(existingRefreshToken) return res.status(400).json({ error :'User is currently logged in' })
   // Extract email and password from req.body 
   const { username, password } = req.body
-  if(!username || !password) return res.status(200).json({ error :'Missing credentials' })
+  if(!username || !password) return res.status(400).json({ error :'Missing credentials' })
   // Confirm user is registered
   try {
     const ownerId = await queries.getOwnerId('username',username)
-    console.log('Owner ID found: ', ownerId)
     if(!ownerId) return res.status(400).json({ error:'User does not exist'})
     req.ownerId = ownerId
   } catch (error) {
@@ -225,43 +220,38 @@ router.post('/sign-in', async(req,res, next) => {
   }
   // Confirm password is correct
   try {
-    console.log('Attempting to find owner ID from req.ownerID: ', req.ownerId)
     const passwordHash = await queries.getPasswordHash(req.ownerId)
-    console.log('Password hash determined from owner ID: ', passwordHash)
     const passwordMatch = await bcrypt.compare(password, passwordHash)
     req.passwordMatch = passwordMatch  
   } catch (error) {
     console.log('Error attempting to check password provided by user with stored password: ', error)
     return res.status(400).json({error:'Error checking password on server'})
   }
-  if(req.passwordMatch){
-    // console.log('Passwords matched!')
-    const ownerId = req.ownerId
-    const accessSecret = process.env.ACCESS_SECRET
-    const refreshSecret = process.env.REFRESH_SECRET
-    // Create access token
-    const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '15m'})
-    // Create refresh token 
-    const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn: '3d' })
-    // Set refresh token cookie
-    const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 3 // ms/s * s/min * min/hr * hrs/day * num. days
-    res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
-    try {
-      const result = await queries.setNewRefreshToken(refreshToken,ownerId)      
-    } catch (error) {
-      return res.status(400).json({error: 'Could not update refresh token on sign-in'})
-    }
-    // const invitationToken = req.query.invite
-    if(!decodedInviteToken){
-      // console.log('Sign-in does not have an invitation token. Access token to be sent is: ', accessToken)
-      return res.status(200).json({accessToken: accessToken})
-    }
-    req.invitationToken = decodedInviteToken
-    req.accessToken = accessToken
-
-  }else{
-    return res.status(400).json({ error: 'Wrong credentials' })
+  if(!req.passwordMatch) return res.status(400).json({ error: 'Wrong credentials' })
+  
+  const ownerId = req.ownerId
+  const accessSecret = process.env.ACCESS_SECRET
+  const refreshSecret = process.env.REFRESH_SECRET
+  // Create access token
+  const accessToken = jwt.sign({ ownerId }, accessSecret, {expiresIn: '15m'})
+  // Create refresh token 
+  const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn: '3d' })
+  // Set refresh token cookie
+  const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 3 // ms/s * s/min * min/hr * hrs/day * num. days
+  res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true})
+  try {
+    const result = await queries.setNewRefreshToken(refreshToken,ownerId)      
+  } catch (error) {
+    return res.status(400).json({error: 'Could not update refresh token on sign-in'})
   }
+  // const invitationToken = req.query.invite
+  if(!decodedInviteToken){
+    // console.log('Sign-in does not have an invitation token. Access token to be sent is: ', accessToken)
+    return res.status(200).json({accessToken: accessToken})
+  }
+  req.invitationToken = decodedInviteToken
+  req.accessToken = accessToken
+
   next()
 })
 
@@ -274,7 +264,7 @@ const updateInvitationStatus = async(req,res, next) => {
       const { accessed_at, expired } = tokenData
       if(accessed_at || expired){
         if(req.guest) return res.status(400).json({ error: 'Token is expired.' })
-        else return res.status(400).json({ accessToken:req.accessToken, error: 'Token is expired.' })
+        else return res.status(200).json({ accessToken:req.accessToken, invitationError: 'Token is expired.' })
       }
       if(!accessed_at){
         // Set a timestamp
@@ -294,23 +284,25 @@ const updateInvitationStatus = async(req,res, next) => {
             await queries.setInviteExpiredByToken(req.invitationToken)
           } catch (error) {
             console.log('Failed to set expiration to true. Error returned: ', error)
-          }
+            throw error
+          } 
+          throw error
         }
       }
     } catch (error) {
       console.log('Error retrieving token data: ', error)
-      if(req.guest) return res.status(400).json({ error:'Could not validate token'}) 
-      else res.status(400).json({ accessToken:req.accessToken,error: 'Token is expired.' })
-
+      if(req.guest) return res.status(400).json({ invitationError:'Could not validate token'}) 
+      else res.status(200).json({ accessToken:req.accessToken,invitationError: 'Token is expired.' })
     }
- 
+
     if(req.guest) return res.status(200).json({ message:'Valid invite and new session'})
+
     try {
       const invitationId = await queries.getInvitationId(req.invitationToken)
       req.invitationId = invitationId
     } catch (error) {
       console.log('Error querying for invitation id: ', error);
-      return res.status(400).json({accessToken:req.accessToken, error:  'Error storing invitation token. Please request a new invite.' })
+      return res.status(200).json({accessToken:req.accessToken, invitationError:  'Error storing invitation token. Please request a new invite.' })
     }
 
     try{
@@ -319,7 +311,7 @@ const updateInvitationStatus = async(req,res, next) => {
       return res.status(200).json({ accessToken: req.accessToken, activeInvite: true })
     } catch(e){
       console.log('Error returned from trying to store the invitation token to the user: ', e)
-      return res.status(200).json({accessToken: req.accessToken,error:'Could not attach token to owner'})
+      return res.status(200).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
     }
   }
 
