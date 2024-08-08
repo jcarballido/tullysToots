@@ -875,6 +875,15 @@ const setInviteExpiredByToken = async(inviteToken) => {
   }
 }
 
+const getTokenData = async(invitationToken) => {
+  try{
+      const result = await pool.query(sqlText.getTokenData, [ invitationToken ])
+      return result.rows[0]
+  }catch(e){
+      throw e
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -930,6 +939,7 @@ export default {
   setInviteTokenAccepted,
   rejectInvitation,
   checkInviteLink,
-  setInviteExpiredByToken
+  setInviteExpiredByToken,
+  getTokenData
 }
 

@@ -445,6 +445,11 @@ const setInviteExpiredByToken = `
     expired = true
   WHERE invitation_token = $1
 `
+const getTokenData = `
+    SELECT * 
+    FROM invitations
+    WHERE invitation_token = $1 
+`
 
 export default {
   insertIntoText,
@@ -501,7 +506,8 @@ export default {
   getInvitationTokens,
   getInvitationToken,
   checkInviteLink,
-  setInviteExpiredByToken
+  setInviteExpiredByToken,
+  getTokenData
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

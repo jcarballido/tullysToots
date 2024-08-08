@@ -88,7 +88,7 @@ router.get('/checkLoginSession', async(req,res, next) => {
   // MUST RETURN AN OBJECT: { accessToken, error, message }
   console.log('checkLoginSession request received')
   const encodedInviteToken = req.query.invite
-  let decodedInviteToken = decodeURIComponent(encodedInviteToken) // returns a string
+  let decodedInviteToken = decodeURIComponent(encodedInviteToken)
   if(decodedInviteToken === 'null') decodedInviteToken = null
   const refreshToken = req.cookies.jwt
   if(!refreshToken){
@@ -97,19 +97,18 @@ router.get('/checkLoginSession', async(req,res, next) => {
       req.guest = true
       return next()
     }
-    return res.status(200).json({message:'New Session'})    
+    return res.status(401).json({ message: 'Missing refresh token'})    
   }
   try {
     const decodedJwt = jwt.verify( refreshToken, process.env.REFRESH_SECRET )
     req.decodedJwt = decodedJwt
   } catch (error) {
     console.log('decodedJwt returned an error: ', error)
-    return res.status(400).json({ error:'Session expired. Login required.' })
+    return res.status(401).json({ message:'Expired refresh token.' })
   }
   const accessSecret = process.env.ACCESS_SECRET
   const ownerId = req.decodedJwt.ownerId
   const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
-  // req.accessToken = accessToken
   if(decodedInviteToken){
     req.invitationToken = decodedInviteToken
     req.accessToken = accessToken
@@ -263,8 +262,8 @@ const updateInvitationStatus = async(req,res, next) => {
       const tokenData = await queries.getTokenData(req.invitationToken)
       const { accessed_at, expired } = tokenData
       if(accessed_at || expired){
-        if(req.guest) return res.status(400).json({ error: 'Token is expired.' })
-        else return res.status(200).json({ accessToken:req.accessToken, invitationError: 'Token is expired.' })
+        if(req.guest) return res.status(401).json({ guest:true, message: 'Invitation token is expired.' })
+        else return res.status(207).json({ accessToken:req.accessToken, invitationError: 'Invitation token is expired.' })
       }
       if(!accessed_at){
         // Set a timestamp
@@ -291,18 +290,18 @@ const updateInvitationStatus = async(req,res, next) => {
       }
     } catch (error) {
       console.log('Error retrieving token data: ', error)
-      if(req.guest) return res.status(400).json({ invitationError:'Could not validate token'}) 
-      else res.status(200).json({ accessToken:req.accessToken,invitationError: 'Token is expired.' })
+      if(req.guest) return res.status(401).json({ guest:true, message:'Issue validating invitation token.'}) 
+      else res.status(207).json({ accessToken:req.accessToken,invitationError: 'Token is expired.' })
     }
 
-    if(req.guest) return res.status(200).json({ message:'Valid invite and new session'})
+    if(req.guest) return res.status(204)
 
     try {
       const invitationId = await queries.getInvitationId(req.invitationToken)
       req.invitationId = invitationId
     } catch (error) {
       console.log('Error querying for invitation id: ', error);
-      return res.status(200).json({accessToken:req.accessToken, invitationError:  'Error storing invitation token. Please request a new invite.' })
+      return res.status(207).json({accessToken:req.accessToken, invitationError:  'Error storing invitation token. Please request a new invite.' })
     }
 
     try{
@@ -311,7 +310,7 @@ const updateInvitationStatus = async(req,res, next) => {
       return res.status(200).json({ accessToken: req.accessToken, activeInvite: true })
     } catch(e){
       console.log('Error returned from trying to store the invitation token to the user: ', e)
-      return res.status(200).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
+      return res.status(207).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
     }
   }
 
@@ -538,19 +537,189 @@ router.get('/invitation', async(req,res) => {
 
 router.use(verifyAccessToken)
 
+// router.get('/verifyInvite', async(req,res) => {
+//   // Check if owner Id has an invite associated with it
+//   // const ownerId = req.ownerId
+//   const ownerId = req.body.ownerId
+//   const invitationSecret = process.env.INVITATION_SECRET
+
+//   const getArrayPetIdArrays = async(invitationsArray) => {
+//     const promiseArray = invitationsArray.map( async(inviteObj)=> {
+//       const invite = inviteObj.invitation_token
+//       console.log('Invite passed in to getArrayPetIdArray:', invite)
+//       try {
+//         const decodeInvite = jwt.verify(invite,invitationSecret)
+//         // console.log('Decoded Invite: ', decodeInvite)
+//         const petIdArray = decodeInvite.petIdArray
+//         const sendingOwnerId = decodeInvite.sendingOwnerId
+//         const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
+//         const inviteId = await queries.getInvitationId(invite)
+//         return { inviteId, sendingOwnerUsername, petIdArray }
+//       } catch (error) {
+//         console.log('Error decoding invitation: ', error)
+//         try{
+//           await queries.setInviteExpiredByToken(invite) 
+//         }catch(error){
+//           console.log('Error setting token as expired: ', error)
+//           return 
+//         }
+//         return null
+//       }
+//     })
+//     try {
+//       const arrayPetIdArrays = await Promise.allSettled(promiseArray)
+//       const filteredArrayPetIdArrays = arrayPetIdArrays?.filter( petIdArray => petIdArray.value != null)
+//       const arrayPetIdArrayValues = filteredArrayPetIdArrays.map( nonNullPetIdAray => nonNullPetIdAray.value)
+//       return arrayPetIdArrayValues 
+//     } catch (error) {
+//       console.log('Error processing invitations: ', error)
+//     }
+//   }
+//   // GET PET INFO
+//   const processPetIds = async(petIdsArray) => {
+//     // Create Promise array of fetching pet info
+//     const promiseArray = petIdsArray.map( async( petId ) => {
+//       try {
+//         const result = await queries.getPetInfo(petId)
+//         return result.rows[0]
+//       } catch (error) {
+//         console.log(`Error getting pet Info for petId ${petId}: `, error)
+//         return null
+//       }
+//     })
+
+//     try {
+//       const result = await Promise.allSettled(promiseArray)
+//       const filteredResult = result.filter( petInfo => petInfo != null )
+//       const resultValues = filteredResult.map( petInfoPromise => petInfoPromise.value)
+//       return resultValues
+//     } catch (error) {
+//       console.log('Error in awating promises settling: ', error)
+//       return null
+//     }
+//     // Values returned are non-null
+//   }
+//   // GET pet info from pet IDs array
+//   const getArrayPetInfoArrays = async(arrayDecodedJWT) => {
+//     // console.log('array of decoded JWT: ', arrayDecodedJWT)
+//     // const sendingOwnerId = arrayDecodedJWT.sendingOwnerId
+//     // const petIdArray = arrayDecodedJWT.petIdArray
+//     const promiseArray = arrayDecodedJWT.map( async(decodedInvite) => {
+//       const petIdArray = decodedInvite.petIdArray
+//       const sendingOwnerUsername = decodedInvite.sendingOwnerUsername
+//       const inviteId = decodedInvite.inviteId
+//       try {
+//         // console.log('Processing pet ID array: ', petIdArray)
+//         const petInfo = await processPetIds(petIdArray)
+//         // console.log('Received the folowing pet id: ', petInfo)
+//         return {inviteId, sendingOwnerUsername, petInfo}
+//       } catch (error) {
+//         throw error
+//       }
+//     })
+
+//     try {
+//       const petInfo = await Promise.allSettled(promiseArray)  
+//       // console.log('Pet Info Promises returned: ', petInfo)
+//       const valuesPetInfo = petInfo.map( petInfoPromiseResult => {
+//         // console.log('Pet info promise result: ', petInfoPromiseResult)
+//         const promisesArray = petInfoPromiseResult.value 
+//         // console.log('Promise array: ', promisesArray)
+//         // const infoArray = promisesArray.map( promise => promise.value)
+//         // console.log('Info array: ', infoArray)
+//         return promisesArray
+//       })
+//       // console.log('Values from pet info promises returned: ', valuesPetInfo)
+
+//       return valuesPetInfo    
+//     } catch (error) {
+//       throw error
+//     }
+
+//   }
+
+//   try {
+//     const invitationTokens = await queries.getInvitationTokens(ownerId)
+//     // console.log('Invitation Tokens received from the backend: ', invitationTokens)
+//     req.invitationTokens = invitationTokens
+//   } catch (error) {
+//     console.log('Error querying for invites: ', error)
+//     return res.status(400).json({queryError:`Error querying for invites: ${error}`})
+//   }
+
+//   if(req.invitationTokens?.length == 0) return res.status(200).json({ emptyInvitations:true })
+
+//   // Check if invite(s) is still valid (not expired)
+//   const invitations = [...req.invitationTokens]
+//   // if(invitations.length == 0) return res.status(400).json({nullInvites:true})
+//   try {
+//     const arrayDecodedInvites = await getArrayPetIdArrays(invitations)
+//     req.arrayDecodedInvites = arrayDecodedInvites
+//   } catch (error) {
+//     console.log('Error querying for pet Ids: ', error)
+//     return res.status(400).json({queryError:`Error querying for pet Ids: ${error}`})
+//   }
+//   if(req.arrayDecodedInvites?.length == 0) return res.status(400).json({invitesExpired:true})
+//   // console.log('Array of pet ID arrays: ', arrayDecodedInvites)
+//   // Parse the invite to capture the pet IDs being shared
+//   try {
+//     const petInfo = await getArrayPetInfoArrays(req.arrayDecodedInvites)    
+//     req.petInfo = petInfo 
+//   } catch (error) {
+//     console.log('Error getting pet info: ', error)
+//     return res.status(400).json({queryError:`Error querying for pet info: ${error}`})
+//   }
+//   // console.log('Pet Info returned: ', petInfo)
+//   console.log('Pet info successfully processed.')
+//   return res.status(200).json(req.petInfo)
+// })
+
 router.get('/verifyInvite', async(req,res) => {
-  // Check if owner Id has an invite associated with it
-  // const ownerId = req.ownerId
-  const ownerId = req.body.ownerId
+  const ownerId = req.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
+
+  const filterPendingInvitationTokens = async(invitationIdArray) => {
+    const promiseArray = invitationIdArray.map( async(invitationId) => {
+        try{
+            const result = await queries.isPending(invitationId)
+            return result //Will return TOKEN and not ID
+        }catch(err){
+            console.log(`Error querying for invitation id: ${invitationId}:`, err)
+            return null
+        }
+    })
+    const promiseResult = await Promise.allSettled(promiseArray) // [ {status:'',value: VALUE ]
+    const promiseValues = promiseResult.map( promise => {
+      return promise.value
+    })
+    const pendingInvitationTokens = promiseValues.filter( value => value != null)
+    return pendingInvitationTokens
+  }
+
+  const verifyPendingInvites = async(pendingInvitationTokens) => {
+    const verifiedInvitePromises = pendingInvitationTokens.map( async(invitationToken) => {
+      try {
+        const decodedInvitation = jwt.verify(invitationToken, invitationSecret )
+        const { sendingOwnerId, petIdArray } = decodedInvitation
+        return { sendingOwnerId, petIdArray }
+      } catch (error) {
+        console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
+        try {
+          await queries.setInviteExpiredByToken(invitationToken)          
+        } catch (error) {
+          
+        }
+      }
+      console.log('Successfully set invitation token to expired.')
+    })
+      
+  }
 
   const getArrayPetIdArrays = async(invitationsArray) => {
     const promiseArray = invitationsArray.map( async(inviteObj)=> {
       const invite = inviteObj.invitation_token
-      console.log('Invite passed in to getArrayPetIdArray:', invite)
       try {
         const decodeInvite = jwt.verify(invite,invitationSecret)
-        // console.log('Decoded Invite: ', decodeInvite)
         const petIdArray = decodeInvite.petIdArray
         const sendingOwnerId = decodeInvite.sendingOwnerId
         const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
@@ -576,9 +745,7 @@ router.get('/verifyInvite', async(req,res) => {
       console.log('Error processing invitations: ', error)
     }
   }
-  // GET PET INFO
   const processPetIds = async(petIdsArray) => {
-    // Create Promise array of fetching pet info
     const promiseArray = petIdsArray.map( async( petId ) => {
       try {
         const result = await queries.getPetInfo(petId)
@@ -600,7 +767,6 @@ router.get('/verifyInvite', async(req,res) => {
     }
     // Values returned are non-null
   }
-  // GET pet info from pet IDs array
   const getArrayPetInfoArrays = async(arrayDecodedJWT) => {
     // console.log('array of decoded JWT: ', arrayDecodedJWT)
     // const sendingOwnerId = arrayDecodedJWT.sendingOwnerId
@@ -610,9 +776,7 @@ router.get('/verifyInvite', async(req,res) => {
       const sendingOwnerUsername = decodedInvite.sendingOwnerUsername
       const inviteId = decodedInvite.inviteId
       try {
-        // console.log('Processing pet ID array: ', petIdArray)
         const petInfo = await processPetIds(petIdArray)
-        // console.log('Received the folowing pet id: ', petInfo)
         return {inviteId, sendingOwnerUsername, petInfo}
       } catch (error) {
         throw error
@@ -621,7 +785,6 @@ router.get('/verifyInvite', async(req,res) => {
 
     try {
       const petInfo = await Promise.allSettled(promiseArray)  
-      // console.log('Pet Info Promises returned: ', petInfo)
       const valuesPetInfo = petInfo.map( petInfoPromiseResult => {
         // console.log('Pet info promise result: ', petInfoPromiseResult)
         const promisesArray = petInfoPromiseResult.value 

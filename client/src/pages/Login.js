@@ -146,38 +146,31 @@ const Login = () => {
 
 //Need to handle response for wrong credentials
 export const action = async ({ request }) => {
-  // Parse request for username and password from form submission
-  const formData = await request.formData();
+  
+  const formData = await request.formData(); // Parse request for username and password from form submission
   const username = formData.get("username");
   const password = formData.get("password");
-  // Package credentials to send to backend
-  const credentials = { username, password };
-  // Capture the invitation token
+ 
+  const credentials = { username, password };  // Package credentials to send to backend
   const url = new URL(request.url);
   const queryParams = new URLSearchParams(url.search);
-  // console.log('Action request URL: ', url)
-  const invitationToken = queryParams.get("invite")
-  // console.log('Query params: ', test)
-  // Send to backend for verification; Expect to get back an access token
+
+  const invitationToken = queryParams.get("invite")  // Capture the invitation token
+
+// Send to backend for verification; Expect to get back an access token
   try{
       const encodedInvitationToken = encodeURIComponent(invitationToken)
       const response = await axiosPrivate
-      .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
-      // console.log('Response received from sign-in request: ', response)
-      const accessToken = response.data.accessToken
-      const expiredToken = response.data.error
-      if(expiredToken){
-        return { accessToken, isLoggedIn:true, expiredInvite: true }
-      }
-      return { accessToken, isLoggedIn: true }
+        .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
+      const { accessToken, activeInvite } = response.data
+      return { accessToken, activeInvite }
   }catch(e){
     console.log('Sign In action resulted in the following error: ',e)
-    const error = e.response
-    return { error:error.data.error }
+    const errorData = e.response.data
+    return { error:errorData.error }
   }
-
-
 }
+
 
 // export const loader = async () => {
 
