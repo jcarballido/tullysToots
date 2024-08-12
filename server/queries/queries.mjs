@@ -777,7 +777,7 @@ const removeInvitationToken = async(invite,ownerId) => {
 const getPetInfo = async( petId ) => {
   try {
     const result = await pool.query(sqlText.getPetInfo,[ petId ])
-    return result
+    return result 
   } catch (error) {
     throw error
   }
@@ -884,6 +884,17 @@ const getTokenData = async(invitationToken) => {
   }
 }
 
+const getPendingInvitationTokens = async(ownerId) => {
+  try {
+    const result = await pool.query(sqlText.getPendingInvitationTokens, [ ownerId ])
+    const tokens = result.rows
+    const isolatedTokens = tokens.map( tokenObject => tokenObject.invitation_token )
+    return isolatedTokens
+  } catch (error) {
+    throw error
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -909,7 +920,7 @@ export default {
   getOwnerIdFromEmail,
   getSingleActivePetId,
   deactivatePetOwnerLink,
-  updateOwner,
+  updateOwner,getPendingInvitationTokens,
   updatePet,
   updateActivity,
   updatePassword,
@@ -940,6 +951,7 @@ export default {
   rejectInvitation,
   checkInviteLink,
   setInviteExpiredByToken,
-  getTokenData
+  getTokenData,
+  getPendingInvitationTokens
 }
 

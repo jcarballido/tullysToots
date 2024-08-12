@@ -37,10 +37,6 @@ router.use(verifyAccessToken)
 // USE ENCODED DATA
 router.get("/get", async (req, res) => {
 
-  // const ownerId = req.body.ownerId
-  // const petIdString = req.body.petId
-  // const referenceDate = '2024-03-26'
-  // const timeWindow = {daysBefore:2,daysAfter:2}
   const ownerId = req.ownerId
   const encodedData = req.query.data
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
@@ -53,14 +49,18 @@ router.get("/get", async (req, res) => {
   // console.log('**Activity Router** timeWindowObj: ', timeWindowObj)
   if (petId) {
     // Confirm active link between owner and pet.
-    const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);
+    try {
+      const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);      
+    } catch (error) {
+      
+    }
     if (confirmActiveLink) {
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
       const petIdArray = await queries.getOwnersPetIds(ownerId)
       // return res.status(200).json({activityArray, petIdArray});
       return res.status(200).json({ activityArray, petIdArray })
     } else {
-      return res.status(201).json({ error: 'Pet and owner are not linked' });
+      return res.status(401).json({ error: 'Pet and owner are not linked' });
     }
   } else {
       try {

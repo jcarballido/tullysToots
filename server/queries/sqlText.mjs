@@ -451,6 +451,17 @@ const getTokenData = `
     WHERE invitation_token = $1 
 `
 
+const getPendingInvitationTokens = `
+  SELECT i.invitation_token 
+  FROM 
+    owners o, 
+    UNNEST(o.invitations) AS key_array_element
+  INNER JOIN invitations i
+  ON
+    key_array_element::INT = i.invitation_id
+  WHERE o.owner_id = $1 AND i.pending = true
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -507,7 +518,8 @@ export default {
   getInvitationToken,
   checkInviteLink,
   setInviteExpiredByToken,
-  getTokenData
+  getTokenData,
+  getPendingInvitationTokens
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
