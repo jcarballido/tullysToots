@@ -42,43 +42,87 @@ router.get("/get", async (req, res) => {
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
-  // console.log("**Activity Router ** type of petId: ",typeof(referencePetId))
-  // console.log('Referene date parsed from encoded data: ', referenceDate)
+
   const petIdString = referencePetId.replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
-  // console.log('**Activity Router** timeWindowObj: ', timeWindowObj)
-  if (petId) {
-    // Confirm active link between owner and pet.
-    try {
-      const confirmActiveLink = await queries.checkOwnerLink(ownerId, petId);      
-    } catch (error) {
-      
+  console.log('Pet id received from request: ', petId)
+  if(!petId){
+    try{
+      const singlePetId = await queries.getSingleActivePetId(ownerId);
+      if(!singlePetId) throw new Error('No active links found.')
+      req.petId = singlePetId
+    }catch(error){
+      console.log('Error getting single pet Activity:', error)
+      return res.status(204)
     }
-    if (confirmActiveLink) {
-      const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
-      const petIdArray = await queries.getOwnersPetIds(ownerId)
-      // return res.status(200).json({activityArray, petIdArray});
-      return res.status(200).json({ activityArray, petIdArray })
-    } else {
-      return res.status(401).json({ error: 'Pet and owner are not linked' });
-    }
-  } else {
-      try {
-        const singlePetId = await queries.getSingleActivePetId(ownerId);
-        const activityArray = await queries.getActivity(
-          singlePetId,
-          referenceDate,
-          timeWindowObj
-        );
-        const petIdArray = await queries.getOwnersPetIds(ownerId)
-        console.log('activityRouter activityArray line 42: ',activityArray)
-        return res.status(200).json({activityArray, petIdArray, singlePetId });
-      
-      } catch (e) {
-        console.log('Some error caught: ', e)
-        return res.status(400).json({ error: e });
-      } 
+  }else{
+    req.petId = petId
   }
+
+  try {
+    const confirmActiveLink = await queries.checkOwnerLink(ownerId, req.petId);   
+    req.activeLink = confirmActiveLink   
+  } catch (error) {
+    console.log('Error checking link with owner: ', error)
+    req.activeLink = false
+  }
+
+
+  if(req.activeLink){
+    const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
+    const petIdArray = await queries.getOwnersPetIds(ownerId)
+    // return res.status(200).json({activityArray, petIdArray});
+    return res.status(200).json({ activityArray, petIdArray })
+  }else{
+    try {
+      const singlePetId = await queries.getSingleActivePetId(ownerId);
+      if(!singlePetId) throw new Error('No active links found.')
+      const activityArray = await queries.getActivity(
+        singlePetId,
+        referenceDate,
+        timeWindowObj
+      );
+      const petIdArray = await queries.getOwnersPetIds(ownerId)
+      return res.status(200).json({activityArray, petIdArray, singlePetId });
+    
+    } catch (e) {
+      console.log('Some error caught: ', e)
+      return res.status(204)
+    }
+  }
+
+  // if a pet ID exists, check if there's a positive link.
+  // If not, look for any existing petId to work with.
+  // If no ID exists, send a message saying no active pet links
+  // if (petId) {
+  //   // Confirm active link between owner and pet.
+    
+  //   if (confirmActiveLink) {
+  //     const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
+  //     const petIdArray = await queries.getOwnersPetIds(ownerId)
+  //     // return res.status(200).json({activityArray, petIdArray});
+  //     return res.status(200).json({ activityArray, petIdArray })
+  //   } else {
+  //     return res.status(401).json({ error: 'Pet and owner are not linked' });
+  //   }
+  // } else {
+  //     try {
+  //       const singlePetId = await queries.getSingleActivePetId(ownerId);
+  //       const activityArray = await queries.getActivity(
+  //         singlePetId,
+  //         referenceDate,
+  //         timeWindowObj
+  //       );
+  //       const petIdArray = await queries.getOwnersPetIds(ownerId)
+  //       console.log('activityRouter activityArray line 42: ',activityArray)
+  //       return res.status(200).json({activityArray, petIdArray, singlePetId });
+      
+  //     } catch (e) {
+  //       console.log('Some error caught: ', e)
+  //       return res.status(400).json({ error: e });
+  //     } 
+  // }
+
 });
 
 router.post("/add", async (req, res) => {

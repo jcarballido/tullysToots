@@ -712,11 +712,14 @@ router.get('/verifyInvite', async(req,res) => {
         return { sendingOwnerUsername, petIdArray }
       } catch (error) {
         console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
-        try {
-          await queries.setInviteExpiredByToken(invitationToken)
-          console.log('Successfully set invitation token to expired.')         
-        } catch (error) {
-          console.log('Error setting invitation to EXPIRED.')
+        if(error.name == 'TokenExpiredError'){
+          try {
+            await queries.setInviteExpiredByToken(invitationToken)
+            console.log('Successfully set invitation token to expired.')         
+          } catch (error) {
+            console.log('Error setting invitation to EXPIRED.')
+            return null
+          }
         }
         return null
       }

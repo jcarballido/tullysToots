@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect,useState } from 'react'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import { useNavigate } from 'react-router-dom'
 
@@ -12,11 +12,13 @@ const AcceptInvite = () =>  {
   useEffect(() => {
     const verifyInvitation = async() => {
       try {
-        const response = await axiosPrivate.get('/account/verifyInvitation')        
+        const response = await axiosPrivate.get('/account/verifyInvite')        
         const inviteInfo = response.data // Represented as an array
-        if(inviteInfo.error) throw new Error("Error fetching invites")
-        if(inviteInfo.length > 0) setActiveInvites([...inviteInfo])
-        else return
+        console.log('Invite info: ',inviteInfo)
+        if(inviteInfo.queryError) throw new Error("Error fetching invites")
+        // if(inviteInfo.length > 0) setActiveInvites([...inviteInfo])
+        // else return
+        return
       } catch (error) {
         console.log(`${error}`)
         return

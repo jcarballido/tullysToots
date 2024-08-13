@@ -47,6 +47,8 @@ const Activity = () => {
       try{
         console.log('Reference Pet Id: ', referencePetId)
         const response = await axiosPrivate.get('/account/getSinglePetId',{ signal:abortController.signal })
+        console.log('Response: ', response)
+        if(!response.data.singlePetId) return console.log('No existing pet links found')
         localStorage.setItem('referencePetId', JSON.stringify(response.data.singlePetId))
         setReferencePetId(response.data.singlePetId)
       }catch(e){
@@ -72,6 +74,8 @@ const Activity = () => {
       // Fetch activity for the reference date and pet ID
       try{
         const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`,{ signal:abortController.signal })
+        console.log('Response: ', response)
+        if(response.status == 204) return console.log('No actively linked pets.')
         // Extract the activity from the resoponse
         const rawActivity = response.data.activityArray
         // Extract the petId array from the response
@@ -126,6 +130,7 @@ const Activity = () => {
       {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
       <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
+      <button onClick={() => navigate('/acceptInvite')}>Accept Invitation</button>    
     </main>
   )
 }

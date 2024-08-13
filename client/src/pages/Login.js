@@ -40,10 +40,13 @@ const Login = () => {
         const { accessToken, error, message, activeInvite } = response.data
         if(activeInvite) setActiveInvite(true)
         if(accessToken) {
+          console.log('Access token returned.')
           setAuth({accessToken:accessToken,isLoggedIn:true})
+          return
         }          
         if(error) {
           console.log('Error checking for login session: ', error)
+          return
           // const cleanUrl = window.location.pathname;
           // return navigate(cleanUrl, { replace: true });
         }
