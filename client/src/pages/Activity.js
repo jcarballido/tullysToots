@@ -56,7 +56,7 @@ const Activity = () => {
     const getActivity = async() => {
       const timeWindowObj = { daysBefore:3, daysAfter:3 }
       const parameters = {
-        referencePetId: referencePetId, 
+        referencePetId,
         referenceDate, 
         timeWindowObj
       }
@@ -65,9 +65,10 @@ const Activity = () => {
       try{
         const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`,{ signal:abortController.signal })
         if(response.status == 204) return console.log('No actively linked pets.')
-        const { rawActivity, responsePetIdArray } = response.data 
-        setActivity(rawActivity)
-        setPetIdArray(responsePetIdArray)
+        console.log('Response recieved from activity request: ', response.data)
+        const { activityArray, petIdArray } = response.data 
+        setActivity(activityArray)
+        setPetIdArray(petIdArray)
         return 
       }catch(e){
         console.log('Error from attempting to get data with encoded parameters: ',e)

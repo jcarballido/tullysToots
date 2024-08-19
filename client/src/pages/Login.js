@@ -70,9 +70,13 @@ const Login = () => {
     // console.log('useEffect ran and did not execute anything')
   },[auth])
 
+  // useEffect( () => {
+
+  // })
+
   // useEffect(() => {
   //   const { accessToken, error } = loaderData
-  //   // if(error) {
+  //   // if(error) {   
   //   //   console.log('Error in useEffect for loader data: ', error)
   //   //   return
   //   // }

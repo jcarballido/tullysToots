@@ -32,10 +32,12 @@ function Invite({ }) {
   const handleInvite = async () => {
     try{
       const result = await axiosPrivate.post('/account/sendInvite',{email: emailInviteeInput.value,petsToShareArray: selectedPets})
+      
       setToast({ visible:true, result:'+', message: result.data.message })
     }catch(e){
+      
       console.log('Error sending invite: ',e)
-      setToast({ visible:true, result:'x', message: result.data.message })
+      setToast({ visible:true, result:'x', message: e.response.data.error })
       return
     }
   }

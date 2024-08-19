@@ -42,11 +42,13 @@ router.get("/get", async (req, res) => {
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
-
-  const petIdString = referencePetId.replace(/^"|"$/g, '');
-  const petId = parseInt(petIdString)
-  console.log('Pet id received from request: ', petId)
+  // console.log('Reference Pet id:', referencePetId)
+  // console.log('Type of reference pet id:', typeof(referencePetId))
+  // const petIdString = referencePetId.replace(/^"|"$/g, '');
+  const petId = parseInt(referencePetId)
+  // console.log('Pet id received from request: ', petId)
   if(!petId){
+    console.log('No pet id found')
     try{
       const singlePetId = await queries.getSingleActivePetId(ownerId);
       if(!singlePetId) throw new Error('No active links found.')
@@ -56,23 +58,28 @@ router.get("/get", async (req, res) => {
       return res.status(204)
     }
   }else{
+    console.log('Pet ID attached to request')
     req.petId = petId
   }
 
   try {
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, req.petId);   
+    console.log('Active link determined as: ', confirmActiveLink)
     req.activeLink = confirmActiveLink   
   } catch (error) {
     console.log('Error checking link with owner: ', error)
     req.activeLink = false
   }
 
-
   if(req.activeLink){
-    const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
-    const petIdArray = await queries.getOwnersPetIds(ownerId)
-    // return res.status(200).json({activityArray, petIdArray});
-    return res.status(200).json({ activityArray, petIdArray })
+    try {
+      const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
+      const petIdArray = await queries.getOwnersPetIds(ownerId)        
+      return res.status(200).json({ activityArray, petIdArray })
+    } catch (error) {
+      console.log('Error caught getting activity or pet ids:', error)
+      return res.status(400).json({error})
+    }
   }else{
     try {
       const singlePetId = await queries.getSingleActivePetId(ownerId);

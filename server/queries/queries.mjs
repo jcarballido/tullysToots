@@ -116,10 +116,10 @@ const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee
 const addInvitationToken = async(sendingOwnerId, invitedEmail, invitationToken) => {
   try{
     const result = await pool.query(sqlText.addInvitationToken,[sendingOwnerId, invitedEmail, invitationToken])
-    return
+    return result
   }catch(e){
     console.log('Error in queries, adding invitation token. Error: ',e)
-    return e
+    throw e
   }
 }
 
@@ -806,8 +806,8 @@ const checkInvitePending = async(invitationId) => {
 const checkExistingLink = async(petId, ownerId) => {
   try {
     const result = await pool.query(sqlText.checkExistingLink, [ petId,ownerId ])
-    if(result.rowCount == 0) return {new: true, link: false}
-    if(result.rowCount > 0) return {new: false, link: result.rows[0].active}
+    if(result.rowCount == 0) return false
+    if(result.rowCount > 0) return true
   } catch (error) {
     throw error
   }

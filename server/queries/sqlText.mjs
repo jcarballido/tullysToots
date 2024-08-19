@@ -374,7 +374,7 @@ const checkInvitePending = `
 const checkExistingLink = `
   SELECT *
   FROM pet_owners
-  WHERE pet_id = $1 AND owner_id = $2
+  WHERE pet_id = $1 AND owner_id = $2 AND active=true
 `
 
 const updateLinkStatus = `

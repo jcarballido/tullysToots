@@ -1,6 +1,7 @@
 import React, { useEffect,useState } from 'react'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import { useNavigate } from 'react-router-dom'
+import Invitation from './Invitation' 
 
 const AcceptInvite = () =>  {
 
@@ -40,30 +41,7 @@ const AcceptInvite = () =>  {
               activeInvites.map( invite => {
                 return (
                   <div key={invite.invitationId} className=' w-full flex justify-center items-center'>
-                    <div>
-                      { invite.sendingOwnerUsername }
-                    </div> 
-                    {
-                      invite.petInfo.map( info => {
-                        const { name,sex,dob } = info
-                        return(
-                          <>
-                            <div>
-                              {name}
-                            </div> 
-                              <div>
-                              {sex}
-                            </div> 
-                              <div>
-                              {dob}
-                            </div> 
-                          </>
-                        )
-                        
-                      })
-                    }
-                    <button id={invite.invitationId} className='border-2 border-black rounded-lg bg-green-500' onClick={handleAccept}>ACCEPT</button>
-                    <button id={invite.invitationId} className='border-2 border-black rounded-lg bg-red-500' onClick={handleReject}>REJECT</button>
+                    <Invitation invitation={invite} />
                   </div>
                 )
               })
