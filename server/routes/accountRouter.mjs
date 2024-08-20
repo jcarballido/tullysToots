@@ -295,7 +295,6 @@ const updateInvitationStatus = async(req,res, next) => {
     try{
       console.log('Attempting to store token with owner')
       await queries.storeInvitationToken(req.invitationId, req.ownerId)
-      
     } catch(e){
       console.log('Error returned from trying to store the invitation token to the user: ', e)
       return res.status(207).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
@@ -689,9 +688,9 @@ router.get('/verifyInvite', async(req,res) => {
     const verifiedInvitePromises = pendingInvitationTokens.map( async(invitationToken) => {
       try {
         const decodedInvitation = jwt.verify(invitationToken, invitationSecret )
-        const { sendingOwnerId, petIdArray } = decodedInvitation
+        const { sendingOwnerId, petIdsArray } = decodedInvitation
         const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
-        return { sendingOwnerUsername, petIdArray }
+        return { sendingOwnerUsername, petIdsArray }
       } catch (error) {
         console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
         if(error.name == 'TokenExpiredError'){
@@ -717,6 +716,7 @@ router.get('/verifyInvite', async(req,res) => {
       const petDataPromises = petIdsArray.map( async( petId ) => {
         try {
           const result = await queries.getPetInfo(petId)
+          console.log('Result from getting pet info: ', result)
           if(result.rowCount == 0) throw new Error('Pet info not found')
           return result.rows[0]
         } catch (error) {
@@ -727,10 +727,12 @@ router.get('/verifyInvite', async(req,res) => {
   
       try {
         const petDataResults = await Promise.allSettled(petDataPromises)
+        console.log('Pet data result: ', petDataResults)
         const petDataValues = petDataResults.map( petInfoResult => petInfoResult.value)
         const petData = petDataValues.filter( petDataValues => petDataValues != null )
         return petData
       } catch (error) {
+        console.log('Error processing pet data: ', error)
         throw error
       }
       // Values returned are non-null
@@ -738,14 +740,16 @@ router.get('/verifyInvite', async(req,res) => {
 
   const getPetDataByInvitation = async(decodedInvitationTokens) => {
     const petDataPromise = decodedInvitationTokens.map( async(decodedInvitationToken) => {
-      const { petIdArray,sendingOwnerUsername } = decodedInvitationToken
+      console.log('Decoded invitation token: ', decodedInvitationToken)
+      const { petIdsArray,sendingOwnerUsername } = decodedInvitationToken
       try {
-        const petData = await processPetIds(petIdArray)
+        const petData = await processPetIds(petIdsArray)
         return {sendingOwnerUsername,petData}
       } catch (error) {
         throw error
       } 
     })
+
     try {
       const petDataResults = await Promise.allSettled(petDataPromise)
       console.log('Pet data results: ', petDataResults)

@@ -11,8 +11,6 @@ import {
   useSearchParams
 } from "react-router-dom";
 import { axiosPrivate } from '../api/axios.js'
-// import axios from 'axios'
-// import ErrorMessage from "../components/ErrorMessage.js";
 
 const Login = () => {
   const { auth, setAuth } = useAuth();
@@ -27,16 +25,11 @@ const Login = () => {
   const [ error, setError ] = useState(null) 
   const [ activeInvite, setActiveInvite ] = useState(false)
 
-  // useEffect( () => {
-  //   console.log('Login useEffect first render useEffect. Auth is: ', auth)
-  // })
-
   useEffect( () => {
     const checkLogin = async() => {
       try{
         const encodedInvitationToken = encodeURIComponent(invitationToken)
         const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
-        // console.log('Response in Login component: ', response.data)
         const { accessToken, error, message, activeInvite } = response.data
         if(activeInvite) setActiveInvite(true)
         if(accessToken) {
@@ -58,21 +51,22 @@ const Login = () => {
       }
     }
 
-    auth?.isLoggedIn 
-    ? activeInvite
-      ? navigate(`/acceptInvite`) 
-      : navigate('/activity')
-    : checkLogin()
+    auth.accessToken? null:checkLogin()
 
     // if(!auth?.isLoggedIn) checkLogin()
     // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
     // if(auth?.isLoggedIn) return navigate('/activity')
     // console.log('useEffect ran and did not execute anything')
+  },[])
+
+  useEffect( () => {
+    auth?.accessToken 
+    ? activeInvite
+      ? navigate(`/acceptInvite`) 
+      : navigate('/activity')
+    : null
+
   },[auth])
-
-  // useEffect( () => {
-
-  // })
 
   // useEffect(() => {
   //   const { accessToken, error } = loaderData
