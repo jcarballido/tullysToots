@@ -895,6 +895,15 @@ const getPendingInvitationTokens = async(ownerId) => {
   }
 }
 
+const confirmLinkedAndPendingInvitation = async(invitationId,ownerId) => {
+  try {
+    const invitationToken = await pool.query(sqlText.confirmLinkedAndPendingInvitation, [ invitationId,ownerId ])
+    if(invitationToken.length == 0) throw new Error('No pending tokens found for this owner ID') 
+  } catch (error) {
+    throw error
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -952,6 +961,7 @@ export default {
   checkInviteLink,
   setInviteExpiredByToken,
   getTokenData,
-  getPendingInvitationTokens
+  getPendingInvitationTokens,
+  confirmLinkedAndPendingInvitation
 }
 

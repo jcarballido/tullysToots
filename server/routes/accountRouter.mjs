@@ -870,14 +870,14 @@ router.post('/acceptInvitation', async(req,res) => {
   const invitationSecret = process.env.INVITATION_SECRET
   const invitationId = req.body.invitationId
 
-  if(!ownerId || !inviteId) {
+  if(!ownerId || !invitationId) {
     return res.status(400).json({ error: 'Missing critical info' })
   }
 
   try {
     const invitationToken = await queries.confirmLinkedAndPendingInvitation(invitationId,ownerId)
     req.invitationToken = invitationToken
-    if(!response) throw new Error('A pending token and owner are not linked.')
+    if(!invitationToken) throw new Error('A pending token and owner are not linked.')
   } catch (error) {
     console.log('Error validating if the owner is linked to this token: ', error)
     return res.status(400).json({ error, invitationId, updated: false })
@@ -886,9 +886,9 @@ router.post('/acceptInvitation', async(req,res) => {
 
   try {
     const decodedInvitationToken = jwt.verify(req.invitationToken, invitationSecret)
-    const { sendingOwnerId, petIdArray } = decodedInvitationToken
+    const { sendingOwnerId, petIdsArray } = decodedInvitationToken
     req.sendingOwnerId = sendingOwnerId
-    req.petIdArray = petIdArray
+    req.petIdsArray = petIdsArray
   } catch (error) {
     if(error.name == 'TokenExpiredError'){
       try {
@@ -943,14 +943,21 @@ router.post('/acceptInvitation', async(req,res) => {
   }
 
   try {
-    const processedPetIdArray = await processPetIdArray(req.petIdArray)   
+    const processedPetIdArray = await processPetIdArray(req.petIdsArray)   
     req.processPetIdArray = processedPetIdArray 
   } catch (error) {
     console.log('Error processing pet Id Array: ', error)
     return res.status(400).json({ error })
   }
+
+  try {
+    await queries.setInviteTokenAccepted(invitationId)
+  } catch (error) {
+    console.log('Error accepting invitation token: ', error)
+  }
+
   const processedInvitation = { invitationId, invitationResult:req.processedPetIdArray, sendingOwnerUsername: req.sendingOwnerUsername }
-  return res.status(200).json( {processedInvitation} )
+  return res.status(200).json( processedInvitation )
 })
 
 // router.post('/acceptInvitation', async(req,res) => {
@@ -1108,7 +1115,7 @@ router.post('/acceptInvitation', async(req,res) => {
   
 // }) 
 
-router.post('/rejectInvite', async(req,res) => {
+router.post('/rejectInvite', async(req,res) => { 
   // Remove invite from owner table, need owner id, need invite token
   const ownerId = req.ownerId
   // const ownerId = req.body.ownerId

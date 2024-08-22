@@ -2,7 +2,7 @@ import React from 'react'
 import InvitationActionButtons from './InvitationActionButtons'
 import PetData from './PetData'
 
-const Invitation = ({ invitation }) => {
+const Invitation = ({ invitation,setActiveInvites }) => {
 
   const { petDataArray, senderUsername, invitationId } = invitation
 
@@ -16,7 +16,7 @@ const Invitation = ({ invitation }) => {
         })
       }
       <div>Sent By: {senderUsername}</div>
-      <InvitationActionButtons invitationId={invitationId} />
+      <InvitationActionButtons invitationId={invitationId} setActiveInvites={setActiveInvites} />
     </div>
   )
 }

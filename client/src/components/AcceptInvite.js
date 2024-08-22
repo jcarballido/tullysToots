@@ -1,6 +1,5 @@
 import React, { useEffect,useState } from 'react'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
-import { useNavigate } from 'react-router-dom'
 import Invitation from './Invitation' 
 
 const AcceptInvite = () =>  {
@@ -8,7 +7,6 @@ const AcceptInvite = () =>  {
   const [ activeInvites, setActiveInvites ] = useState([])
 
   const axiosPrivate = useAxiosPrivate()
-  const navigate = useNavigate()
 
   useEffect(() => {
     const verifyInvitation = async() => {
@@ -17,15 +15,11 @@ const AcceptInvite = () =>  {
         const inviteInfo = response.data // Represented as an array
         console.log('Invite info: ',inviteInfo)
         if(inviteInfo.queryError) throw new Error("Error fetching invites")
-        // if(inviteInfo.length > 0) setActiveInvites([...inviteInfo])
-        // else return
-        return
+        if(inviteInfo.length > 0) setActiveInvites([...inviteInfo])
       } catch (error) {
-        console.log(`${error}`)
-        return
+        console.log(`Error verifying invitations ${error}`)
       }
     }
-
     verifyInvitation()
 
   },[])
@@ -41,7 +35,7 @@ const AcceptInvite = () =>  {
               activeInvites.map( invite => {
                 return (
                   <div key={invite.invitationId} className=' w-full flex justify-center items-center'>
-                    <Invitation invitation={invite} />
+                    <Invitation invitation={invite} setActiveInvites={ setActiveInvites } />
                   </div>
                 )
               })
