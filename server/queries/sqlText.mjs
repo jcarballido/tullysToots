@@ -327,7 +327,7 @@ const setInvalidInvitationToken = `
   SET accepted = false,
       rejected = false,
       pending = false,
-      invalid = true
+      expired = true
   WHERE invitation_token = $1
 `
 const logoutUser = `
@@ -391,7 +391,7 @@ const updateLinkStatus = `
 
 const setInviteTokenAcceptedText = `
   UPDATE invitations
-  SET invalid = false, pending = false, accepted = true, rejected=false
+  SET expired = false, pending = false, accepted = true, rejected=false
   WHERE invitation_id = $1
 `
 
@@ -402,7 +402,7 @@ const addPetOwnerText = `
 
 const rejectInvitation = `
   UPDATE invitations
-  SET accepted=false,rejected=true,pending=false,invalid=false
+  SET accepted=false,rejected=true,pending=false,expired=false
   WHERE invitation_id=$1
 `
 
@@ -452,7 +452,7 @@ const getTokenData = `
 `
 
 const getPendingInvitationTokens = `
-  SELECT i.invitation_token 
+  SELECT i.invitation_token, i.invitation_id
   FROM 
     owners o, 
     UNNEST(o.invitations) AS key_array_element
@@ -470,7 +470,7 @@ const confirmLinkedAndPendingInvitation = `
   INNER JOIN invitations i
   ON
     key_array_element::INT = i.invitation_id
-  WHERE o.owner_id = $2 AND i.pending = true AND invitation_id = $1`
+  WHERE o.owner_id = $2 AND i.pending = true AND i.invitation_id = $1`
 
 export default {
   insertIntoText,

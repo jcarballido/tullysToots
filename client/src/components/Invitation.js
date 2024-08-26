@@ -4,18 +4,18 @@ import PetData from './PetData'
 
 const Invitation = ({ invitation,setActiveInvites }) => {
 
-  const { petDataArray, senderUsername, invitationId } = invitation
+  const { petData, sendingOwnerUsername, invitationId } = invitation
 
   return(
     <div key={invitationId} className='border-2 border-blue-700 w-full'>
       {
-        petDataArray.map( pet =>{
+        petData?.map( pet =>{
           return(
             <PetData pet={pet}/>
           )
         })
       }
-      <div>Sent By: {senderUsername}</div>
+      <div>Sent By: {sendingOwnerUsername}</div>
       <InvitationActionButtons invitationId={invitationId} setActiveInvites={setActiveInvites} />
     </div>
   )

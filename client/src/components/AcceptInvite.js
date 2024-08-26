@@ -26,7 +26,6 @@ const AcceptInvite = () =>  {
 
   return (
     <div>
-      <div>AcceptInvite Component</div>
       {
         activeInvites?.length > 0
         ? <div className='w-full flex justify-center items-center'>

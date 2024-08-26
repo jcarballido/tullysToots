@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
+import useAxiosPrivate from '../hooks/useAxiosPrivate' 
 
 
 const InvitationActionButtons = ({ invitationId,setActiveInvites }) => {
 
+  const axiosPrivate = useAxiosPrivate()
   const [ inviteStatusUpdates, setInviteStatusUpdates ] = useState([])
 
   const handleAccept = async(e) => {
@@ -20,7 +22,7 @@ const InvitationActionButtons = ({ invitationId,setActiveInvites }) => {
   const handleReject = async(e) => {
     e.preventDefault()
     try {
-      const response = await axiosPrivate.post('/account/rejectInvitation', { invitationId } )
+      const response = await axiosPrivate.post('/account/rejectInvite', { invitationId } )
       console.log('Response data: ', response.data)
       const result = response.data
       setActiveInvites([...result])

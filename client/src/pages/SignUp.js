@@ -23,7 +23,46 @@ const SignUp = () => {
   const invitationToken = searchParams.get('invite')
   const parsedInvitationToken = invitationToken == 'null'? JSON.parse(invitationToken):invitationToken
 
+  const [ activeInvite, setActiveInvite ] = useState(false)
   const [ error, setError ] = useState(null)
+
+  useEffect( () => {
+    const checkLogin = async() => {
+      try{
+        const encodedInvitationToken = encodeURIComponent(invitationToken)
+        const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
+        const { accessToken, message, activeInvite } = response.data
+        if(activeInvite) setActiveInvite(true)
+        if(accessToken) {
+          console.log('Access token returned.')
+          setAuth({accessToken,isLoggedIn:true})
+         
+        }          
+        if(message) console.log('Message from checking login session: ', message)
+        else console.log('Response returned something unexpected: ', response.data)
+      }catch(e){
+        console.log('Error in checkLogin useEffect\'s fetch: ', e)
+        
+      }
+    }
+
+    auth.accessToken? null:checkLogin()
+
+    // if(!auth?.isLoggedIn) checkLogin()
+    // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
+    // if(auth?.isLoggedIn) return navigate('/activity')
+    // console.log('useEffect ran and did not execute anything')
+  },[])
+
+  useEffect( () => {
+    auth?.accessToken 
+    ? activeInvite
+      ? navigate(`/acceptInvite`) 
+      : navigate('/activity')
+    : null
+
+  },[auth])
+
 
   // useEffect( () => {
 
@@ -48,51 +87,48 @@ const SignUp = () => {
 
   //   checkLogin()
   // },[])
-  useEffect( () => {
-    const checkLogin = async() => {
-      // console.log('Check login useEffect ran')
-      try{
-        const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
-        const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
-        // console.log('Response in Login component: ', response.data)
-        if(response.data.accessToken) {
-          setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
-        }          
-        if(response.data.error) {
-          console.log('Error checking for login session: ', response.data.error)
-          const cleanUrl = window.location.pathname;
-          navigate(cleanUrl, { replace: true });
-        }
-        if(response.data.message) console.log('Message from checking login session: ', response.data.message)
-        return 
-      }catch(e){
-        console.log('Error in checkLogin useEffect: ', e)
-        return
-      }
-    }
+  // useEffect( () => {
+  //   const checkLogin = async() => {
+  //     // console.log('Check login useEffect ran')
+  //     try{
+  //       const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
+  //       const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
+  //       // console.log('Response in Login component: ', response.data)
+  //       if(response.data.accessToken) {
+  //         setAuth({accessToken:response.data.accessToken,isLoggedIn:true})
+  //       }          
+  //       if(response.data.error) {
+  //         console.log('Error checking for login session: ', response.data.error)
+  //         const cleanUrl = window.location.pathname;
+  //         navigate(cleanUrl, { replace: true });
+  //       }
+  //       if(response.data.message) console.log('Message from checking login session: ', response.data.message)
+  //       return 
+  //     }catch(e){
+  //       console.log('Error in checkLogin useEffect: ', e)
+  //       return
+  //     }
+  //   }
 
-    auth?.isLoggedIn 
-      ? (auth?.expiredInvite)
-        ? navigate('/activity')
-        : (parsedInvitationToken
-          ? navigate(`/acceptInvite?invite=${invitationToken}`)
-          : navigate('/activity'))
-      : null
+  //   auth?.isLoggedIn 
+  //     ? (auth?.expiredInvite)
+  //       ? navigate('/activity')
+  //       : (parsedInvitationToken
+  //         ? navigate(`/acceptInvite?invite=${invitationToken}`)
+  //         : navigate('/activity'))
+  //     : null
 
-    // if(!auth?.isLoggedIn) checkLogin()
-    // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
-    // if(auth?.isLoggedIn) return navigate('/activity')
-    // console.log('useEffect ran and did not execute anything')
-  },[auth])
+  //   // if(!auth?.isLoggedIn) checkLogin()
+  //   // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
+  //   // if(auth?.isLoggedIn) return navigate('/activity')
+  //   // console.log('useEffect ran and did not execute anything')
+  // },[auth])
 
   useEffect(() => {
-    if( actionData?.accessToken && actionData?.expiredInvite ){
-      console.log('Invite expired')
-      const { accessToken, isLoggedIn, expiredInvite } = actionData
-      setAuth({ accessToken, isLoggedIn, expiredInvite })
-    } else if(actionData?.accessToken){
-      const { accessToken, isLoggedIn } = actionData
-      setAuth({ accessToken, isLoggedIn })
+    if(actionData?.accessToken){
+      const { accessToken, isLoggedIn, activeInvite } = actionData
+      if(activeInvite) setActiveInvite(true)
+        setAuth({ accessToken, isLoggedIn })
     } else if(actionData?.error) {
       setError(actionData.error)
     }
@@ -133,20 +169,17 @@ export const action = async ({ request }) => {
   // console.log('Action request URL: ', url)
   const invitationToken = queryParams.get("invite")
   try{
-    const encodedInvitationToken = encodeURIComponent(JSON.stringify(invitationToken))
+    const encodedInvitationToken = encodeURIComponent(invitationToken)
     const response = await axiosPrivate
     .post(`/account/sign-up?invite=${encodedInvitationToken}`, newOwnerData)
     console.log('Response from Sign up: ', response)
-    const accessToken = response.data.accessToken
-    const expiredToken = response.data.error
-    if(expiredToken){
-      return { accessToken, isLoggedIn:true, expiredInvite: true }
-    }
-    return { accessToken, isLoggedIn: true }
+    const { accessToken, activeInvite } = response.data
+    // const accessToken = response.data.accessToken
+    return { accessToken, activeInvite }
   } catch(e){
     console.log('Sign Up action resulted in the following error: ',e)
-    const error = e.response
-    return { error:error.data.error }
+    const error = e.response.data.error
+    return { error }
   }
 }
 

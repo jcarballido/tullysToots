@@ -84,7 +84,8 @@ const pool = new Pool()
 // }
 const addPetOwnerLink = async(petId,ownerId) => {
   try {
-    await pool.query(sqlText.addPetOwnerText, [ petId,ownerId ])
+    const result = await pool.query(sqlText.addPetOwnerText, [ petId,ownerId ])
+    return result
   } catch (error) {
     throw error
   }
@@ -191,11 +192,12 @@ const getOwnerId = async(identifierNameString, identifier) => {
 const getUsername = async(ownerId) => {
   try{
     const result = await pool.query(sqlText.getUsernameText, [ownerId])
+    if(result.rowCount ==  0) throw new Error(`No username found associated with owner ID ${ownerId}`)
     const savedUsername = result.rows[0].username
     return savedUsername
   }catch(e){
     console.log('Error caught during getting the saved username: ', e)
-    return e
+    throw e
   }
 }
 
@@ -888,7 +890,9 @@ const getPendingInvitationTokens = async(ownerId) => {
   try {
     const result = await pool.query(sqlText.getPendingInvitationTokens, [ ownerId ])
     const tokens = result.rows
-    const isolatedTokens = tokens.map( tokenObject => tokenObject.invitation_token )
+    const isolatedTokens = tokens.map( tokenObject => {
+      return {invitationToken:tokenObject['invitation_token'],invitationId:tokenObject['invitation_id']}
+    })
     return isolatedTokens
   } catch (error) {
     throw error
@@ -898,7 +902,9 @@ const getPendingInvitationTokens = async(ownerId) => {
 const confirmLinkedAndPendingInvitation = async(invitationId,ownerId) => {
   try {
     const invitationToken = await pool.query(sqlText.confirmLinkedAndPendingInvitation, [ invitationId,ownerId ])
+    console.log('Query result: ', invitationToken)
     if(invitationToken.length == 0) throw new Error('No pending tokens found for this owner ID') 
+    return invitationToken.rows[0].invitation_token
   } catch (error) {
     throw error
   }

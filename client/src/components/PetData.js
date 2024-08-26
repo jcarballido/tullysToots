@@ -2,11 +2,11 @@ import React from 'react'
 
 const PetData = ({ pet }) => {
 
-  const { name, dob, sex } = pet
+  const { pet_name, dob, sex } = pet
   return (
     <>
       <div>
-        {name}
+        {pet_name}
       </div> 
         <div>
         {sex}

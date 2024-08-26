@@ -11,6 +11,7 @@ export const Dashboard = () => {
   console.log('Dashboard layout mounted')
   
   const [ previousLocation, setPreviousLocation ] = useState('')
+  const [ slide, setSlide ] = useState(false)
 
   const { auth } = useAuth()
   const location = useLocation()
@@ -43,7 +44,7 @@ export const Dashboard = () => {
   
   return(
     <div className='max-w-screen h-screen bg-violet-800 flex flex-col justify-start items-center text-white overflow-x-hidden border-4 border-blue-700 relative'>
-      <Banner auth={auth} />
+      <Banner auth={auth} slide={slide} setSlide={setSlide}/>
       <div className='w-full grow flex flex-col items-center  bg-gray-500 border-black'>
         {
           previousLocation

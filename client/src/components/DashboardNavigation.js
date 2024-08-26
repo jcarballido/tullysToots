@@ -15,7 +15,8 @@ const DashboardNavigation = () => {
     e.preventDefault()
     try{
       await axiosPrivate.get('/account/logout')
-      setAuth({ accessToken:null, isLoggedIn:false })
+      setAuth({ })
+      localStorage.clear()
     }catch(e){
       console.log(e)
     }

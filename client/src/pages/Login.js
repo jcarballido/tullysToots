@@ -30,21 +30,15 @@ const Login = () => {
       try{
         const encodedInvitationToken = encodeURIComponent(invitationToken)
         const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
-        const { accessToken, error, message, activeInvite } = response.data
+        const { accessToken,message, activeInvite } = response.data
         if(activeInvite) setActiveInvite(true)
         if(accessToken) {
           console.log('Access token returned.')
-          setAuth({accessToken:accessToken,isLoggedIn:true})
-          return
+          setAuth({accessToken,isLoggedIn:true})
         }          
-        if(error) {
-          console.log('Error checking for login session: ', error)
-          return
-          // const cleanUrl = window.location.pathname;
-          // return navigate(cleanUrl, { replace: true });
-        }
-        if(message) return console.log('Message from checking login session: ', message)
-        else return console.log('Response returned something unexpected: ', response.data)
+
+        if(message) console.log('Message from checking login session: ', message)
+        else console.log('Response returned something unexpected: ', response.data)
       }catch(e){
         console.log('Error in checkLogin useEffect\'s fetch: ', e)
         return
@@ -80,12 +74,9 @@ const Login = () => {
   
   useEffect(() => {
     // console.log('Action Data from useEffect: ', actionData)
-    if( actionData?.accessToken && actionData?.expiredInvite ){
-      console.log('Invite expired')
-      const { accessToken, isLoggedIn, expiredInvite } = actionData
-      setAuth({ accessToken, isLoggedIn, expiredInvite })
-    } else if(actionData?.accessToken){
-      const { accessToken, isLoggedIn } = actionData
+    if(actionData?.accessToken){
+      const { accessToken, isLoggedIn, activeInvite } = actionData
+      if(activeInvite) setActiveInvite(true)
       setAuth({ accessToken, isLoggedIn })
     } else if(actionData?.error) {
       setError(actionData.error)
@@ -160,15 +151,15 @@ export const action = async ({ request }) => {
 
 // Send to backend for verification; Expect to get back an access token
   try{
-      const encodedInvitationToken = encodeURIComponent(invitationToken)
-      const response = await axiosPrivate
-        .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
-      const { accessToken, activeInvite } = response.data
-      return { accessToken, activeInvite }
+    const encodedInvitationToken = encodeURIComponent(invitationToken)
+    const response = await axiosPrivate
+      .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
+    const { accessToken, activeInvite } = response.data
+    return { accessToken, activeInvite }
   }catch(e){
     console.log('Sign In action resulted in the following error: ',e)
-    const errorData = e.response.data
-    return { error:errorData.error }
+    const error = e.response.data.error
+    return { error }
   }
 }
 

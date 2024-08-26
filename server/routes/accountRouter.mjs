@@ -104,7 +104,8 @@ router.post('/sign-up', async(req,res,next) => {
   console.log('Sign-up request received')
   //Capture the invitation token
   const encodedInviteToken = req.query.invite
-  const decodedInviteToken = JSON.parse(decodeURIComponent(encodedInviteToken))
+  let decodedInviteToken = decodeURIComponent(encodedInviteToken)
+  if(decodedInviteToken === 'null') decodedInviteToken = null
   // Alert if the token exists
   if(decodedInviteToken) console.log('Invitation token detected: ', decodedInviteToken)
   else console.log('Invitation was NULL')
@@ -136,6 +137,7 @@ router.post('/sign-up', async(req,res,next) => {
   } 
   try {
     const tempPassword = generateTempPassword(16);
+    console.log('Generated temp password: ', tempPassword)
     const owner = await queries.addOwner({ email,tempPassword, username } )
     console.log('Owner info receievd from query: ', owner)
     req.ownerId = owner.ownerId
@@ -160,10 +162,7 @@ router.post('/sign-up', async(req,res,next) => {
     console.log('Error in updating new owner info: ', error)
     return res.status(200).json({error:'ERROR: Could not update new owner with refresh token during sign-up.'})
   }
-  if(!decodedInviteToken){
-    console.log('An invite token was not detected, access token sent in response.')
-    return res.status(200).json({accessToken: req.accessToken})
-  }
+
   const saltRounds = 5
   bcrypt.hash(password, saltRounds, async(err,passwordHash) => {
     try{
@@ -173,8 +172,15 @@ router.post('/sign-up', async(req,res,next) => {
       return res.status(400).json({error:'Error finalzing adding owner.'})
     }
   })
+
+  if(!decodedInviteToken){
+    console.log('An invite token was not detected, access token sent in response.')
+    return res.status(200).json({accessToken})
+  }
+
   req.invitationToken = decodedInviteToken
   req.accessToken = accessToken
+  req.signUp = true
   next()
 })
 
@@ -246,7 +252,7 @@ const updateInvitationStatus = async(req,res, next) => {
       const tokenData = await queries.getTokenData(req.invitationToken)
       console.log('Token data: ', tokenData)
       const { accessed_at, expired } = tokenData
-      if(req.signIn && expired){
+      if((req.signIn || req.signUp) && expired){
         console.log('Expired token, middleware complete.')
         if(expired) return res.status(207).json({ accessToken:req.accessToken, invitationError: 'Invitation token is expired.' })
       }
@@ -687,15 +693,15 @@ router.get('/verifyInvite', async(req,res) => {
   const verifyPendingInvites = async(pendingInvitationTokens) => {
     const verifiedInvitePromises = pendingInvitationTokens.map( async(invitationToken) => {
       try {
-        const decodedInvitation = jwt.verify(invitationToken, invitationSecret )
+        const decodedInvitation = jwt.verify(invitationToken.invitationToken, invitationSecret )
         const { sendingOwnerId, petIdsArray } = decodedInvitation
         const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
-        return { sendingOwnerUsername, petIdsArray }
+        return { sendingOwnerUsername, petIdsArray, invitationId: invitationToken.invitationId }
       } catch (error) {
         console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
         if(error.name == 'TokenExpiredError'){
           try {
-            await queries.setInviteExpiredByToken(invitationToken)
+            await queries.setInviteExpiredByToken(invitationToken.invitationToken)
             console.log('Successfully set invitation token to expired.')         
           } catch (error) {
             console.log('Error setting invitation to EXPIRED.')
@@ -713,53 +719,44 @@ router.get('/verifyInvite', async(req,res) => {
   } // Verifies token validity and returns { sendingOwnerUsername, petIdArray }
 
   const processPetIds = async(petIdsArray) => {
-      const petDataPromises = petIdsArray.map( async( petId ) => {
-        try {
-          const result = await queries.getPetInfo(petId)
-          console.log('Result from getting pet info: ', result)
-          if(result.rowCount == 0) throw new Error('Pet info not found')
-          return result.rows[0]
-        } catch (error) {
-          console.log(`Error getting pet Info for petId ${petId}: `, error)
-          return null
-        }
-      })
-  
+    const petDataPromises = petIdsArray.map( async( petId ) => {
       try {
-        const petDataResults = await Promise.allSettled(petDataPromises)
-        console.log('Pet data result: ', petDataResults)
-        const petDataValues = petDataResults.map( petInfoResult => petInfoResult.value)
-        const petData = petDataValues.filter( petDataValues => petDataValues != null )
-        return petData
+        const result = await queries.getPetInfo(petId)
+        console.log('Result from getting pet info: ', result)
+        if(result.rowCount == 0) throw new Error('Pet info not found')
+        return result.rows[0]
       } catch (error) {
-        console.log('Error processing pet data: ', error)
-        throw error
+        console.log(`Error getting pet Info for petId ${petId}: `, error)
+        return null
       }
+    })
+
+    const petDataResults = await Promise.allSettled(petDataPromises)
+    const petDataValues = petDataResults.map( petInfoResult => petInfoResult.value)
+    const petData = petDataValues.filter( petDataValues => petDataValues != null )
+    return petData
+
       // Values returned are non-null
   }
 
   const getPetDataByInvitation = async(decodedInvitationTokens) => {
     const petDataPromise = decodedInvitationTokens.map( async(decodedInvitationToken) => {
       console.log('Decoded invitation token: ', decodedInvitationToken)
-      const { petIdsArray,sendingOwnerUsername } = decodedInvitationToken
+      const { petIdsArray,sendingOwnerUsername, invitationId } = decodedInvitationToken
       try {
         const petData = await processPetIds(petIdsArray)
-        return {sendingOwnerUsername,petData}
+        return {sendingOwnerUsername,petData, invitationId}
       } catch (error) {
         throw error
       } 
     })
 
-    try {
-      const petDataResults = await Promise.allSettled(petDataPromise)
-      console.log('Pet data results: ', petDataResults)
-      const petDataValues = petDataResults.map( result => result.value )
-      const petDataByInvitation = petDataValues.filter( petDataResult => petDataResult.petData.length > 0 )
-      return petDataByInvitation
-    } catch (error) {
-      console.log('Error getting pet data:', error)
-      throw error
-    }
+    const petDataResults = await Promise.allSettled(petDataPromise)
+    console.log('Pet data results: ', petDataResults)
+    const petDataValues = petDataResults.map( result => result.value )
+    const petDataByInvitation = petDataValues.filter( petDataResult => petDataResult.petData.length > 0 )
+    return petDataByInvitation
+
   }
 
   // const getArrayPetIdArrays = async(invitationsArray) => {
@@ -842,6 +839,7 @@ router.get('/verifyInvite', async(req,res) => {
   const invitationTokens = [...req.invitationTokens]
 
   try {
+    // const invitationTokensJwt = invitationTokens.map(invitationTokenObject => invitationTokenObject.invitationToken)
     const verifiedInvites = await verifyPendingInvites(invitationTokens)
     req.verifiedInvites = verifiedInvites
   } catch (error) {
@@ -866,6 +864,7 @@ router.get('/verifyInvite', async(req,res) => {
 })
   
 router.post('/acceptInvitation', async(req,res) => {
+  console.log('An attempt to accept an invite has been recieved')
   const ownerId = req.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
   const invitationId = req.body.invitationId
@@ -875,7 +874,10 @@ router.post('/acceptInvitation', async(req,res) => {
   }
 
   try {
+    console.log('Invitation id: ', invitationId)
+    console.log('OwnerId: ', ownerId)
     const invitationToken = await queries.confirmLinkedAndPendingInvitation(invitationId,ownerId)
+    console.log('invitationToken found: ', invitationToken)
     req.invitationToken = invitationToken
     if(!invitationToken) throw new Error('A pending token and owner are not linked.')
   } catch (error) {
@@ -901,7 +903,7 @@ router.post('/acceptInvitation', async(req,res) => {
   }
 
   try {
-    const sendingOwnerUsername = await queries.getUsername(req.ownerId)
+    const sendingOwnerUsername = await queries.getUsername(req.sendingOwnerId)
     req.sendingOwnerUsername = sendingOwnerUsername
   } catch (error) {
     console.log('Error finding an the sender\'s username: ', error)
@@ -933,13 +935,10 @@ router.post('/acceptInvitation', async(req,res) => {
       }
     })
 
-    try {
-      const updatePromiseResult = await Promise.allSettled(updatePromiseArray)
-      const updatePromiseValues = updatePromiseResult.map( promise => promise.value )
-      return updatePromiseValues
-    } catch (error) {
-      throw error
-    }  
+    const updatePromiseResult = await Promise.allSettled(updatePromiseArray)
+    const updatePromiseValues = updatePromiseResult.map( promise => promise.value )
+    return updatePromiseValues
+ 
   }
 
   try {
@@ -1116,6 +1115,7 @@ router.post('/acceptInvitation', async(req,res) => {
 // }) 
 
 router.post('/rejectInvite', async(req,res) => { 
+  console.log('An attempt to reject an invite was recieved.')
   // Remove invite from owner table, need owner id, need invite token
   const ownerId = req.ownerId
   // const ownerId = req.body.ownerId
@@ -1125,28 +1125,14 @@ router.post('/rejectInvite', async(req,res) => {
   }
 
   try {
-    const invitationToken = await queries.confirmLinkedAndPendingInvitation(invitationId,ownerId)
+    const invitationToken = await queries.confirmLinkedAndPendingInvitation(inviteId,ownerId)
     // req.invitationToken = invitationToken
     if(!invitationToken) throw new Error('A pending token and owner are not linked.')
   } catch (error) {
     console.log('Error validating if the owner is linked to this token: ', error)
-    return res.status(400).json({ error, invitationId, updated: false })
+    return res.status(400).json({ error, inviteId, updated: false })
   }
 
-  // try {
-  //   const inviteToken = await queries.getInvitationToken(inviteId)
-  //   req.inviteToken = inviteToken 
-  // } catch (error) {
-  //   console.log('Error querying for invite token: ', error)
-  //   return res.status(400).json({ error: 'Could not query for invitation token.' })
-  // }
-
-  // try{
-  //   await queries.removeInvitationToken(req.inviteToken,ownerId)
-  // }catch(error){
-  //   console.log('Error removing token from owner :', error)
-  //   return res.status(400).json({ error: 'Failed to remove invitation token from owner.' })
-  // }
   // Update invite in invite table so rejected is true
   try {
     await queries.rejectInvitation(inviteId)
@@ -1172,7 +1158,6 @@ router.get('/logout', async (req,res) => {
     console.log('Error logging user out:',error)
     return res.status(400).json({ error: 'Did not successfully log user out' })
   }
-  
 })
 
 router.get('/getSinglePetId', async(req, res)=>{
