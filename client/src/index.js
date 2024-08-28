@@ -20,10 +20,11 @@ import Invite from './components/Invite.js'
 import Pets from './components/Pets.js'
 import AcceptInvite from './components/AcceptInvite.js'
 import UpdatePassword, { action as updatePasswordAction } from './components/UpdatePassword.js'
-import ForgotPassword from './pages/ForgotPassword.js'
+import ForgotPassword, {action as forgotPasswordAction} from './pages/ForgotPassword.js'
 import NotFound from './pages/NotFound.js'
 import { AuthProvider } from './context/AuthContext.js'
 import UpdateUsername, { action as updateUsernameAction } from './components/UpdateUsername.js';
+import ResetPassword, { action as resetPasswordAction} from './pages/ResetPassword'
 
 const appElement = document.getElementById('app');
 const root = createRoot(appElement)
@@ -33,7 +34,8 @@ const router = createBrowserRouter(
       <Route element={<HomeLayout />} >
         <Route path="/" element={<Login />} action={ loginAction }  />
         <Route path="signup" element={<SignUp />} action={ signUpAction } />
-        <Route path="forgotPassword" element={<ForgotPassword/>} />
+        <Route path="forgotPassword" element={<ForgotPassword/>} action={forgotPasswordAction} />
+        <Route path="resetPassword" element={<ResetPassword/>} action={resetPasswordAction} />
       </Route>
       <Route element={<RequireAuth />}>
         <Route element={<HomeLayout />}>

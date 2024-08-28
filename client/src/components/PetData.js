@@ -1,8 +1,12 @@
 import React from 'react'
+import getDateCharacteristics from '../util/getDateCharacteristics'
 
 const PetData = ({ pet }) => {
 
   const { pet_name, dob, sex } = pet
+
+  const { paddedDate, monthName, fullYear } = getDateCharacteristics(dob)
+
   return (
     <>
       <div>
@@ -12,7 +16,7 @@ const PetData = ({ pet }) => {
         {sex}
       </div> 
         <div>
-        {dob}
+        { paddedDate }-{ monthName }- {fullYear }
       </div> 
     </>
   )

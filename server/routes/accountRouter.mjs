@@ -312,6 +312,63 @@ const updateInvitationStatus = async(req,res, next) => {
 
 }
 
+router.post('/forgotPassword', async(req,res) => {
+
+  const ownerEmail = req.body.email
+
+  try {
+    const ownerId = await queries.getOwnerIdFromEmail(ownerEmail)
+    req.ownerId = ownerId
+  } catch (error) {
+    console.log('Error getting owner ID from email: ', error)
+    return res.status(200).json({ message: 'If we find an account associated with this email, a password reset link will be sent.' })
+  }
+
+  const ownerId = req.ownerId
+  const resetPasswordSecret = process.env.RESET_SECRET
+
+  const resetPasswordToken = jwt.sign( {ownerId}, resetPasswordSecret, {expiresIn: '10m'} )
+
+  const link = `http://localhost:3000/resetPassword?resetToken=${resetPasswordToken}`
+  const resetPasswordEmail = (resetPasswordlink) => {
+    return `
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>HTML Form</title>
+      </head>
+      <body>
+          <h1>Reset Password Link</h1>
+          <h2>Please click the link below to reset your password</h2>
+          <h3>If you did not request to reset your password, please ignore this message.<h3>
+          <a href=${resetPasswordlink} target="_blank">RESET PASSWORD</a>
+      </body>
+    `
+  }
+
+  try {
+      const result = await queries.addResetToken(ownerId, resetPasswordToken)
+  } catch (error) {
+      console.log('Error storing reset token in database: ', error)
+      return res.status(400).json({ error: 'Server error attempting to send a link, please try again.' })
+  }
+
+  try{
+    const info = await transporter.sendMail({
+      from: companyEmail, // sender address
+      to: ownerEmail, // list of receivers
+      subject: "Password Reset from Tully's Toots", // Subject line
+      html: resetPasswordEmail(link), // html body
+    });
+    console.log('Line 101 => ', info)
+    return res.status(200).json({ message: 'If we find an account associated with this email, a password reset link will be sent.' })
+  }catch(e){
+    console.log('Error attempting to add invitation token to table: ', e)
+    return res.status(400).json({error: 'Server error attempting to send a link, please try again.'})
+  }
+
+})
+
 router.use(updateInvitationStatus)
 
 // Need to test with frontend

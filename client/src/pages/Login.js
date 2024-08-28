@@ -14,14 +14,10 @@ import { axiosPrivate } from '../api/axios.js'
 
 const Login = () => {
   const { auth, setAuth } = useAuth();
-  // const [ mounted, setMounted ] = useState(false)
   const navigate = useNavigate();
   const actionData = useActionData();
-  // const loaderData = useLoaderData()
   const [ searchParams ] = useSearchParams()
   const invitationToken = searchParams.get("invite")
-  // const parsedInvitationToken = invitationToken == 'null'? invitationToken:JSON.parse(invitationToken)
-  // console.log('Invitation token and auth: ', invitationToken,'/',auth.accessToken)
   const [ error, setError ] = useState(null) 
   const [ activeInvite, setActiveInvite ] = useState(false)
 
@@ -47,10 +43,6 @@ const Login = () => {
 
     auth.accessToken? null:checkLogin()
 
-    // if(!auth?.isLoggedIn) checkLogin()
-    // if(auth?.isLoggedIn && invitationToken) return navigate(`/acceptInvite?invite=${invitationToken}`)
-    // if(auth?.isLoggedIn) return navigate('/activity')
-    // console.log('useEffect ran and did not execute anything')
   },[])
 
   useEffect( () => {
@@ -62,18 +54,9 @@ const Login = () => {
 
   },[auth])
 
-  // useEffect(() => {
-  //   const { accessToken, error } = loaderData
-  //   // if(error) {   
-  //   //   console.log('Error in useEffect for loader data: ', error)
-  //   //   return
-  //   // }
-  //   if(accessToken) setAuth({accessToken,isLoggedIn:true})
-  //   console.log('Loader Data: ', loaderData)
-  // }, [loaderData])
+  
   
   useEffect(() => {
-    // console.log('Action Data from useEffect: ', actionData)
     if(actionData?.accessToken){
       const { accessToken, isLoggedIn, activeInvite } = actionData
       if(activeInvite) setActiveInvite(true)
@@ -82,41 +65,6 @@ const Login = () => {
       setError(actionData.error)
     }
   }, [actionData])
-
-  // useEffect(() => {
-  //   auth?.isLoggedIn 
-  //     ? (invitationToken 
-  //         ? navigate(`/acceptInvite?invite=${invitationToken}`)
-  //         : navigate('/activity')
-  //       ) 
-  //     : null;
-  // }, [auth])
-
-  // useEffect(() => {
-  //   console.log('Testing to see if loaderData causes a re-render; loaderData useEffect ran.')
-  //   setAuth('loaderData was evaluated')
-  //   loaderData?.isLoggedIn
-  //     ? setAuth( prev => {return {...prev, accessToken: loaderData.accessToken, isLoggedIn: loaderData.isLoggedIn}})
-  //     : setAuth(loaderData)
-  // },[loaderData])
-  // // Update Context state to include accessToken
-  // useEffect(() => {
-  //   if (hasMounted) {
-  //     console.log('Effect ran after the first render!');
-  //     console.log('LoginData received; loginData useEffect ran')search.replace('?','').split()
-  //   } else {
-  //     // Update the state to indicate that the component has mounted
-  //     setHasMounted(true);
-  //   }
-    
-  //   loginData?.accessToken ? setAuth({ ...loginData }) : null;
-  // }, [hasMounted])
-
-  // useEffect(() => {
-  //   console.log('Auth useEffect ran')
-  //   // console.log("Checking if user is logged in...", auth?.isLoggedIn);
-  //   // auth?.isLoggedIn ? navigate("activity") : null;
-  // }, [auth]);
 
   return (
     <CredentialsModal>
@@ -129,6 +77,13 @@ const Login = () => {
         <button className="min-w-[44px] min-h-[44px]">
           <Link to={invitationToken? `/signup?invite=${invitationToken}`:'signup'} className="flex justify-center items-center pl-1">
             Create an account
+          </Link>
+        </button>
+      </div>
+      <div className="flex justify-center items-center my-4">
+        <button className="min-w-[44px] min-h-[44px]">
+          <Link to='/forgotPassword' className="flex justify-center items-center pl-1">
+            Forgot Password
           </Link>
         </button>
       </div>
@@ -162,41 +117,5 @@ export const action = async ({ request }) => {
     return { error }
   }
 }
-
-
-// export const loader = async () => {
-
-//   try{
-//     const response = await axiosPrivate.get('/account/checkLoginSession')
-//     if(response.data.accessToken) return response.data
-//     if(response.data.error) return response.data.error
-//     return response.data
-  
-//   }catch(e){
-//     console.log('Error in loader: ', e)
-//     throw new Error('Some error in loader')
-//   }
-//   // try{
-//   //   const response = await axiosPrivate.get('/account/checkLoginSession')
-//   //   console.log('Loader response: ', response)
-//   //   return response
-//   // }catch(e){
-//   //   console.log('Error caught in Login loader: ', e)
-//   //   throw e
-//   // }
-
-//   // return 'some data'
-    
-//     // const accessToken = response?.data?.accessToken
-//     // const error = response?.data?.error
-//     // if(response.data.accessToken) return { accessToken,isLoggedIn:true }
-//     // // const accessToken = resp, isLoggedIn:true }
-//     // // else if(error) return {error:'New session started'}
-//     // else return null
-//     // console.log('Response: ', response)
-//     // return { accessToken, isLoggedIn:true }
-//     // return response
-
-// }
 
 export default Login;

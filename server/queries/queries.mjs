@@ -910,6 +910,16 @@ const confirmLinkedAndPendingInvitation = async(invitationId,ownerId) => {
   }
 }
 
+const addResetToken = async(ownerId, resetToken) => {
+  try {
+    const result = await pool.query(sqlText.addResetToken, [ ownerId, resetToken ])
+    const token = result.rows[0].reset_token
+    return token
+  } catch (error) {
+    throw error
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -968,6 +978,7 @@ export default {
   setInviteExpiredByToken,
   getTokenData,
   getPendingInvitationTokens,
-  confirmLinkedAndPendingInvitation
+  confirmLinkedAndPendingInvitation,
+  addResetToken
 }
 
