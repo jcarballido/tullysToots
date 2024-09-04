@@ -244,6 +244,97 @@ router.post('/sign-in', async(req,res, next) => {
   next()
 })
 
+router.get('/verifyResetToken', async(req,res) => {
+  const encodedResetToken = req.query.resetToken
+  let decodedResetToken = decodeURIComponent(encodedResetToken)
+  if(decodedResetToken == 'null') decodedResetToken = null
+  if(decodedResetToken) return res.status(400).json(new Error('Empty reset token.'))
+  
+  try {
+    const result = await queries.verifyValidResetTokenExists(decodedResetToken)
+    const resetTokenId = result.reset_token_id
+    req.resetTokenId = resetTokenId
+  } catch (error) {
+    console.log('Error validating reset token: ', error)
+    return res.status(400).json({error})
+  }
+  return res.status(204)
+})
+
+router.post('/resetPassword', async(req,res) => {
+  // Get reset token from request URL query
+  const encodedResetToken = req.query.resetToken
+  let decodedResetToken = decodeURIComponent(encodedResetToken)
+  // Validate token to get the userID, ensuring the token is valid and not expired.
+  // const resetTokenPayload = verify(resetToken, tokenSecret)
+  // if(resetTokenPayload instanceof Error){
+  //   return res.json({error: new Error('Invalid link')})
+  // }
+
+  if(decodedResetToken == 'null') decodedResetToken = null
+  if(!decodedResetToken) return res.status(400).json({error: 'Empty reset token.'})
+
+  const newPassword = req.body.trimmedNewPassword
+  if(!newPassword) return res.status(400).json({ error: 'Empty new password.' })
+
+  const resetSecret = process.env.RESET_SECRET
+
+  try{
+    const result = queries.verifyValidResetTokenExists(decodedResetToken)
+  }catch(error){
+    console.log('Error checking if reset token exists: ', error)
+    return res.status(400).json({ error: 'Valid token not found.' })
+  }
+
+  try{
+    const verifyResetToken = jwt.verify(decodedResetToken, resetSecret)
+    req.ownerId = verifyResetToken.ownerId
+  }catch(error){
+    console.log('Error verify reset token:', error)
+    if(error.name == 'TokenExpiredError'){
+      try {
+        await queries.setResetTokenExpired(decodedResetToken) // MISSING query    
+      } catch (error) {
+        console.log('Error setting expired token: ', error)
+
+      }
+    }
+    return res.status(400).json({error:'Invalid token.'})
+  }  
+
+  const saltRounds = 5
+  bcrypt.hash(newPassword, saltRounds, async(err,passwordHash) => {
+    if(err){
+      console.log('Error attemtpting to hash password:', err)
+      return res.status(400).json({ error: 'Error hashing password' })
+    }
+    try{
+      await queries.updatePassword(req.ownerId,passwordHash)
+    }catch(e){
+      console.log('Error updating password to the new password: ', e)
+      return res.status(400).json({error:'Error updating password.'})
+    }
+  })
+
+  try {
+    await queries.setResetTokenExpired(decodedResetToken)
+  } catch (error) {
+    console.log('Error setting reset token to expired.:', error)
+  }
+
+  return res.status(200).json({ success: 'Password was successfully updated.' })
+  // Query the 'ResetRequest' table to confirm the the 'AccessToken' is null and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
+  // const match = await queries.getResetToken(resetToken)
+  // console.log('Result from checking if reset tokens match: ', match)
+  // if(match instanceof Error) return res.json({error:'ERROR: Could not execute query for reset token'})
+  // if(match.rowCount === 0) return res.json({error:'ERROR: Reset token does not exist in database.'})
+  // if(match.rows[0].accessed_at) return res.json({error:'ERROR: Reset request has already been accessed'})
+  // const accessedAt = await queries.setResetAccessedAtTimestamp(resetToken)
+  // if( accessedAt instanceof Error) return res.json({error:'ERROR: Did not set an accessed_at timestamp after reset token lookup.'})
+  // return res.redirect(`http://localhost:3001/resetPassword?resetToken=${resetToken}`)
+})
+
+
 const updateInvitationStatus = async(req,res, next) => {
   console.log('UpdateInvitationStatus middleware ran')
   if(req.invitationToken){
@@ -347,7 +438,7 @@ router.post('/forgotPassword', async(req,res) => {
   }
 
   try {
-      const result = await queries.addResetToken(ownerId, resetPasswordToken)
+      const result = await queries.addResetToken(ownerId, resetPasswordToken) // MISSING QUERY
   } catch (error) {
       console.log('Error storing reset token in database: ', error)
       return res.status(400).json({ error: 'Server error attempting to send a link, please try again.' })
@@ -379,7 +470,7 @@ router.get('/resetRequest', async(req,res) => {
   const ownerId = await queries.getOwnerIdFromEmail(ownerEmail)
   if(ownerId === null) {
     console.log('Email requesting password reset does not exist')
-    return res.json({message:'Email with reset link sent to requesting customer if it exists in our records'})
+    return res.status(200).json({message:'Email with reset link sent to requesting customer if it exists in our records'})
   }
   // const ownerId = req.ownerId
   // // Get email associated with owner ID
@@ -418,24 +509,7 @@ router.get('/resetRequest', async(req,res) => {
 })
 
 // Need to test with front end
-router.get('/resetPassword', async(req,res) => {
-  // Get reset token from request URL query
-  const resetToken = req.query.resetToken
-  // Validate token to get the userID, ensuring the token is valid and not expired.
-  const resetTokenPayload = verify(resetToken, tokenSecret)
-  if(resetTokenPayload instanceof Error){
-    return res.json({error: new Error('Invalid link')})
-  }
-  // Query the 'ResetRequest' table to confirm the the 'AccessToken' is null and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
-  const match = await queries.getResetToken(resetToken)
-  console.log('Result from checking if reset tokens match: ', match)
-  if(match instanceof Error) return res.json({error:'ERROR: Could not execute query for reset token'})
-  if(match.rowCount === 0) return res.json({error:'ERROR: Reset token does not exist in database.'})
-  if(match.rows[0].accessed_at) return res.json({error:'ERROR: Reset request has already been accessed'})
-  const accessedAt = await queries.setResetAccessedAtTimestamp(resetToken)
-  if( accessedAt instanceof Error) return res.json({error:'ERROR: Did not set an accessed_at timestamp after reset token lookup.'})
-  return res.redirect(`http://localhost:3001/resetPassword?resetToken=${resetToken}`)
-})
+
 
 // Need to test with front end
 router.post('/resetPasswordConfirmation', (req,res) => {

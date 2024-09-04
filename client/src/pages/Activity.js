@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react'
 import {
+  Link,
   useActionData,
   useLoaderData,
   useNavigate
@@ -8,8 +9,10 @@ import useAuth from '../hooks/useAuth'
 import ActivityCarousel from '../components/ActivityCarousel'
 import PetSelector from '../components/PetSelector'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
+import { axiosPrivate } from '../api/axios'
 // import timestampParser from '../util/timestampParser'
 // import axios from 'axios'
+import AddPetModal from '../components/AddPetModal'
 
 const Activity = () => { 
 
@@ -26,6 +29,7 @@ const Activity = () => {
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
   const [ petIdArray, setPetIdArray ] = useState([])
+  const [ addPetModal, setAddPetModal ] = useState({ visible: false })
 
   useEffect( () => {
     const abortController = new AbortController()
@@ -106,6 +110,11 @@ const Activity = () => {
     
   },[activity])
 
+  const openAddPetModal = (e) => {
+    e.preventDefault()
+    setAddPetModal({ visible: true })
+  }
+
   return(
     <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
       {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
@@ -113,9 +122,9 @@ const Activity = () => {
       {
         referencePetId
         ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity=    {setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
-        : <div>Add a new pet!</div>
+        : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
-      <button onClick={() => navigate('/acceptInvite')}>Accept Invitation</button>    
+      <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } />
     </main>
   )
 }
@@ -136,5 +145,24 @@ export const loader = () => {
   const referencePetId = referencePetIdLocalStorage == 'undefined' || referencePetIdLocalStorage == 'null'  ? null : JSON.parse(referencePetIdLocalStorage)  
 
   return { referenceDate, referencePetId}
+}
+
+export const action = async({ request }) => {
+  const formData = request.formData()
+  const name = formData.get('name')
+  const dob = formData.get('dob')
+  const sex = formData.get('sex')
+
+  const petInfo = { name,dob, sex }
+
+  try {
+    const response = await axiosPrivate.post('/account/addPet', petInfo)
+    const { success } = response.data
+    return success
+  } catch (err) {
+    console.log('Error attempting to add a pet: ', error)
+    const { error } = err.response.data
+    return error
+  }
 }
 

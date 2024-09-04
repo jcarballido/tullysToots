@@ -194,7 +194,7 @@ const getInvitationTokenComparisonText = () => {
 }
 
 const getOwnerIdFromEmailText = `
-  SELECT owner_idgetActivity
+  SELECT owner_id
   FROM owners
   WHERE email = $1
 `
@@ -402,7 +402,7 @@ const addPetOwnerText = `
 
 const rejectInvitation = `
   UPDATE invitations
-  SET accepted=false,rejected=true,pending=false,expired=false
+  SET rejected=true
   WHERE invitation_id=$1
 `
 
@@ -439,10 +439,7 @@ const checkInviteLink = `
 
 const setInviteExpiredByToken = `
   UPDATE invitations
-  SET accepted = false,
-    rejected = false,
-    pending = false,
-    expired = true
+  SET expired = true
   WHERE invitation_token = $1
 `
 const getTokenData = `
@@ -471,6 +468,12 @@ const confirmLinkedAndPendingInvitation = `
   ON
     key_array_element::INT = i.invitation_id
   WHERE o.owner_id = $2 AND i.pending = true AND i.invitation_id = $1`
+
+const getValidResetToken = `
+  SELECT reset_token
+  FROM reset_tokens
+  WHERE reset_token = $1
+`
 
 export default {
   insertIntoText,
@@ -530,7 +533,8 @@ export default {
   setInviteExpiredByToken,
   getTokenData,
   getPendingInvitationTokens,
-  confirmLinkedAndPendingInvitation
+  confirmLinkedAndPendingInvitation,
+  getValidResetToken
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

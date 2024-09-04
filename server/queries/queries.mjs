@@ -408,7 +408,7 @@ const updatePassword = async(ownerId, hashedPassword) => {
     await pool.query(sqlText.updatePassword, [ hashedPassword, ownerId ])
     return true
   }catch(e){
-    return e
+    throw e
   }
 }
 
@@ -920,6 +920,17 @@ const addResetToken = async(ownerId, resetToken) => {
   }
 }
 
+const verifyValidResetTokenExists = async( resetToken) => {
+  try {
+    const result = await pool.query(sqlText.getValidResetToken, [ resetToken ])
+    if(result.rowCount == 0) throw new Error('Invalid token')
+    return result.rows[0]
+  } catch (error) {
+    throw error
+  }
+
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -979,6 +990,7 @@ export default {
   getTokenData,
   getPendingInvitationTokens,
   confirmLinkedAndPendingInvitation,
-  addResetToken
+  addResetToken,
+  verifyValidResetTokenExists
 }
 
