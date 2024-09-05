@@ -21,6 +21,8 @@ const Activity = () => {
   const navigate = useNavigate()
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData() 
+  const actionData = useActionData()
+  const { success, addedPetId, error } = actionData
 
   const [ activity, setActivity ] = useState([])
   const [ dateMap, setDateMap ] = useState(new Map())
@@ -110,6 +112,10 @@ const Activity = () => {
     
   },[activity])
 
+  useEffect( () => {
+    if(addedPetId) setReferencePetId(addedPetId)
+  },[addedPetId])
+
   const openAddPetModal = (e) => {
     e.preventDefault()
     setAddPetModal({ visible: true })
@@ -124,7 +130,7 @@ const Activity = () => {
         ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity=    {setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
         : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
-      <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } />
+      <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } success={success} error={error}/>
     </main>
   )
 }
@@ -157,12 +163,12 @@ export const action = async({ request }) => {
 
   try {
     const response = await axiosPrivate.post('/account/addPet', petInfo)
-    const { success } = response.data
-    return success
+    const { success, addedPetId } = response.data
+    return {success, addedPetId }
   } catch (err) {
     console.log('Error attempting to add a pet: ', error)
     const { error } = err.response.data
-    return error
+    return {error}
   }
 }
 
