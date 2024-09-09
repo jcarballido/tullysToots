@@ -1,6 +1,6 @@
 // import UpdateUsername from "../../client/src/components/UpdateUsername"
 
-const activityColumns = ['pet_id','entered_by','timestamp_received', 'timestamp_utc_offset','pee','poo']
+const activityColumns = ['pet_id','set_by','set_on_at','pee','poo']
 
 const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
@@ -132,7 +132,7 @@ const getActivityText = () => {
   return `
     SELECT activity_id,${activityColumns.join()}
     FROM activities
-    WHERE pet_id = $1 AND timestamp_received > $2::timestamp - $3::interval AND timestamp_received < $2::timestamp + $4::interval
+    WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $4::interval
   `
 }
 
@@ -475,6 +475,23 @@ const getValidResetToken = `
   WHERE reset_token = $1
 `
 
+const setResetTokenExpired = `
+  UPDATE reset_tokens
+  SET expired = true
+  WHERE reset_token = $1
+`
+
+// Get owner's registered email from owners table from passed in email.
+// Pass owner's registered email to reset token table
+
+const addResetToken = `
+  INSERT INTO reset_tokens (recipient_email, reset_token)
+  SELECT email, $2
+  FROM owners
+  WHERE owner_id = $1
+  RETURNING *
+`
+
 export default {
   insertIntoText,
   updateText,
@@ -534,7 +551,9 @@ export default {
   getTokenData,
   getPendingInvitationTokens,
   confirmLinkedAndPendingInvitation,
-  getValidResetToken
+  getValidResetToken,
+  setResetTokenExpired,
+  addResetToken
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

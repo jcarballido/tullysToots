@@ -2,13 +2,13 @@ import React from 'react'
 
 const StatusMessage = ({ message }) => {
 
-  if(message?.success || message?.error){
-    const keysArr = Object.keys(message)
+  if(message?.status?.success || message?.status?.error){
+    const keysArr = Object.keys(message?.status)
     const result = keysArr[0]
     
     return(
       <>
-        { message[`${result}`] }
+        { message.status[`${result}`] }
       </>
     )
   }

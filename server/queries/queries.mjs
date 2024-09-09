@@ -165,7 +165,7 @@ const addPet = async(petName,dob,sex) => {
     const petId = result.rows[0].pet_id
     return petId
   }catch(e){
-    return e
+    throw e
   }
   
   // console.log('This is the result from inserting pet name => ', petId)
@@ -205,14 +205,15 @@ const getOwnerIdFromEmail = async(email) => {
   //const email = ownerData.email
   //console.log('Line 62 Queries',email)
   try{
-    const result = await pool.query(sqlText.getOwnerIdFromEmailText(),[email])
+    const result = await pool.query(sqlText.getOwnerIdFromEmailText,[email])
     //console.log('Here\'s the SQL text: ',sqlText.getOwnerText())
     //console.log(result)
+    if(result.rowCount == 0 ) throw new Error('Account not found')
     const ownerId = result.rows[0].owner_id
     // console.log(ownerId)
     return ownerId
   }catch(e){
-    return null
+    throw e
   }
 }
 
@@ -920,7 +921,7 @@ const addResetToken = async(ownerId, resetToken) => {
   }
 }
 
-const verifyValidResetTokenExists = async( resetToken) => {
+const verifyValidResetTokenExists = async( resetToken ) => {
   try {
     const result = await pool.query(sqlText.getValidResetToken, [ resetToken ])
     if(result.rowCount == 0) throw new Error('Invalid token')
@@ -928,7 +929,14 @@ const verifyValidResetTokenExists = async( resetToken) => {
   } catch (error) {
     throw error
   }
+}
 
+const setResetTokenExpired = async( decodedResetToken ) => {
+  try {
+    const result = await pool.query(sqlText.setResetTokenExpired, [ decodedResetToken ])
+  } catch (error) {
+    throw error
+  }
 }
 
 export default {
@@ -991,6 +999,7 @@ export default {
   getPendingInvitationTokens,
   confirmLinkedAndPendingInvitation,
   addResetToken,
-  verifyValidResetTokenExists
+  verifyValidResetTokenExists,
+  setResetTokenExpired,
 }
 

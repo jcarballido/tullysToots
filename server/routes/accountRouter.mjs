@@ -247,11 +247,13 @@ router.post('/sign-in', async(req,res, next) => {
 router.get('/verifyResetToken', async(req,res) => {
   const encodedResetToken = req.query.resetToken
   let decodedResetToken = decodeURIComponent(encodedResetToken)
+  console.log('Decoded reset token: ',decodedResetToken)
   if(decodedResetToken == 'null') decodedResetToken = null
-  if(decodedResetToken) return res.status(400).json(new Error('Empty reset token.'))
+  if(decodedResetToken) return res.status(400).json({error:'Empty reset token.'})
   
   try {
     const result = await queries.verifyValidResetTokenExists(decodedResetToken)
+    console.log('Result from verifying valid reset token: ', result)
     const resetTokenId = result.reset_token_id
     req.resetTokenId = resetTokenId
   } catch (error) {
@@ -420,7 +422,7 @@ router.post('/forgotPassword', async(req,res) => {
 
   const resetPasswordToken = jwt.sign( {ownerId}, resetPasswordSecret, {expiresIn: '10m'} )
 
-  const link = `http://localhost:3000/resetPassword?resetToken=${resetPasswordToken}`
+  const link = `http://localhost:3001/resetPassword?resetToken=${resetPasswordToken}`
   const resetPasswordEmail = (resetPasswordlink) => {
     return `
       <head>
@@ -457,7 +459,6 @@ router.post('/forgotPassword', async(req,res) => {
     console.log('Error attempting to add invitation token to table: ', e)
     return res.status(400).json({error: 'Server error attempting to send a link, please try again.'})
   }
-
 })
 
 router.use(updateInvitationStatus)
@@ -1302,12 +1303,12 @@ router.get('/getSinglePetId', async(req, res)=>{
 })
 
 router.post('/addPet', async(req,res) => {
+  console.log('Owner ID parsed from auth token:', req.ownerId)
   const ownerId = req.ownerId
   const { name, dob, sex } = req.body
 
   try {
-    const result = await queries.addPet(name,dob,sex) 
-    const petId = result.rows[0].pet_id  
+    const petId = await queries.addPet(name,dob,sex) 
     req.petId = petId 
   } catch (error) {
     console.log('Error adding pet:' , error)
@@ -1315,7 +1316,7 @@ router.post('/addPet', async(req,res) => {
   }
   
   try{
-    await queries.addPetOwnerLink(ownerId, req.petId)
+    await queries.addPetOwnerLink( req.petId,ownerId)
     return res.status(200).json({ success:'Pet successfully added', addedPetId: req.petId })
   }catch(e){
     console.log('Error occured adding pet: ', e)

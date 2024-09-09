@@ -22,7 +22,7 @@ const Activity = () => {
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData() 
   const actionData = useActionData()
-  const { success, addedPetId, error } = actionData
+  const { success, addedPetId, error } = actionData || {}
 
   const [ activity, setActivity ] = useState([])
   const [ dateMap, setDateMap ] = useState(new Map())
@@ -154,7 +154,7 @@ export const loader = () => {
 }
 
 export const action = async({ request }) => {
-  const formData = request.formData()
+  const formData = await request.formData()
   const name = formData.get('name')
   const dob = formData.get('dob')
   const sex = formData.get('sex')
