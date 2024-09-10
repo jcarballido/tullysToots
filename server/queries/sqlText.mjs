@@ -470,9 +470,9 @@ const confirmLinkedAndPendingInvitation = `
   WHERE o.owner_id = $2 AND i.pending = true AND i.invitation_id = $1`
 
 const getValidResetToken = `
-  SELECT reset_token
+  SELECT *
   FROM reset_tokens
-  WHERE reset_token = $1
+  WHERE reset_token = $1 AND pending = TRUE
 `
 
 const setResetTokenExpired = `
@@ -491,6 +491,14 @@ const addResetToken = `
   WHERE owner_id = $1
   RETURNING *
 `
+const addResetTokenTimestamp = `
+  UPDATE reset_tokens
+  SET accessed_at = now() AT TIME ZONE 'UTC'
+  WHERE reset_token_id = $1
+
+`
+
+
 
 export default {
   insertIntoText,
@@ -553,7 +561,8 @@ export default {
   confirmLinkedAndPendingInvitation,
   getValidResetToken,
   setResetTokenExpired,
-  addResetToken
+  addResetToken,
+  addResetTokenTimestamp
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {

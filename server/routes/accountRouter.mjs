@@ -249,18 +249,45 @@ router.get('/verifyResetToken', async(req,res) => {
   let decodedResetToken = decodeURIComponent(encodedResetToken)
   console.log('Decoded reset token: ',decodedResetToken)
   if(decodedResetToken == 'null') decodedResetToken = null
-  if(decodedResetToken) return res.status(400).json({error:'Empty reset token.'})
+  if(!decodedResetToken) return res.status(400).json({error:'Empty reset token.'})
   
   try {
     const result = await queries.verifyValidResetTokenExists(decodedResetToken)
-    console.log('Result from verifying valid reset token: ', result)
     const resetTokenId = result.reset_token_id
     req.resetTokenId = resetTokenId
   } catch (error) {
     console.log('Error validating reset token: ', error)
+    if(error.message == 'Token previously accessed'){
+      try {
+        await queries.setResetTokenExpired(decodedResetToken)
+      } catch (error) {
+        console.log("Error setting reset token as expired:", error)
+      }
+    }
     return res.status(400).json({error})
   }
-  return res.status(204)
+
+  try {
+    console.log('reset token id: ', req.resetTokenId)
+    await queries.addResetTokenAccessedTimestamp(req.resetTokenId)
+  } catch (error) {
+    console.log('Error adding timestamp to reset token:', error)
+    return res.status(400).json({ error: 'Server error attempting to add timestamp to reset token.' })
+  }
+  
+  const resetSecret = process.env.RESET_SECRET
+
+  try {
+    const verifiedAndDecodedResetToken = jwt.verify(decodedResetToken, resetSecret)
+  } catch (error) {
+    try {
+      await queries.setResetTokenExpired(decodedResetToken)
+    } catch (error) {
+      console.log("Error setting reset token as expired:", error)
+    }
+  }
+
+  return res.status(200).json({ status:'verified' })
 })
 
 router.post('/resetPassword', async(req,res) => {

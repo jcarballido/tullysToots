@@ -26,7 +26,7 @@ const ResetPassword = () => {
         const response = await axios.get(`/account/verifyResetToken?resetToken=${encodedResetToken}`)
         console.log('Response from token verification: ', response)
       } catch (error) {
-        if(error.message == 'Empty reset token.'){
+        if(error.response.data.error == 'Empty reset token.'){
           navigate('/')
         }
         console.log('Error vaidating token: ', error)

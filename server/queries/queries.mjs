@@ -925,7 +925,11 @@ const verifyValidResetTokenExists = async( resetToken ) => {
   try {
     const result = await pool.query(sqlText.getValidResetToken, [ resetToken ])
     if(result.rowCount == 0) throw new Error('Invalid token')
-    return result.rows[0]
+    console.log('Result from verifying reset token:',result)
+    const tokenStatus = result.rows[0]
+    const accessedAt = tokenStatus.accessed_at
+    if(accessedAt) throw new Error('Token previously accessed')
+    return tokenStatus
   } catch (error) {
     throw error
   }
@@ -934,6 +938,14 @@ const verifyValidResetTokenExists = async( resetToken ) => {
 const setResetTokenExpired = async( decodedResetToken ) => {
   try {
     const result = await pool.query(sqlText.setResetTokenExpired, [ decodedResetToken ])
+  } catch (error) {
+    throw error
+  }
+}
+
+const addResetTokenAccessedTimestamp = async(resetTokenId) => {
+  try {
+    const result = await pool.query(sqlText.addResetTokenTimestamp, [ resetTokenId ])
   } catch (error) {
     throw error
   }
@@ -1001,5 +1013,6 @@ export default {
   addResetToken,
   verifyValidResetTokenExists,
   setResetTokenExpired,
+  addResetTokenAccessedTimestamp
 }
 
