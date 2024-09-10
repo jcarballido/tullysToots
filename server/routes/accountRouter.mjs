@@ -309,7 +309,7 @@ router.post('/resetPassword', async(req,res) => {
   const resetSecret = process.env.RESET_SECRET
 
   try{
-    const result = queries.verifyValidResetTokenExists(decodedResetToken)
+    const result = queries.verifyPendingResetTokenExists(decodedResetToken)
   }catch(error){
     console.log('Error checking if reset token exists: ', error)
     return res.status(400).json({ error: 'Valid token not found.' })

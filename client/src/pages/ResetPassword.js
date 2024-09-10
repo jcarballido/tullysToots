@@ -11,6 +11,8 @@ import ResetPasswordForm from '../components/ResetPasswordForm'
 const ResetPassword = () => {
 
   const actionData = useActionData()
+  const {error} = actionData || {}
+  console.log('Action data:', {error})
   const [ validationError, setValidationError ] = useState(false)
   const [ message, setMessage ] = useState({})
 
@@ -60,7 +62,7 @@ export const action = async({ request }) => {
   const confirmPassword = formData.get("confirmPassword")
 
   const trimmedNewPassword = newPassword.trim()
-  const trimmedConfirmPassword = newPassword.trim()
+  const trimmedConfirmPassword = confirmPassword.trim()
 
   if(trimmedNewPassword != trimmedConfirmPassword) return { error: 'Passwords must match!' }
 

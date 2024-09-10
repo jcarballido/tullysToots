@@ -495,8 +495,8 @@ const addResetTokenTimestamp = `
   UPDATE reset_tokens
   SET accessed_at = now() AT TIME ZONE 'UTC'
   WHERE reset_token_id = $1
+  `
 
-`
 
 
 
