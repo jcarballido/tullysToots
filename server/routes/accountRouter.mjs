@@ -247,7 +247,6 @@ router.post('/sign-in', async(req,res, next) => {
 router.get('/verifyResetToken', async(req,res) => {
   const encodedResetToken = req.query.resetToken
   let decodedResetToken = decodeURIComponent(encodedResetToken)
-  console.log('Decoded reset token: ',decodedResetToken)
   if(decodedResetToken == 'null') decodedResetToken = null
   if(!decodedResetToken) return res.status(400).json({error:'Empty reset token.'})
   
@@ -268,7 +267,6 @@ router.get('/verifyResetToken', async(req,res) => {
   }
 
   try {
-    console.log('reset token id: ', req.resetTokenId)
     await queries.addResetTokenAccessedTimestamp(req.resetTokenId)
   } catch (error) {
     console.log('Error adding timestamp to reset token:', error)
@@ -301,10 +299,10 @@ router.post('/resetPassword', async(req,res) => {
   // }
 
   if(decodedResetToken == 'null') decodedResetToken = null
-  if(!decodedResetToken) return res.status(400).json({error: 'Empty reset token.'})
+  if(!decodedResetToken) return res.status(400).json({status:"error", message: 'Empty reset token.'})
 
   const newPassword = req.body.trimmedNewPassword
-  if(!newPassword) return res.status(400).json({ error: 'Empty new password.' })
+  if(!newPassword) return res.status(400).json({ status:"error", message: 'Empty new password.' })
 
   const resetSecret = process.env.RESET_SECRET
 
@@ -312,7 +310,7 @@ router.post('/resetPassword', async(req,res) => {
     const result = queries.verifyPendingResetTokenExists(decodedResetToken)
   }catch(error){
     console.log('Error checking if reset token exists: ', error)
-    return res.status(400).json({ error: 'Valid token not found.' })
+    return res.status(400).json({ status:"error", message: 'Valid token not found.' })
   }
 
   try{
@@ -325,23 +323,22 @@ router.post('/resetPassword', async(req,res) => {
         await queries.setResetTokenExpired(decodedResetToken) // MISSING query    
       } catch (error) {
         console.log('Error setting expired token: ', error)
-
       }
     }
-    return res.status(400).json({error:'Invalid token.'})
+    return res.status(400).json({status:"error", message:'Invalid token.'})
   }  
 
   const saltRounds = 5
   bcrypt.hash(newPassword, saltRounds, async(err,passwordHash) => {
     if(err){
       console.log('Error attemtpting to hash password:', err)
-      return res.status(400).json({ error: 'Error hashing password' })
+      return res.status(400).json({ status:'error', message: 'Error hashing password' })
     }
     try{
       await queries.updatePassword(req.ownerId,passwordHash)
     }catch(e){
       console.log('Error updating password to the new password: ', e)
-      return res.status(400).json({error:'Error updating password.'})
+      return res.status(400).json({status:'error', message:'Error updating password.'})
     }
   })
 
@@ -351,7 +348,7 @@ router.post('/resetPassword', async(req,res) => {
     console.log('Error setting reset token to expired.:', error)
   }
 
-  return res.status(200).json({ success: 'Password was successfully updated.' })
+  return res.status(200).json({ status:'success', message: 'Password was successfully updated.' })
   // Query the 'ResetRequest' table to confirm the the 'AccessToken' is null and that the token's match. If not, display that the link expired and a new link needs to be requested. Finally, remove the token from the record since it's considered 'no good'.
   // const match = await queries.getResetToken(resetToken)
   // console.log('Result from checking if reset tokens match: ', match)

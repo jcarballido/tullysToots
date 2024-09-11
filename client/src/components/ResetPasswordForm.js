@@ -27,16 +27,16 @@ const ResetPasswordForm = ({ message,resetToken }) => {
     e.preventDefault()
     setPasswordVisible(!passwordVisible)
   }
+
   const handleConfirmPasswordShow = (e) => {
     e.preventDefault()
     setConfirmPasswordVisible(!setConfirmPasswordVisible)
   }
 
-
-   return(
+  return(
     <>
       <div>
-        { message? `${message.result}`:null }
+        { message.status == 'error'? `${message.message}`:null }
       </div>
       <Form method='post' action={`/resetPassword?resetToken=${resetToken}`}>
         <label htmlFor='newPassword' className='flex flex-col mb-2 min-h-[44px]'>
@@ -58,7 +58,7 @@ const ResetPasswordForm = ({ message,resetToken }) => {
         </button>
       </Form>
     </>
-   )
+  )
 }
 
 export default ResetPasswordForm

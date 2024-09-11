@@ -11,8 +11,6 @@ import ResetPasswordForm from '../components/ResetPasswordForm'
 const ResetPassword = () => {
 
   const actionData = useActionData()
-  const {error} = actionData || {}
-  console.log('Action data:', {error})
   const [ validationError, setValidationError ] = useState(false)
   const [ message, setMessage ] = useState({})
 
@@ -39,14 +37,14 @@ const ResetPassword = () => {
   }, [])
 
   useEffect( () => {
-    if(actionData?.result) {
+    if(actionData?.status) {
       setMessage(actionData)
     }
   },[actionData])
 
   return (
     <>
-      <div>ResetPassword</div>
+      <div>Reset Password</div>
       {
         validationError
         ? <ExpiredResetToken/>
@@ -64,7 +62,7 @@ export const action = async({ request }) => {
   const trimmedNewPassword = newPassword.trim()
   const trimmedConfirmPassword = confirmPassword.trim()
 
-  if(trimmedNewPassword != trimmedConfirmPassword) return { error: 'Passwords must match!' }
+  if(trimmedNewPassword != trimmedConfirmPassword) return { status:"error",message: 'Passwords must match!' }
 
   const url = new URL(request.url)
   const searchParams = new URLSearchParams(url.search)
@@ -74,11 +72,10 @@ export const action = async({ request }) => {
 
   try {
     const response = await axios.post(`/account/resetPassword?resetToken=${encodedResetToken}`, {trimmedNewPassword})
-    const { success } = response.data
-    return {success}
+    return response.data
   } catch (error) {
     console.log('Error caught in axios request:', error)
-    return {error: 'Error processing request. Please request a new link.'}     
+    return {status:"error", message: 'Error processing request. Please request a new link.'}     
   }
 } 
 

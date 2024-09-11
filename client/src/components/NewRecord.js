@@ -3,7 +3,7 @@ import Checkbox from './Checkbox'
 // import timestampParser from '../util/timestampParser'
 import getTimeCharacteristics from '../util/getTimeCharacteristics'
 
-const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, setTimeModal, dateString }) => {
+const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, setTimeModal, dateString, setEditableActivityMap }) => {
   const [ timeString, setTimeString ] = useState('')
 
   const changeTime = () => {
@@ -26,8 +26,8 @@ const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, 
 
   return (
     <div className='w-full border-[2px] border-solid border-red-400 flex items-start'>
-      <Checkbox id={record.newId} setNewActivity={setNewActivity} checked={record.pee} activity='pee' />
-      <Checkbox id={record.newId} setNewActivity={setNewActivity} checked={record.poo} activity='poo' />
+      <Checkbox id={record.newId} setNewActivity={setNewActivity} checked={record.pee} activity='pee' setEditableActivityMap={setEditableActivityMap} />
+      <Checkbox id={record.newId} setNewActivity={setNewActivity} checked={record.poo} activity='poo' setEditableActivityMap={setEditableActivityMap}/>
       {/* <input type='time' value={timeString} className='invisible absolute' disabled /> */}
       <div>@</div>
       <div onClick={changeTime}>{timeString}</div>

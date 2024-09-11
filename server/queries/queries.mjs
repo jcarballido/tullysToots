@@ -925,7 +925,6 @@ const verifyValidResetTokenExists = async( resetToken ) => {
   try {
     const result = await pool.query(sqlText.getValidResetToken, [ resetToken ])
     if(result.rowCount == 0) throw new Error('Invalid token')
-    console.log('Result from verifying reset token:',result)
     const tokenStatus = result.rows[0]
     const accessedAt = tokenStatus.accessed_at
     if(accessedAt) throw new Error('Token previously accessed')

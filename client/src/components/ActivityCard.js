@@ -248,7 +248,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       { newActivity.map( record => {
         return (
           <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} />
+            <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} setEditableActivityMap={setEditableActivityMap} />
           </div>
         )
       })}
