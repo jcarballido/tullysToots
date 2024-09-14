@@ -74,6 +74,7 @@ router.get("/get", async (req, res) => {
   if(req.activeLink){
     try {
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
+      console.log('Activity array received:', activityArray)
       const petIdArray = await queries.getOwnersPetIds(ownerId)        
       return res.status(200).json({ activityArray, petIdArray })
     } catch (error) {
@@ -149,13 +150,13 @@ router.post("/add", async (req, res) => {
   const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
   const timestampUTCString = req.body.timestampUTCString;
-  const referenceTimezoneOffset = req.body.referenceTimezoneOffset
+  // const referenceTimezoneOffset = req.body.referenceTimezoneOffset
   // console.log('**Activity Router** referenceDate: ', timestampUTCString)
   const { pee, poo } = req.body.activity
   
   try{
     // console.log('Attempt to add activity is being made.')
-    const result = await queries.addActivity(petId, ownerId, timestampUTCString,referenceTimezoneOffset,pee,poo)
+    const result = await queries.addActivity(petId, ownerId, timestampUTCString, pee,poo)
     // console.log('Line 71, result: ', result)
   }catch(e){
     console.log('Error adding activity; error code sent to client: ',e)

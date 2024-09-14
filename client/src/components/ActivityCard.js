@@ -43,13 +43,13 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     setNewActivity( prevNewActivity => {
       const result = getTimeCharacteristics(new Date().toUTCString())
       console.log('Activity Card, result: ',result)
-      const { paddedHourString, paddedMinutesString, meridianString, localTimezoneOffset } = getTimeCharacteristics(new Date().toUTCString())
+      const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(new Date().toUTCString())
       const { fullYear, monthIndex, date } = getDateCharacteristics(dateString)
       // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
       // console.log('ActivityCard, newTimestamp: ', timestampString)
       // const newTimestamp = new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
       // console.log('ActivityCard, newTimestamp: ', newTimestamp)
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), timestampUTCOffset:localTimezoneOffset, pee:true, poo: true}]
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:true, poo: true}]
     })
   }
 
@@ -70,9 +70,10 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
         pee:newActivity[0].pee,
         poo:newActivity[0].poo
       }
+      console.log('Activity being sent:', activity)
       const newActivityTimestamp = `${newActivity[0].timestampReceived}`
       const timezoneOffset = newActivity[0].timestampUTCOffset
-      const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp,referenceTimezoneOffset:timezoneOffset, activity})
+      const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp, activity})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
       const referenceDateActivity = response.data[0]
       // console.log('*RECORD** response.data: ',referenceDateActivity)
@@ -93,7 +94,6 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       console.log(e)
     }
   }
-
 
   const sendUpdatedActivity = async (e) => {
     e.preventDefault()
@@ -143,8 +143,6 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     e.preventDefault()
     setUpdateEnabled(false)
   }
-
-  // savedRecord example: [{activity_id:1,...},{activity_id:2,...}]
 
   const compareArrays = ( originalArray, modifiedArray ) => {
     const updates = []
@@ -216,11 +214,6 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   //     console.log(e)
   //   }
   }
-
-  // const openConfirmationModal = (e, activity_id) => {
-  //   e.preventDefault()
-  //   setConfirmationModalVisibility(prevDeletion => { return {visible:true,activityId:activity_id}})
-  // }
 
   return(
     <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>

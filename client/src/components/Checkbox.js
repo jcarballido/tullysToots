@@ -1,26 +1,33 @@
 import React from "react"
 
-const Checkbox =({id, setNewActivity, checked, activity, disabled, setEditableActivityMap}) => {
+const Checkbox =({id, setNewActivity, checked, activity, disabled, setEditableActivityMap, newRecord}) => {
   
   const handleCheck = () => {
-   setEditableActivityMap( prevEditableMap => {
-      const updatedMap = structuredClone(prevEditableMap)
-      const recordToUpdate = updatedMap.get(id)
-      recordToUpdate[activity] = !checked
-      updatedMap.set(id,recordToUpdate)
-      return updatedMap
-    })
-    // setNewActivity( prevNewActivity => {
-    //   const updatedNewActivity = prevNewActivity.map( newActivity => {
-    //     if(newActivity.newId != id){
-    //       return newActivity
-    //     }else{
-    //       newActivity[activity] = !newActivity[activity]
-    //       return newActivity
-    //     }
-    //   })
-    //   return updatedNewActivity
-    // })
+    if(newRecord){
+      setNewActivity( prevNewActivity => {
+        const updatedNewActivity = prevNewActivity.map( newActivity => {
+          if(newActivity.newId != id){
+            return newActivity
+          }else{
+            newActivity[activity] = !newActivity[activity]
+            return newActivity
+          }
+        })
+        return updatedNewActivity
+      })
+    } else{
+      setEditableActivityMap( prevEditableMap => {
+        const updatedMap = structuredClone(prevEditableMap)
+        console.log('updatedMap:', updatedMap)
+        const recordToUpdate = updatedMap.get(id)
+        console.log('record to update: ', recordToUpdate)
+        console.log('activity:', activity)
+        recordToUpdate[activity] = !checked
+        updatedMap.set(id,recordToUpdate)
+        console.log('final updatedMap: ', updatedMap)
+        return updatedMap
+      })
+    }    
   }
 
   return(

@@ -92,7 +92,7 @@ const addPetOwnerLink = async(petId,ownerId) => {
 }
 
 
-const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee, poo) => {
+const addActivity = async(petId, ownerId, timestampUTCString, pee, poo) => {
   // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
   const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
   const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString)
@@ -100,7 +100,7 @@ const addActivity = async(petId, ownerId, timestampUTCString,timezoneOffset, pee
   // console.log('**Queries** addActivity timestamp: ', timestamp)
   try{
     
-    const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, timezoneOffset, pee, poo])
+    const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo])
     // console.log('Queries, addActivity, result: ',result)
     const data = result.rows[0]
     console.log('*queries* data: ', data)
@@ -506,7 +506,7 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
   const { daysBefore, daysAfter } = timeWindowObj
   // console.log('TargetDate: ', targetDate)
   const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
-  // console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)
+  // console.log('${year}-${monthIndex+1}-${date}: ', `${fullYear}-${monthIndex+1}-${date}`)
   const dateArray = []
   for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
     const referenceDate = new Date(targetDate)
@@ -522,7 +522,7 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
     const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
     // console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
     const filteredActivityArray = data.filter( activity => { 
-      const activityDate = new Date(activity.timestamp_received)
+      const activityDate = new Date(activity.set_on_at)
       return (
         fullYear == activityDate.getFullYear() &&
         monthIndex == activityDate.getMonth() &&
@@ -557,7 +557,7 @@ const getSingleDayActivity = async(petId,targetDate) => {
     const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
     // console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
     const filteredActivityArray = data.filter( activity => { 
-      const activityDate = new Date(activity.timestamp_received)
+      const activityDate = new Date(activity.set_on_at)
       return (
         fullYear == activityDate.getFullYear() &&
         monthIndex == activityDate.getMonth() &&

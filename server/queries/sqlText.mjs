@@ -141,7 +141,7 @@ const getSingleDayActivityText = () => {
   return `
     SELECT activity_id,${activityColumns.join()}
     FROM activities
-    WHERE pet_id = $1 AND timestamp_received >= $2::timestamp AND timestamp_received < $2::timestamp + '1 day'::interval
+    WHERE pet_id = $1 AND set_on_at >= $2::timestamp AND set_on_at < $2::timestamp + '1 day'::interval
   `
 }
 
