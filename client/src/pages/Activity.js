@@ -32,6 +32,7 @@ const Activity = () => {
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
   const [ petIdArray, setPetIdArray ] = useState([])
   const [ addPetModal, setAddPetModal ] = useState({ visible: false })
+  const [ pendingInvitations, setPendingInvitations ] = useState(false)
 
   useEffect( () => {
     const abortController = new AbortController()
@@ -122,12 +123,12 @@ const Activity = () => {
   }
 
   return(
-    <main className='w-full border-2 border-green-700 mt-4 flex flex-col justify-start items-center overflow-hidden'>
-      {/* <button className='rounded-2xl bg-gray-400 border-black border-2' onClick={sendAxiosRequest} >TEST AXIOS INTERCEPTOR</button> */}
+    <main className='w-full grow flex flex-col justify-start items-center overflow-y-auto gap-8 mt-4'>
+      {pendingInvitations ? <button  onClick={( ) => navigate('/acceptInvite')} >You have pending invites!</button>:null}
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
       {
         referencePetId
-        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity=    {setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
+        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
         : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
       <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } success={success} error={error}/>

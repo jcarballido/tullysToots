@@ -2,7 +2,7 @@ import React,{ useState, useEffect } from 'react'
 import eyeOpen from '../media/eye-open.svg'
 import eyeClosed from '../media/eye-closed.svg'
 
-function PasswordInput({ setInvalidField }) {
+function ConfirmPassword({ setInvalidField }) {
   const [value, setValue] = useState('')
   const [ passwordVisible, setPasswordVisible ] = useState(false)
 
@@ -24,7 +24,7 @@ function PasswordInput({ setInvalidField }) {
 
   return(
     <label htmlFor='password' className='flex flex-col mb-2 w-full'>
-      <div>Password:</div>
+      <div>Confirm Password:</div>
       <div className='flex w-full h-[40px]'>
         <input id='password' name='password' type={passwordVisible ? 'text':'password'} onChange={handleInputChange} className='grow text-black border-none outline-none ring-2 ring-gray-300 focus:ring-accent-blue w-full rounded-lg' value={value} />
         <img className='grow-0 max-h-[48px] fill-white' onClick={ handleShow } src={passwordVisible? eyeClosed:eyeOpen}/>
@@ -33,4 +33,4 @@ function PasswordInput({ setInvalidField }) {
   )
 }
 
-export default PasswordInput
+export default ConfirmPassword

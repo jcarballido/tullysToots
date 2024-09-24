@@ -28,8 +28,8 @@ const PetSelector = ({ petIdArray, referencePetId, setReferencePetId }) => {
   }
 
   return(
-    <div className='w-full border-green-700 border-2 flex justify-center items-center relative' onClick={toggleDropdownVisibility}>
-      {name ? `${name}'s Activity`:''}
+    <div className='w-full flex justify-center items-center relative text-black' onClick={toggleDropdownVisibility}>
+      <div className='border-4 border-accent p-2 text-2xl rounded-lg'>{name ? `${name}'s Activity`:''}</div>
       <DropdownMenu petIdArray={petIdArray} visible={visible} setVisible={setVisible} referencePetId={referencePetId} setReferencePetId={setReferencePetId} />
     </div>
       

@@ -12,7 +12,12 @@ module.exports = {
           '33':'33%'
         },
         colors: {
-          'accent-blue': '#40e0d0'
+          'accent': '#77B5FE',
+          'secondary':'#DCC6E0',
+          'primary':'#F0E6D6'
+        },
+        fontFamily: {
+          'Borel': [ 'Borel','cursive' ]
         }
       }
     },

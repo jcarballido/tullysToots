@@ -13,7 +13,10 @@ const InvitationActionButtons = ({ invitationId,setActiveInvites }) => {
       const response = await axiosPrivate.post('/account/acceptInvitation', { invitationId } )
       console.log('Response data: ', response.data)
       const result = response.data
-      setActiveInvites([...result])   
+      setActiveInvites( prevActiveInvites => {
+        const newArray = prevActiveInvites.filter( invite => invite.invitationId != result.invitationId )
+        return newArray
+      })   
     } catch (error) {
       return console.log('Error with request to add new pets:', error)
     } 

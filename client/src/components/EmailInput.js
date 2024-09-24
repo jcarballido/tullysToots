@@ -37,9 +37,9 @@ function EmailInput({ setInvalidField }) {
   }, [isFocusedOn,value,validEmail])
 
   return(
-    <label htmlFor='email' className='flex flex-col mb-2 min-h-[44px]'>
+    <label htmlFor='email' className='flex flex-col mb-2'>
         Email:
-        <input id='email' name='email' type='text' onFocus={ handleFocus } onBlur={ handleBlur } onChange={handleInputChange} className={`w-full text-black border-none outline-none ring-2 ring-gray-300 ${ inputError ? 'ring-red-700':'focus:ring-accent-blue'}`} value={value} />  
+        <input id='email' name='email' type='text' onFocus={ handleFocus } onBlur={ handleBlur } onChange={handleInputChange} className={`w-full text-black border-none outline-none ring-2 ring-gray-300 rounded-lg h-[40px] ${ inputError ? 'ring-red-700':'focus:ring-accent-blue'}`} value={value} />  
         <div className={`${ inputError ? 'visible':'invisible'} italic text-gray-500`}>Invalid email format</div>
     </label>
   )

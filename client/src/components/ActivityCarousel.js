@@ -5,6 +5,8 @@ import getDateCharacteristics from '../util/getDateCharacteristics.js';
 import useAxiosPrivate from '../hooks/useAxiosPrivate.js';
 import TimeModal from './TimeModal.js';
 import ConfirmationModal from './ConfirmationModal.js'
+import leftArrow from '../media/left_arrow.svg' 
+import rightArrow from '../media/right_arrow.svg' 
 
 const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity }) => {
 
@@ -137,17 +139,13 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   }
 
   return (
-    <div className="w-full flex items-center justify-center relative">
+    <div className="w-11/12 flex items-start justify-center relative overflow-x-hidden rounded-xl">
       <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
       <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/> 
-      <button onClick={prevCard} className="px-0 py-2 bg-blue-500 text-white absolute bottom-4 left-4 z-10">
-        Previous
-      </button>
-      <button disabled={today} onClick={nextCard} className={`px-0 py-2 bg-blue-500 text-white absolute bottom-4 right-4 z-10 disabled:bg-red-500`} >
-        Next
-      </button>
+      <img onClick={prevCard} className="absolute top-4 left-4 z-10 w-[48px]" src={leftArrow} />
+      <img disabled={today} onClick={nextCard} className={`w-[48px] absolute top-4 right-4 z-10 disabled:bg-red-500`} src={rightArrow} />
       <div
-        className="flex w-screen transition-transform duration-300 ease-in-out"
+        className="flex w-screen transition-transform duration-300 ease-in-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)`}}
       >
         {
@@ -156,7 +154,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
             return (
               <div
                 key={dateString}
-                className={`shrink-0 w-full min-h-48 border-[10px] border-yellow-400 text-black text-[24px] px-4`}
+                className={`shrink-0 w-full text-black text-[24px] px-4`}
               >
                 <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity}/>
               </div>

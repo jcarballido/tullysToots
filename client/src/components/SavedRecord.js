@@ -13,11 +13,18 @@ const SavedRecord = ({ record }) => {
   const time = `${paddedHourString}:${paddedMinutesString} ${meridianString}`
 
   return (
-    <div className='w-full border-[2px] border-pink-700 flex items-start'>
-      <Checkbox id={record.id} checked={record.pee} activity='pee' disabled={true}/>
-      <Checkbox id={record.id} checked={record.poo} activity='poo' disabled={true}/>
-      <div>@</div>
-      <div>{time}</div>
+    <div className='flex flex-col justify-start items-center w-10/12'>
+      <div className='w-full flex justify-between items-center '>
+        <Checkbox id={record.id} checked={record.pee} activity='pee' disabled={true}/>
+        <Checkbox id={record.id} checked={record.poo} activity='poo' disabled={true}/>
+        <div className='flex justify-between items-center min-w-[125px] gap-2'>
+          <div className='flex justify-center items-center'>@</div>
+          <div className='flex justify-center items-center'>{time}</div>
+        </div>  
+      </div>
+      <div className='flex justify-start items-center w-full italic text-gray-700 text-sm'>
+        Entered by: {record.set_by}
+      </div>
     </div>
   )
 }

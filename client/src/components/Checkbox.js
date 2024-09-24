@@ -1,4 +1,6 @@
 import React from "react"
+import Drip from '../media/drops.svg'
+import Poo from '../media/poo.svg'
 
 const Checkbox =({id, setNewActivity, checked, activity, disabled, setEditableActivityMap, newRecord}) => {
   
@@ -31,13 +33,14 @@ const Checkbox =({id, setNewActivity, checked, activity, disabled, setEditableAc
   }
 
   return(
-    <label className=' border-2 border-solid border-gray-700 w-full relative'>
+    <label className='w-max relative flex items-center justify-center'>
       {
         disabled 
         ? <input type='checkbox' name={activity} checked={checked} className='appearance-none peer absolute invisible' disabled />
         : <input type='checkbox' name={activity} checked={checked} className='appearance-none peer absolute invisible' onChange={handleCheck} />
       }
-      <div className='peer-checked:opacity-100 peer-checked:border-green-700  border-2 border-red-700' >{activity.toUpperCase()}</div>
+      {/* <div className='peer-checked:opacity-100 peer-checked:border-green-700  border-2 border-red-700' >{activity.toUpperCase()}</div> */}
+      <img className='w-[48px] opacity-25 peer-checked:opacity-100' src={activity == 'poo'? Poo:Drip}/>
     </label>
   )
 }

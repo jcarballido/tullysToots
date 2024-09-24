@@ -2,26 +2,14 @@ import React, { useState, useEffect } from 'react'
 import Checkbox from './Checkbox'
 import timestampParser from '../util/timestampParser'
 import getTimeCharacteristics from '../util/getTimeCharacteristics'
+import deleteIcon from '../media/delete.svg'
 
 const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableActivityMap, dateString}) => {
 
   const [ time, setTime ] = useState('')
   
   useEffect( () => {
-    // console.log('Editable record, set on at: ',record.set_on_at)
-    // console.log('Editable record, set on at typeof: ', typeof(record.set_on_at))
-    // const timezoneRemoval =/(?<= \d{2}:\d{2}:\d{2}).*/
-    // const timestampStringified = `${record.set_on_at}`
-    // console.log('timestampStringified: ',timestampStringified)
-    // const strippedTimezone = timestampStringified.replace(timezoneRemoval,'')
-    // console.log('**EditableRecord** stripped time: ', strippedTimezone)
-    // const dateOb = new Date(strippedTimezone)
-    // console.log('dateOb in locale string: ', dateOb.toLocaleString())
-    // const { convertedHour, convertedMinutes, meridian } = timestampParser(dateOb.toLocaleString())
-    // console.log('Editable record, convertedHour: ',convertedHour)
-
-    const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.timestamp_received, record.timestamp_utc_offset)
-
+    const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.set_on_at)
     setTime(`${paddedHourString}:${paddedMinutesString} ${meridianString}`)
   },[record])
 
@@ -31,7 +19,7 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
         visible:true,
         new:false,
         recordId:record.activity_id,
-        time:{ timestampUTC: record.timestamp_received, timezoneOffset:record.timestamp_utc_offset } ,
+        time:{ timestampUTC: record.set_on_at } ,
         dateString
       }
     })
@@ -50,15 +38,15 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
   }
 
   return (
-    <div className='w-full border-[2px] border-blue-700 flex items-start'>
-      <Checkbox id={record.activity_id} checked={record.pee} activity='pee' setEditableActivityMap={setEditableActivityMap} />
-      <Checkbox id={record.activity_id} checked={record.poo} activity='poo' setEditableActivityMap={setEditableActivityMap} />
-      {/* <input type='time' value={time} className='invisible absolute' disabled /> */}
-      <div>@</div>
-      <div onClick={() => openTimeModal()} >{time}</div>
-      <button onClick={ (e) => openConfirmationModal(e, record.activity_id) }> 
-        DELETE
-      </button>
+    <div className='w-full border-[2px] border-accent flex items-start justify-between p-2 rounded-lg'>
+      <div className='flex justify-evenly items-center basis-2/3'>
+        <Checkbox id={record.activity_id} checked={record.pee} activity='pee' setEditableActivityMap={setEditableActivityMap} />
+        <Checkbox id={record.activity_id} checked={record.poo} activity='poo' setEditableActivityMap={setEditableActivityMap} />
+        {/* <input type='time' value={time} className='invisible absolute' disabled /> */}
+        <div>@</div>
+        <div onClick={() => openTimeModal()} >{time}</div>
+      </div>
+      <img className='w-[48px]' onClick={ (e) => openConfirmationModal(e, record.activity_id) } src={deleteIcon} /> 
     </div>
   )
 }

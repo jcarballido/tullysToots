@@ -12,6 +12,7 @@ function Invite({ }) {
   const [ toast, setToast ] = useState({ visible:false,result:null,message:'' })
   const [ selectedPets, setSelectedPets ] = useState([])
   const [ petsList, setPetsList ] = useState([])
+  const [ singlePetChecked, setSinglePetChecked ] = useState(true)
 
   useEffect(() => {
     const getPets = async () => {
@@ -29,7 +30,14 @@ function Invite({ }) {
 
   },[])
 
+  useEffect(() => {
+    if(petsList && petsList.length == 1){
+      setSelectedPets([petsList[0].pet_id])
+    }
+  },[petsList])
+
   const handleInvite = async () => {
+    console.log('Selected pets:',selectedPets)
     try{
       const result = await axiosPrivate.post('/account/sendInvite',{email: emailInviteeInput.value,petsToShareArray: selectedPets})
       
@@ -46,6 +54,7 @@ function Invite({ }) {
     console.log(`${e.target.id} was clicked`)
     const target = e.target
     const petId = target.id
+    console.log("Pet ID: ", petId)
     if(selectedPets.includes(petId)) return setSelectedPets(previousArray => {
       const newArray = previousArray.filter( petIdElement => petIdElement != petId )
       return newArray
@@ -53,7 +62,7 @@ function Invite({ }) {
     else return setSelectedPets( previousArray => [...previousArray, petId])
   }
 
-  const handleSubmissioCheck = () => {
+  const handleSubmissionCheck = () => {
     setChecked(!checked)
   }
 
@@ -83,7 +92,7 @@ function Invite({ }) {
                   )})
                 : <div>
                     {petsList[0].pet_name}
-                    <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked='true' onChange={ e => handleCheck(e)} />          
+                    <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
                   </div>
             }
             <input type='email' className='text-black' {...emailInviteeInput} />
@@ -92,7 +101,7 @@ function Invite({ }) {
             </div>
             <div>
               Check this box to accept the statement above and allow submission.
-              <input type='checkbox' checked={checked} value='submitApproved' onChange={handleSubmissioCheck} />
+              <input type='checkbox' checked={checked} value='submitApproved' onChange={handleSubmissionCheck} />
             </div>
             <button disabled={!checked || petsList?.length == 0} onClick={handleInvite}>SUBMIT</button>
           </div>

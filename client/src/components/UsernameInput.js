@@ -20,9 +20,9 @@ function UsernameInput({setInvalidField }) {
   },[value])
 
   return(
-    <label htmlFor='username' className='flex flex-col mb-2 min-h-[44px]'>
+    <label htmlFor='username' className='flex flex-col mb-2'>
       Username:
-      <input id='username' name='username' type='text' onChange={handleInputChange} className={`w-full text-black border-none outline-none ring-2 ring-gray-300 ${ exceedsCharLimit ? 'focus:ring-red-700':'focus:ring-accent-blue'}`} value={value} />
+      <input id='username' name='username' type='text' onChange={handleInputChange} className={`w-full h-[40px] rounded-lg text-black border-none outline-none ring-2 ring-gray-300 ${ exceedsCharLimit ? 'focus:ring-red-700':'focus:ring-accent-blue'}`} value={value} />
       <div className={`${ exceedsCharLimit ? 'visible':'invisible'} italic text-gray-500`}>Username is too long</div>
     </label>
   )

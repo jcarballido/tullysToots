@@ -295,7 +295,7 @@ const deleteActivityByIdText = `
 `
 
 const addInvitationToken = `
-  INSERT INTO invitations (sender_owner_id, email, invitation_token)
+  INSERT INTO invitations (from_owner_id, recipient_email, invitation_token)
   VALUES ($1, $2,$3)
 `
 

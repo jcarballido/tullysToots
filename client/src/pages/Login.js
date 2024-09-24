@@ -70,16 +70,14 @@ const Login = () => {
     <CredentialsModal>
       <div className="flex justify-center items-center my-4">LOGIN</div>
       <LoginForm error={ error } setError={ setError } invitationToken={ invitationToken } />
-      <div className="flex justify-center items-center my-4">
-        <div className="flex justify-center items-center mr-1">
+      <button className="min-w-[48px] min-h-[40px] flex flex-col justify-center items-center my-4">
+        <div className="flex justify-center items-center">
           New to Tully's Toots?
         </div>
-        <button className="min-w-[44px] min-h-[44px]">
-          <Link to={invitationToken? `/signup?invite=${invitationToken}`:'signup'} className="flex justify-center items-center pl-1">
-            Create an account
-          </Link>
-        </button>
-      </div>
+        <Link to={invitationToken? `/signup?invite=${invitationToken}`:'signup'} className="flex justify-center items-center pl-1">
+          Create an account
+        </Link>
+      </button>
       <div className="flex justify-center items-center my-4">
         <button className="min-w-[44px] min-h-[44px]">
           <Link to='/forgotPassword' className="flex justify-center items-center pl-1">

@@ -9,6 +9,11 @@ import SavedRecord from './SavedRecord'
 import EditableRecord from './EditableRecord'
 import getDateCharacteristics from '../util/getDateCharacteristics'
 import getTimeCharacteristics from '../util/getTimeCharacteristics'
+import add from '../media/add.svg'
+import edit from '../media/edit.svg'
+import confirm from '../media/confirm.svg'
+import cancel from '../media/cancel.svg'
+
 
 function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity }) {
   // console.log(`${dateString} activityArray: `, activityArray)
@@ -216,50 +221,50 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   }
 
   return(
-    <div className='bg-red-600 h-full w-full flex flex-col items-center relative'>
+    <div className='w-full flex flex-col items-center relative h-full gap-12'>
       {/* <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/> */}
       {/* <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/> */}
       <DateComponent dateString={dateString} />
-      { updateEnabled 
-          ? editableRecords.map( record => {
-            console.log('*Activity Card* record: ',record)
-              return (
-                <div key={record.activity_id} className='max-w-max border-red-700 border-6 flex items-center justify-center bg-gray-300'>
-                  <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>
-                </div>
-              )
-          })
-          : savedRecords?.map( record => {
-              // console.log(`Record in ${dateString}: `, record)
-              return (
-                <div key={record.activity_id} className='max-w-max flex items-center justify-center'>
-                  <SavedRecord record={record} />
-                </div>
-              )
-          })
-      }
-      { newActivity.map( record => {
-        return (
-          <div key={record.newId} className='max-w-full border-4 border-yellow-700'>
-            <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} setEditableActivityMap={setEditableActivityMap} />
-          </div>
-        )
-      })}
-      <div className='flex justify-center items-center border-black border-2'>
-      { updateEnabled
-        ? <button onClick={(e) => sendUpdate(e)} className='border-2 border-white rounded-xl'>CONFIRM</button>
-        : <div className='flex justify-center items-center'>
-            <button onClick={addActivity} disabled={newActivity?.length > 0} className='border-2 border-white rounded-xl max-w-max disabled:bg-gray-700 disabled:text-white'>
-              ADD
-            </button>
-          </div>
-      }
-      { savedRecords.length > 0 
-        ? updateEnabled
-          ? <button onClick={disableUpdate} className='border-2 border-red-700 rounded-xl '>CANCEL</button>
-          : <button onClick={enableUpdate} className='border-2 border-green-700 rounded-xl'>UPDATE</button>
-        :null}  
+      <div className='w-full overflow-y-auto flex flex-col justify-start items-center gap-8 shadow-xl bg-primary rounded-xl'>
+        { updateEnabled 
+            ? editableRecords.map( record => {
+              console.log('*Activity Card* record: ',record)
+                return (
+                  <div key={record.activity_id} className='flex items-center justify-center bg-gray-300 w-full my-4 rounded-lg'>
+                    <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>
+                  </div>
+                )
+            })
+            : savedRecords?.map( record => {
+                // console.log(`Record in ${dateString}: `, record)
+                return (
+                  <div key={record.activity_id} className='w-full flex items-center justify-center py-4'>
+                    <SavedRecord record={record} />
+                  </div>
+                )
+            })
+        }
+        { newActivity.map( record => {
+          return (
+            <div key={record.newId} className='max-w-full '>
+              <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} setEditableActivityMap={setEditableActivityMap} />
+            </div>
+          )
+        })}
+
       </div>
+      <div className='flex justify-center gap-8 items-center w-9/12 mb-8'>
+          { updateEnabled
+            ? <img onClick={(e) => sendUpdate(e)} className='rounded-xl w-[48px] bg-accent stroke-[2px]' src={confirm}/>
+            : <img onClick={addActivity} disabled={newActivity?.length > 0} className='w-[48px] rounded-xl bg-accent' src={add} />
+          }
+          { savedRecords.length > 0 
+            ? updateEnabled
+              ? <img onClick={disableUpdate} className='rounded-xl w-[48px]' src={cancel} />
+              : <img onClick={enableUpdate} className='rounded-xl w-[48px]' src={edit} />
+            :null
+          }  
+        </div>
     </div>
   )
 }

@@ -87,29 +87,31 @@ const TimeModal = ({ timeModal, setTimeModal, setEditableActivityMap }) => {
     }   
   }
 
-  return(
-    <div className={`w-full h-full z-20 border-4 border-red-500 flex flex-col items-center justify-start absolute transform origin-center ${timeModal.visible ? 'bg-gray-700 scale-100':'scale-0'}`}>
-      <div className='w-3/4 h-3/4 flex items-center justify-center gap-2 text-black'>
-        <input type='text' value={hour} onChange={handleHourChange} className='w-1/4 border-2 border-blue-500' onBlur={handleHourBlur} onFocus={handleHourFocus} />
-        <input type='text'value={minutes} onChange={handleMinutesChange} className='w-1/4 border-2 border-blue-500' onBlur={handleMinuteBlur} onFocus={handleMinutesFocus} />
-        <label>
-          <input type='radio' name='test' onChange={handleChange} value='AM' checked={ meridian == 'AM' } />
-          AM
-          <input type='radio' name='test' onChange={handleChange} value='PM' checked={ meridian == 'PM'} />
-          PM
-        </label> 
-          
-      </div>   
-      <div className='flex justify-center items-center gap-4'>
-        <button onClick={(e) => handleTimeSet(e)} disabled={!timeSet} className={` bg-yellow-500 disabled:bg-red-700`}>
-          OK  
-        </button>
-        <div onClick={closeModal}>
-          CANCEL  
+  if(timeModal?.visible){
+    return(
+      <div className={`w-full h-full z-20 border-4 border-red-500 flex flex-col items-center justify-start absolute transform origin-center ${timeModal.visible ? 'bg-gray-700 scale-100':'scale-0'}`}>
+        <div className='w-3/4 h-3/4 flex items-center justify-center gap-2 text-black'>
+          <input type='text' value={hour} onChange={handleHourChange} className='w-1/4 border-2 border-blue-500' onBlur={handleHourBlur} onFocus={handleHourFocus} />
+          <input type='text'value={minutes} onChange={handleMinutesChange} className='w-1/4 border-2 border-blue-500' onBlur={handleMinuteBlur} onFocus={handleMinutesFocus} />
+          <label>
+            <input type='radio' name='test' onChange={handleChange} value='AM' checked={ meridian == 'AM' } />
+            AM
+            <input type='radio' name='test' onChange={handleChange} value='PM' checked={ meridian == 'PM'} />
+            PM
+          </label> 
+            
+        </div>   
+        <div className='flex justify-center items-center gap-4'>
+          <button onClick={(e) => handleTimeSet(e)} disabled={!timeSet} className={` bg-yellow-500 disabled:bg-red-700`}>
+            OK  
+          </button>
+          <div onClick={closeModal}>
+            CANCEL  
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }else {return null}
 }
 
 export default TimeModal
