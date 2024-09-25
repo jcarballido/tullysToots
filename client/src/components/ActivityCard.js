@@ -15,7 +15,7 @@ import confirm from '../media/confirm.svg'
 import cancel from '../media/cancel.svg'
 
 
-function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity }) {
+function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex }) {
   // console.log(`${dateString} activityArray: `, activityArray)
   //console.log('**ActivityCard Rendered** savedActivityMap: ',  savedActivityMap)
   const axiosPrivate = useAxiosPrivate()

@@ -62,6 +62,29 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     setToday(isToday)
   },[referenceDate])
 
+  useEffect(() => {
+    // THE GETMAPKEY FN REFERENCES THE OLD DATEMAP
+    console.log('referencePetId and current index: ',referencePetId, ' ', currentIndex)
+    if(referencePetId && currentIndex > 6 && dateMap){
+      const getMapKey = (map, key) => {
+        let index = 0
+        for (let k of map.keys()){
+          if(k == key) return index
+          index++
+        }
+        return -1
+      }
+      const newIndex = getMapKey(dateMap, referenceDate)
+      console.log('DateMap:', dateMap)
+      console.log('referenceDate: ', referenceDate)
+      console.log('newIndex:', newIndex)
+
+
+      if(newIndex == -1) setCurrentIndex(4)
+      else setCurrentIndex(newIndex)
+    }
+  }, [referencePetId])
+
 
   useEffect( () => {
     if(currentIndex == 0){
@@ -150,13 +173,12 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       >
         {
           activityArr.map(([dateString, activityArray]) => {
-            
             return (
               <div
                 key={dateString}
                 className={`shrink-0 w-full text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity}/>
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} />
               </div>
             )
           })

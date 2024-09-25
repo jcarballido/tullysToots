@@ -129,7 +129,7 @@ const Activity = () => {
       {
         referencePetId
         ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
-        : <button onClick={openAddPetModal}>Add a new pet!</button>
+        : <button onClick={openAddPetModal}>Add a ne w pet!</button>
       }
       <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } success={success} error={error}/>
     </main>
@@ -148,7 +148,6 @@ export const loader = () => {
 
   // Get exisiting reference pet ID from local storage or set to null
   const referencePetIdLocalStorage = localStorage.getItem('referencePetId') || null
-  console.log('Reference pet id in local storage type of: ', typeof(referencePetIdLocalStorage))
   const referencePetId = referencePetIdLocalStorage == 'undefined' || referencePetIdLocalStorage == 'null'  ? null : JSON.parse(referencePetIdLocalStorage)  
 
   return { referenceDate, referencePetId}
@@ -172,4 +171,3 @@ export const action = async({ request }) => {
     return {error}
   }
 }
-

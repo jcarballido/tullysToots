@@ -3,9 +3,7 @@ import { Form } from 'react-router-dom'
 import StatusMessage from './StatusMessage'
 
 const AddPetModal = ({ visible, setAddPetModal, success, error }) => {
-
-  console.log('AddPetModal visible prop:', visible)
-
+  
   const [ message, setMessage ] = useState({})
   const [ petNameInput, setPetNameInput ] = useState('')
   const [ dobInput,setDobInput ] = useState('')
