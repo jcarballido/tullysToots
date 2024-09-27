@@ -14,6 +14,7 @@ const DropdownMenu = ({ petIdArray, visible, setVisible, referencePetId, setRefe
   const updatePetReference = (e) => {
     e.preventDefault()
     setActiveSelection('')
+    console.log('activeSelection:', activeSelection)
     setReferencePetId(activeSelection)
   }
 

@@ -76,6 +76,10 @@ const Activity = () => {
         const { activityArray, petIdArray } = response.data 
         setActivity(activityArray)
         setPetIdArray(petIdArray)
+        const localStorageReferencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null
+        console.log('localStorageRefPetId:', localStorageReferencePetId)
+        console.log('referencePetId:', referencePetId)
+        if( localStorageReferencePetId != referencePetId) localStorage.setItem('referencePetId', JSON.stringify(referencePetId))  
         return 
       }catch(e){
         console.log('Error from attempting to get data with encoded parameters: ',e)
@@ -84,6 +88,7 @@ const Activity = () => {
     }
     if(referencePetId){
       getActivity()
+
     }
     return () => abortController.abort()
 

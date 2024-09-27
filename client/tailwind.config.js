@@ -17,7 +17,9 @@ module.exports = {
           'primary':'#F0E6D6'
         },
         fontFamily: {
-          'Borel': [ 'Borel','cursive' ]
+          'Borel': [ 'Borel','cursive' ],
+          'Fredoka': [ "Fredoka", "sans-serif" ],
+          'Lato': [ "Lato", "sans-serif"]
         }
       }
     },

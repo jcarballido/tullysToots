@@ -1,4 +1,4 @@
-import React, {  useEffect, useState } from 'react'
+import React, {  useEffect, useRef, useState } from 'react'
 import ActivityCard from './ActivityCard'
 // import timestampParser from '../util/timestampParser.js'
 import getDateCharacteristics from '../util/getDateCharacteristics.js';
@@ -15,6 +15,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   const [ today, setToday ] = useState(false)
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
+  const currentReferencePetId = useRef(null)
 
   const activityArr = Array.from(dateMap)
 
@@ -64,24 +65,27 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
 
   useEffect(() => {
     // THE GETMAPKEY FN REFERENCES THE OLD DATEMAP
-    console.log('referencePetId and current index: ',referencePetId, ' ', currentIndex)
-    if(referencePetId && currentIndex > 6 && dateMap){
-      const getMapKey = (map, key) => {
-        let index = 0
-        for (let k of map.keys()){
-          if(k == key) return index
-          index++
-        }
-        return -1
-      }
-      const newIndex = getMapKey(dateMap, referenceDate)
-      console.log('DateMap:', dateMap)
-      console.log('referenceDate: ', referenceDate)
-      console.log('newIndex:', newIndex)
+    // console.log('referencePetId and current index: ',referencePetId, ' ', currentIndex)
+    // if(referencePetId && currentIndex > 6 && dateMap){
+    //   const getMapKey = (map, key) => {
+    //     let index = 0
+    //     for (let k of map.keys()){
+    //       if(k == key) return index
+    //       index++
+    //     }
+    //     return -1
+    //   }
+    //   const newIndex = getMapKey(dateMap, referenceDate)
+    //   console.log('DateMap:', dateMap)
+    //   console.log('referenceDate: ', referenceDate)
+    //   console.log('newIndex:', newIndex)
 
 
-      if(newIndex == -1) setCurrentIndex(4)
-      else setCurrentIndex(newIndex)
+    //   if(newIndex == -1) setCurrentIndex(4)
+    //   else setCurrentIndex(newIndex)
+    // }
+    if(referencePetId && currentReferencePetId.current == null) {
+      currentReferencePetId.current = referencePetId
     }
   }, [referencePetId])
 
@@ -95,14 +99,23 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   }, [currentIndex])
 
   useEffect( () =>{
-    if(currentIndex == 0 || currentIndex == activityArr.length - 1){
+    if(currentReferencePetId == referencePetId && (currentIndex == 0 || currentIndex == activityArr.length - 1)){
       const mapKeys = dateMap.keys()
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
+    } 
+    if(currentReferencePetId.current != referencePetId){
+      const mapKeys = dateMap.keys()
+      const mapKeysArray = Array.from(mapKeys)
+      const index = mapKeysArray.indexOf(referenceDate)
+      if(index != -1) setCurrentIndex(index)
+      else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
+      currentReferencePetId.current = referencePetId
     }
-  },[ dateMap  ])
+    return 
+  },[ dateMap ])
 
   const nextCard = (e) => {
     e.preventDefault()
