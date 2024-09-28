@@ -11,7 +11,7 @@ import rightArrow from '../media/right_arrow.svg'
 const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity }) => {
 
   const axiosPrivate = useAxiosPrivate()
-  const [ currentIndex, setCurrentIndex ] = useState(4);
+  const [ currentIndex, setCurrentIndex ] = useState();
   const [ today, setToday ] = useState(false)
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
@@ -20,43 +20,52 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   const activityArr = Array.from(dateMap)
 
   const fetchAdditionalData = async(timeWindowObj) => {
-    console.log('*Carousel* timeWindow: ', timeWindowObj)
-    // const timeWindow = { 
-    //     daysBefore:3, 
-    //     daysAfter:0
-    //   }
-      const parameters = {
-        referencePetId:JSON.stringify(referencePetId), 
-        referenceDate, 
-        timeWindowObj
+
+    const parameters = {
+      referencePetId:JSON.stringify(referencePetId), 
+      referenceDate, 
+      timeWindowObj
+    }
+    const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
+    try{
+      const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
+      const newActivity = response.data.activityArray
+      // console.log('*Activity Carousel* newActivity: ', newActivity)
+      if(timeWindowObj.daysBefore){
+        // console.log('Prior history requested.')
+        setActivity( (prevActivity) => {
+          const rawActivity = structuredClone(prevActivity)
+          // console.log('raw activity before updates:', rawActivity)
+          rawActivity.unshift(...newActivity)
+          // console.log('raw activity after updates:', rawActivity)
+          // console.log('*Raw activity* : ', rawActivity)
+          return rawActivity
+        })
+      }else{
+        setActivity( (prevActivity) => {
+          const rawActivity = structuredClone(prevActivity)
+          rawActivity.push(...newActivity)
+          return rawActivity
+        })
       }
-      const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
-      try{
-        const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
-        const newActivity = response.data.activityArray
-        // console.log('*Activity Carousel* newActivity: ', newActivity)
-        if(timeWindowObj.daysBefore){
-            setActivity( (prevActivity) => {
-                const rawActivity = structuredClone(prevActivity)
-                rawActivity.unshift(...newActivity)
-              //   console.log('*Raw activity* : ', rawActivity)
-                return rawActivity
-            })
-            
-        }else{
-            setActivity( (prevActivity) => {
-                const rawActivity = structuredClone(prevActivity)
-                rawActivity.push(...newActivity)
-              //   console.log('*Raw activity* : ', rawActivity)
-                return rawActivity
-              })
-            
-        }
-        
-      }catch(e){
-        console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
-      }
+    }catch(e){
+      console.log('*Activity Card* Error caught trying to fetch more activity cards:', e)
+    }
   }
+
+  useEffect(() => {
+    console.log('Current index after initial render:', currentIndex)
+    if(currentIndex == null || undefined){
+      const mapKeys = dateMap.keys()
+      const mapKeysArray = Array.from(mapKeys)
+      const index = mapKeysArray.indexOf(referenceDate)
+      if(index != -1) setCurrentIndex(index)
+      else{
+        console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
+        setCurrentIndex(3)
+      }
+    }
+  }, [])
 
   useEffect( () => {
     const { isToday } = getDateCharacteristics(referenceDate)
@@ -64,26 +73,6 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   },[referenceDate])
 
   useEffect(() => {
-    // THE GETMAPKEY FN REFERENCES THE OLD DATEMAP
-    // console.log('referencePetId and current index: ',referencePetId, ' ', currentIndex)
-    // if(referencePetId && currentIndex > 6 && dateMap){
-    //   const getMapKey = (map, key) => {
-    //     let index = 0
-    //     for (let k of map.keys()){
-    //       if(k == key) return index
-    //       index++
-    //     }
-    //     return -1
-    //   }
-    //   const newIndex = getMapKey(dateMap, referenceDate)
-    //   console.log('DateMap:', dateMap)
-    //   console.log('referenceDate: ', referenceDate)
-    //   console.log('newIndex:', newIndex)
-
-
-    //   if(newIndex == -1) setCurrentIndex(4)
-    //   else setCurrentIndex(newIndex)
-    // }
     if(referencePetId && currentReferencePetId.current == null) {
       currentReferencePetId.current = referencePetId
     }
@@ -99,10 +88,14 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   }, [currentIndex])
 
   useEffect( () =>{
-    if(currentReferencePetId == referencePetId && (currentIndex == 0 || currentIndex == activityArr.length - 1)){
+    // console.log('Current index after dateMap changes:', currentIndex)
+    if(currentReferencePetId.current == referencePetId && (currentIndex == 0 || currentIndex == activityArr.length - 1)){
+      console.log('current ref matches pet ID in state' )
       const mapKeys = dateMap.keys()
+      console.log('mapKeys:', mapKeys)
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
+      console.log('index:', index)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
     } 
@@ -119,11 +112,16 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
 
   const nextCard = (e) => {
     e.preventDefault()
+    if(today) return
     setCurrentIndex((prevIndex) => prevIndex + 1);
     const entries = Array.from(dateMap.entries())
+    // console.log('Entries:', entries)
+
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex+1][0]
     setReferenceDate(activeReferenceDate)
+    // console.log('activeReferenceDate:', activeReferenceDate)
+
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
   };
 
@@ -131,8 +129,10 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     e.preventDefault()
     setCurrentIndex((prevIndex) => prevIndex - 1)
     const entries = Array.from(dateMap.entries())
+    // console.log('Entries:', entries)
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex-1][0]
+    // console.log('activeReferenceDate:', activeReferenceDate)
     setReferenceDate(activeReferenceDate)
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
   };
@@ -179,7 +179,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
       <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/> 
       <img onClick={prevCard} className="absolute top-4 left-4 z-10 w-[48px]" src={leftArrow} />
-      <img disabled={today} onClick={nextCard} className={`w-[48px] absolute top-4 right-4 z-10 disabled:bg-red-500`} src={rightArrow} />
+      <img onClick={nextCard} className={`w-[48px] absolute top-4 right-4 z-10 disabled:bg-red-500`} src={rightArrow} />
       <div
         className="flex w-screen transition-transform duration-300 ease-in-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)`}}

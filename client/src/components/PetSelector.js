@@ -31,7 +31,7 @@ const PetSelector = ({ petIdArray, referencePetId, setReferencePetId }) => {
     <div className='w-full flex justify-center items-center relative text-black font-Fredoka font-bold text-2xl' onClick={toggleDropdownVisibility}>
       <div className='flex gap-2 justify-center items-center'>
         <div className='rounded-lg underline decoration-accent decoration-4'>{name ? `${name}'s `:''}</div>
-        <div>Activity</div>
+        <div>Logs</div>
       </div>
       <DropdownMenu petIdArray={petIdArray} visible={visible} setVisible={setVisible} referencePetId={referencePetId} setReferencePetId={setReferencePetId} />
     </div>
