@@ -42,11 +42,13 @@ router.get("/get", async (req, res) => {
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
-  // console.log('Reference Pet id:', referencePetId)
+  console.log('Reference Pet id:')
+  console.log(referencePetId)
   // console.log('Type of reference pet id:', typeof(referencePetId))
-  // const petIdString = referencePetId.replace(/^"|"$/g, '');
-  const petId = parseInt(referencePetId)
-  // console.log('Pet id received from request: ', petId)
+  const petIdString = referencePetId.replace(/^"|"$/g, '');
+
+  const petId = parseInt(petIdString)
+  console.log('Pet id received from request: ', petId)
   if(!petId){
     console.log('No pet id found')
     try{

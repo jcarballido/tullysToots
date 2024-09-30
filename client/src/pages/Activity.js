@@ -31,8 +31,27 @@ const Activity = () => {
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
   const [ petIdArray, setPetIdArray ] = useState([])
-  const [ addPetModal, setAddPetModal ] = useState({ visible: false })
+  const [ addPetModal, setAddPetModal ] = useState({ visible: true })
   const [ pendingInvitations, setPendingInvitations ] = useState(false)
+  const [ switchPetModal, setSwitchPetModal ] = useState({visible:true})
+  const [ name, setName ] = useState('')
+
+  useEffect( () => {
+    // const activePetId = localStorage.getItem('referencePetId')
+    // const petIdString = activePetId? activePetId.replace(/^"|"$/g, ''):null
+    // const petId = petIdString? parseInt(petIdString):null
+    // console.log('petIdArray: ',petIdArray)
+    if(referencePetId && petIdArray){
+      const activePetRecord = petIdArray.filter( petRecord => {
+        return petRecord.id == referencePetId
+      })
+      // console.log('activePetRecord: ',activePetRecord)
+      const activePetName = activePetRecord[0]
+      // console.log('Active pet name: ', activePetName)
+      if(activePetName) setName(activePetName['petName'])
+      // setName(activePetName)
+    }
+  },[ referencePetId, petIdArray ])
 
   useEffect( () => {
     const abortController = new AbortController()
@@ -127,15 +146,24 @@ const Activity = () => {
     setAddPetModal({ visible: true })
   }
 
+  const openPetSelectorModal = (e) => {
+    e.preventDefault()
+    setSwitchPetModal({visible:true})
+  }
+
   return(
     <main className='w-full grow flex flex-col justify-start items-center overflow-y-auto gap-8 mt-4'>
       {pendingInvitations ? <button  onClick={( ) => navigate('/acceptInvite')} >You have pending invites!</button>:null}
-      <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } />
+      <div className='flex gap-2 justify-center items-center font-bold text-black font-Fredoka text-2xl' onClick={openPetSelectorModal}>
+        <div className='rounded-lg underline decoration-accent decoration-4'>{name ? `${name}'s `:''}</div>
+        <div>Logs</div>
+      </div>
       {
         referencePetId
         ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} />
-        : <button onClick={openAddPetModal}>Add a ne w pet!</button>
+        : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
+      <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } switchPetModal={switchPetModal} setSwitchPetModal={setSwitchPetModal} setAddPetModal={setAddPetModal} addPetModal={addPetModal}/>
       <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } success={success} error={error}/>
     </main>
   )

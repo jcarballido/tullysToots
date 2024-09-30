@@ -1,44 +1,66 @@
 import React, { useState } from "react"
+import check from '../media/check.svg'
+import cancel from '../media/cancel.svg'
 
-const DropdownMenu = ({ petIdArray, visible, setVisible, referencePetId, setReferencePetId }) => {
+const DropdownMenu = ({ petIdArray, visible, setSwitchPetModal, referencePetId, setReferencePetId, addPetModal, setAddPetModal }) => {
 
-  const [ activeSelection, setActiveSelection ] = useState('')
+  const [ activeSelection, setActiveSelection ] = useState(null)
+  console.log('Active selection:',activeSelection)
 
-  const selectPet = (event, petId, activeSelection) => {
-    event.preventDefault()
-    event.stopPropagation()
-    if(activeSelection == petId) setActiveSelection('')
-    else setActiveSelection(petId)
+  const selectPet = (event) => {
+    console.log('Pet selected:', event.target.value)
+    event.stopPropagation() 
+    setActiveSelection(activeSelection == event.target.value ? null:event.target.value)
   }
   
   const updatePetReference = (e) => {
     e.preventDefault()
-    setActiveSelection('')
+    setActiveSelection(null)
+    setSwitchPetModal({visible:false})
     console.log('activeSelection:', activeSelection)
     setReferencePetId(activeSelection)
   }
 
   const closeMenu = (e) => {
     e.preventDefault()
-    setVisible(false)
-    setActiveSelection('')
+    setSwitchPetModal({visible:false})
+    setActiveSelection(null)
+  }
+
+  const openAddPetModal = () => {
+    setAddPetModal({ visible:true })
   }
 
   return(
-    <div className={`border-white border-4 bg-blue-600 flex flex-col items-center justify-center transform transition duration-100 ease-in-out ${visible ? 'scale-x-100 scale-y-100':'scale-x-0 scale-y-0'} absolute top-full z-10`}>
+    <div className={`border-primary border-4 bg-secondary flex flex-col gap-4 rounded-2xl items-center justify-center transform transition duration-1000 ease-in-out ${visible ? 'scale-100 ':'scale-0'} mt-16 w-3/4 z-10 p-8`}>
+      <div className="font-bold mb-4">
+        Switch Pets?
+      </div>
       {
-        petIdArray
-        ? petIdArray.map( pet => {
+        petIdArray?.map( pet => {
           if(pet.id == referencePetId) return null
           return(
-            <button key={pet.id} onClick={(e) => selectPet(e,pet.id,activeSelection)} disabled={ activeSelection != pet.id && activeSelection} className={`flex justify-center items-center transform transition ease-in ${visible? 'opaque-100 duration-1000':'opaque-0 duration-0'} disabled:bg-gray-100 disabled:text-black`}>
-              {pet.petName}
-            </button>
+            <label key={pet.id} htmlFor={`${pet.id}`} className="flex justify-center items-center">
+              <input type='radio' name='pets' value={pet.id} id={`${pet.id}`} onChange={(e)=> selectPet(e) } checked={activeSelection == pet.id} className={`appearance-none peer invisible`} />
+              <div className=" h-[48px] border-2 border-accent rounded-2xl bg-primary peer-checked:bg-accent flex justiy-center items-center px-4">{pet.petName}</div>
+            </label>
           )})
-        : null 
       }
-      <button onClick={updatePetReference} disabled={ !activeSelection } className='border-2 border-green-700 disabled:bg-gray-100 disabled:text-white'>CONFIRM</button>
-      <button onClick={closeMenu} className='border-2 border-red-700'>CANCEL</button>
+      <div className="flex min-w-max flex-col gap-6 mt-4">
+        <div className="flex justify-center items-center w-full bg-primary rounded-2xl" onClick={openAddPetModal}>
+          Add a pet
+        </div>
+        <div className="flex gap-6 justify-center items-center w-full">
+          <div className="flex flex-col">
+            <img onClick={updatePetReference} disabled={ !activeSelection } className='disabled:bg-gray-100 disabled:text-black h-[48px]' src={ check }/>
+            <div className="flex justify-center items-center font-xs italic">Confirm</div>
+          </div>
+          <div className="flex flex-col">
+            <img onClick={closeMenu} className=' h-[48px]' src={cancel}/>
+            <div className="flex justify-center items-center font-xs italic">Cancel</div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import DropdownMenu from './DropdownMenu.js'
 
-const PetSelector = ({ petIdArray, referencePetId, setReferencePetId }) => {
+const PetSelector = ({ petIdArray, referencePetId, setReferencePetId, switchPetModal, setSwitchPetModal,addPetModal, setAddPetModal }) => {
   const [ name, setName ] = useState('')
-  const [ visible, setVisible ] = useState(false)
 
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
@@ -24,16 +23,14 @@ const PetSelector = ({ petIdArray, referencePetId, setReferencePetId }) => {
 
   const toggleDropdownVisibility = (e) => {
     e.preventDefault()
-    setVisible(!visible)
+    setSwitchPetModal({visible:false})
   }
 
+  if(switchPetModal.visible == false) return null
+
   return(
-    <div className='w-full flex justify-center items-center relative text-black font-Fredoka font-bold text-2xl' onClick={toggleDropdownVisibility}>
-      <div className='flex gap-2 justify-center items-center'>
-        <div className='rounded-lg underline decoration-accent decoration-4'>{name ? `${name}'s `:''}</div>
-        <div>Logs</div>
-      </div>
-      <DropdownMenu petIdArray={petIdArray} visible={visible} setVisible={setVisible} referencePetId={referencePetId} setReferencePetId={setReferencePetId} />
+    <div className={`absolute inset-0 flex justify-center items-start text-black font-Fredoka text-2xl z-30 backdrop-grayscale backdrop-blur-sm`}>
+      <DropdownMenu petIdArray={petIdArray} visible={switchPetModal.visible} setSwitchPetModal={setSwitchPetModal} referencePetId={referencePetId} setReferencePetId={setReferencePetId} addPetModal={addPetModal} setAddPetModal={setAddPetModal}/>
     </div>
       
     

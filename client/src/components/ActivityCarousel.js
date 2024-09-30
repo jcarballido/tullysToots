@@ -100,9 +100,12 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
     } 
     if(currentReferencePetId.current != referencePetId){
+      console.log("pet change!")
+      console.log('dateMap:', dateMap)
       const mapKeys = dateMap.keys()
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
+      console.log('index:', index)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
       currentReferencePetId.current = referencePetId
@@ -115,12 +118,12 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     if(today) return
     setCurrentIndex((prevIndex) => prevIndex + 1);
     const entries = Array.from(dateMap.entries())
-    // console.log('Entries:', entries)
+    console.log('Entries:', entries)
 
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex+1][0]
     setReferenceDate(activeReferenceDate)
-    // console.log('activeReferenceDate:', activeReferenceDate)
+    console.log('activeReferenceDate:', activeReferenceDate)
 
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
   };
