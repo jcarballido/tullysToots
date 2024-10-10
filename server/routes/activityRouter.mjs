@@ -44,10 +44,14 @@ router.get("/get", async (req, res) => {
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
   console.log('Reference Pet id:')
   console.log(referencePetId)
-  // console.log('Type of reference pet id:', typeof(referencePetId))
-  const petIdString = referencePetId.replace(/^"|"$/g, '');
+  let petId
+  if(typeof(referencePetId) == 'number') petId = referencePetId
+  if(typeof(referencePetId) == 'string') {
+    const petIdString = referencePetId.replace(/^"|"$/g, '');
+    petId = parseInt(petIdString)
+  }
+    // console.log('Type of reference pet id:', typeof(referencePetId))
 
-  const petId = parseInt(petIdString)
   console.log('Pet id received from request: ', petId)
   if(!petId){
     console.log('No pet id found')

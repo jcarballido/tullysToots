@@ -23,11 +23,11 @@ const DashboardNavigation = () => {
   }
 
   return(
-    <div className='flex flex-col w-full'>
-      <Link to='/account' state={{ from: location.pathname }} className='w-full'>Account Info</Link>
-      <Link to='/pets' state={{ from: location.pathname }} className='w-full'>Pets</Link>
-      <Link to='/sendInvite' state={{ from: location.pathname }} className='w-full'> Share Pet Info </Link>
-      <button onClick={handleLogout} className='w-full'>LOGOUT</button>
+    <div className='flex flex-col w-full text-xl gap-2 pt-2'>
+      <Link to='/account' state={{ from: location.pathname }} className='w-full flex items-center h-[48px]'>Account Info</Link>
+      <Link to='/pets' state={{ from: location.pathname }} className='w-full flex items-center h-[48px]'>Pets</Link>
+      <Link to='/sendInvite' state={{ from: location.pathname }} className='w-full flex items-center h-[48px]'> Share Pet Info </Link>
+      <button onClick={handleLogout} className='w-full flex items-center mt-10'>Logout</button>
     </div>
   )
 }

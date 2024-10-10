@@ -58,14 +58,25 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     })
   }
 
+  // const deleteNewActivity = (e, key) => {
+  //   e.preventDefault()
+  //   setNewActivity( prevNewActivity => {
+  //     const updatedNewActivityArray = prevNewActivity.filter( newRecord => {
+  //       return newRecord.newId != key
+  //     })
+  //     return updatedNewActivityArray
+  //   })
+  // }
+
   const deleteNewActivity = (e, key) => {
     e.preventDefault()
-    setNewActivity( prevNewActivity => {
-      const updatedNewActivityArray = prevNewActivity.filter( newRecord => {
-        return newRecord.newId != key
-      })
-      return updatedNewActivityArray
-    })
+    setNewActivity([])
+    // setNewActivity( prevNewActivity => {
+    //   const updatedNewActivityArray = prevNewActivity.filter( newRecord => {
+    //     return newRecord.newId != key
+    //   })
+    //   return updatedNewActivityArray
+    // })
   }
 
   const sendNewActivity = async (e) => {
@@ -255,15 +266,40 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       </div>
       <div className='flex justify-center gap-8 items-center w-9/12 mb-8'>
           { updateEnabled
-            ? <img onClick={(e) => sendUpdate(e)} className='rounded-xl w-[48px] bg-accent stroke-[2px]' src={confirm}/>
-            : <img onClick={addActivity} disabled={newActivity?.length > 0} className='w-[48px] rounded-xl bg-accent' src={add} />
+              ? <img onClick={(e) => sendUpdate(e)} className='rounded-xl h-[48px] bg-accent' src={confirm}/>
+              : <div className='flex gap-1 justify-center items-center rounded-xl bg-accent px-2'>
+                <img onClick={addActivity} disabled={newActivity?.length > 0} className='h-[48px] flex items-center justify-center' src={add} />
+                <div className='flex w-full justify-center items-center font-bold'>Add</div>
+                </div>
+            
           }
           { savedRecords.length > 0 
             ? updateEnabled
               ? <img onClick={disableUpdate} className='rounded-xl w-[48px]' src={cancel} />
-              : <img onClick={enableUpdate} className='rounded-xl w-[48px]' src={edit} />
+              : <div className='flex gap-1 justify-center items-center rounded-xl bg-primary-light px-2'>
+                  <img onClick={enableUpdate} className='rounded-xl w-[48px]' src={edit} />
+                  <div className='flex w-full justify-center items-center'>Edit</div>
+                </div>
             :null
-          }  
+          } 
+          {
+            newActivity.length > 0
+            ? <div className='flex gap-1 justify-center items-center rounded-xl bg-primary-light px-2'>
+                <div>
+                  <img onClick={sendNewActivity} className='rounded-xl w-[48px]' src={edit} />
+                  <div>
+                    Save
+                  </div>
+                </div>
+                <div>
+                  <div onClick={deleteNewActivity} className='flex w-full justify-center items-center'>X</div>
+                  <div>
+                    Cancel
+                  </div>
+                </div>
+              </div>
+          :null
+          } 
         </div>
     </div>
   )

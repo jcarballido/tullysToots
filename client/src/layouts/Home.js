@@ -54,7 +54,7 @@ export const Home = () => {
   const { auth } = useAuth()
 
   return(
-    <div className='w-screen h-screen max-h-screen bg-secondary flex flex-col justify-start items-center relative overflow-x-hidden'>
+    <div className='w-screen h-screen max-h-screen bg-secondary flex flex-col justify-start items-center relative overflow-hidden'>
       <Banner slide={slide} setSlide={setSlide} auth={auth} />
       { auth?.accessToken
         ? <AccountNavigation slide={slide} setSlide={setSlide} />

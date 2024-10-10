@@ -31,12 +31,12 @@ const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, 
       {/* <input type='time' value={timeString} className='invisible absolute' disabled /> */}
       <div>@</div>
       <div onClick={changeTime}>{timeString}</div>
-      <button onClick={sendNewActivity}>
+      {/* <button onClick={sendNewActivity}>
         SAVE
       </button>
       <button onClick={(e) => deleteNewActivity(e,record.newId)} >
         CANCEL
-      </button>
+      </button> */}
     </div>
   )
 }

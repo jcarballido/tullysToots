@@ -14,7 +14,10 @@ module.exports = {
         colors: {
           'accent': '#77B5FE',
           'secondary':'#DCC6E0',
-          'primary':'#F0E6D6'
+          'secondary-dark':'#6B1F7B',
+          'secondary-light':'#e6d7e9',
+          'primary':'#F0E6D6',
+          'primary-light':'#f4ede2'
         },
         fontFamily: {
           'Borel': [ 'Borel','cursive' ],

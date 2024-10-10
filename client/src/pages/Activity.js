@@ -22,7 +22,7 @@ const Activity = () => {
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData() 
   const actionData = useActionData()
-  const { success, addedPetId, error } = actionData || {}
+  const { status, updatedPetIdArray } = actionData || {}
 
   const [ activity, setActivity ] = useState([])
   const [ dateMap, setDateMap ] = useState(new Map())
@@ -31,10 +31,11 @@ const Activity = () => {
   const [ referenceDate, setReferenceDate ] = useState(initialReferenceDate)
   const [ referencePetId, setReferencePetId ] = useState(initialPetId)
   const [ petIdArray, setPetIdArray ] = useState([])
-  const [ addPetModal, setAddPetModal ] = useState({ visible: true })
+  const [ addPetModal, setAddPetModal ] = useState({ visible: false })
   const [ pendingInvitations, setPendingInvitations ] = useState(false)
-  const [ switchPetModal, setSwitchPetModal ] = useState({visible:true})
+  const [ switchPetModal, setSwitchPetModal ] = useState({visible:false})
   const [ name, setName ] = useState('')
+  const [addPetError, setAddPetError] = useState(false)
 
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
@@ -138,8 +139,21 @@ const Activity = () => {
   },[activity])
 
   useEffect( () => {
-    if(addedPetId) setReferencePetId(addedPetId)
-  },[addedPetId])
+    if(actionData?.status == 'success'){
+      console.log('pet added!')
+      console.log(updatedPetIdArray)
+      setPetIdArray(actionData.updatedPetIdArray)
+      setAddPetModal({visible:false})
+    }
+    if(actionData?.status == 'error'){
+      console.log('Error adding pet')
+      setAddPetError(true)
+    }
+  },[ actionData ])
+
+  // useEffect( () => {
+  //   if(addedPetId) setReferencePetId(addedPetId)
+  // },[addedPetId])
 
   const openAddPetModal = (e) => {
     e.preventDefault()
@@ -154,9 +168,9 @@ const Activity = () => {
   return(
     <main className='w-full grow flex flex-col justify-start items-center overflow-y-auto gap-8 mt-4'>
       {pendingInvitations ? <button  onClick={( ) => navigate('/acceptInvite')} >You have pending invites!</button>:null}
-      <div className='flex gap-2 justify-center items-center font-bold text-black font-Fredoka text-2xl' onClick={openPetSelectorModal}>
-        <div className='rounded-lg underline decoration-accent decoration-4'>{name ? `${name}'s `:''}</div>
-        <div>Logs</div>
+      <div className='flex gap-2 justify-center items-center text-black font-Fredoka text-2xl bg-secondary-light rounded-2xl border-2 border-accent px-2' onClick={openPetSelectorModal}>
+        <div className='rounded-lg '>{name ? `${name}'s `:''}</div>
+        <div>Log</div>
       </div>
       {
         referencePetId
@@ -164,7 +178,7 @@ const Activity = () => {
         : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } switchPetModal={switchPetModal} setSwitchPetModal={setSwitchPetModal} setAddPetModal={setAddPetModal} addPetModal={addPetModal}/>
-      <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } success={success} error={error}/>
+      <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } error={addPetError} setAddPetError={setAddPetError} />
     </main>
   )
 }
@@ -196,11 +210,11 @@ export const action = async({ request }) => {
 
   try {
     const response = await axiosPrivate.post('/account/addPet', petInfo)
-    const { success, addedPetId } = response.data
-    return {success, addedPetId }
+    const { status, updatedPetIdArray } = response.data
+    return {status, updatedPetIdArray }
   } catch (err) {
-    console.log('Error attempting to add a pet: ', error)
-    const { error } = err.response.data
-    return {error}
+    console.log('Error attempting to add a pet: ', err)
+    const { status, message } = err.response.data
+    return { status, message }
   }
 }

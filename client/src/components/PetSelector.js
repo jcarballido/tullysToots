@@ -29,7 +29,7 @@ const PetSelector = ({ petIdArray, referencePetId, setReferencePetId, switchPetM
   if(switchPetModal.visible == false) return null
 
   return(
-    <div className={`absolute inset-0 flex justify-center items-start text-black font-Fredoka text-2xl z-30 backdrop-grayscale backdrop-blur-sm`}>
+    <div className={`absolute inset-0 flex flex-col justify-start items-center text-black font-Fredoka text-2xl z-30 backdrop-grayscale backdrop-blur-sm`}>
       <DropdownMenu petIdArray={petIdArray} visible={switchPetModal.visible} setSwitchPetModal={setSwitchPetModal} referencePetId={referencePetId} setReferencePetId={setReferencePetId} addPetModal={addPetModal} setAddPetModal={setAddPetModal}/>
     </div>
       

@@ -4,11 +4,9 @@ import '../tailwind.css';
 import Banner from '../components/Banner.js'
 import Footer from '../components/Footer.js'
 import useAuth from '../hooks/useAuth.js';
-// import { axiosPrivate } from '../api/axios.js';
+import returnSymbol from '../media/return.svg'
 
 export const Dashboard = () => {
-
-  console.log('Dashboard layout mounted')
   
   const [ previousLocation, setPreviousLocation ] = useState('')
   const [ slide, setSlide ] = useState(false)
@@ -16,10 +14,6 @@ export const Dashboard = () => {
   const { auth } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  // const previousLocation = location.state?.from
-  // console.log('Previous location: ', previousLocation)
-
-  // const previousPathSplit = previousLocation.split('/')
   
   const sendBack = (e) => {
     e.preventDefault()
@@ -27,33 +21,32 @@ export const Dashboard = () => {
   }
 
   useEffect( () => {
-    console.log('Current location: ', location)
     if(location?.state?.from){
-      console.log('Dashboard Layout/ useEffect ran and detected a location with state.from property: ', location.state.from)
       const previousLocationFilePath = location.state.from
       const previousLocationFilePathSplit = previousLocationFilePath.split('/')
       const previousPageName = previousLocationFilePathSplit[previousLocationFilePathSplit.length - 1] || null
       const previousPageNameCapitalized = previousPageName.charAt(0).toUpperCase() + previousPageName.slice(1)
       setPreviousLocation(previousPageNameCapitalized)
     }
-    // else{
-    //   console.log('Dashboard Layout/ useEffect ran and DID NOT detect a location with state.from property')
-    //   setPreviousLocation('Account')
-    // }
   },[location])
   
   return(
-    <div className='max-w-screen h-screen bg-violet-800 flex flex-col justify-start items-center text-white overflow-x-hidden border-4 border-blue-700 relative'>
+    <div className='w-screen h-screen max-h-screen bg-secondary flex flex-col justify-start items-center relative overflow-hidden'>
       <Banner auth={auth} slide={slide} setSlide={setSlide}/>
-      <div className='w-full grow flex flex-col items-center  bg-gray-500 border-black'>
+      <div className='w-full grow flex flex-col items-center border-black'>
         {
           previousLocation
-          ? <button className='w-full grow-0 flex items-center' onClick={sendBack}>{`<= ${previousLocation}`}</button>
+          ? <div className='flex w-full justify-start items-center gap-2' onClick={sendBack}>
+              <img className='flex items-center h-[48px]' src={returnSymbol}/>
+              <div className='flex justify-center items-center text-lg font-bold'>{previousLocation}</div>
+            </div>          
           : null  
         }
-        <div className='grow w-full flex flex-col items-center'>
-          <div className='flex items-center justify-center' >USERNAME</div>
-          <Outlet />
+        <div className='grow w-full flex flex-col items-center justify-center'>
+          <div className='w-11/12 grow border-2 border-black rounded-2xl mb-2 p-4'>
+            <div className='flex items-center justify-center text-xl font-bold' >USERNAME</div>
+            <Outlet />
+          </div>
         </div>
       </div>
       <Footer />

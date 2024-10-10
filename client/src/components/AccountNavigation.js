@@ -7,7 +7,6 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import Toast from './Toast'
 
 function AccountNavigation({ slide, setSlide }) {
-  const [ toast, setToast ] = useState({ visible:false,result:null,message:'' })
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -31,17 +30,18 @@ function AccountNavigation({ slide, setSlide }) {
       return
     }catch(e){
       console.log('Error sending logout request: ',e)
-      setToast({ visible:true, result:'x', message: e.message })
     }
-    
   }
 
   return (
-    <div className={`absolute h-full bg-amber-100 w-1/3 transition duration-150 ease-in left-full z-50 text-black ${slide ? '-translate-x-full':'translate-x-0'} flex flex-col items-start`} >
-      <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } />
-      <Link to='/dashboard' state={{from:location.pathname}}>DASHBOARD</Link>
-      <button onClick={handleLogout}>LOGOUT</button>
-      <button onClick={handleClose}>CLOSE</button>
+    <div className={`absolute h-full inset-0 z-50 transition transform duration-150 origin-bottom backdrop-grayscale backdrop-blur-sm ${slide ? 'scale-y-100':'scale-y-0' }`} onClick={handleClose}>
+      <div className={`absolute min-h-max bg-primary font-Lato min-w-full transition duration-150 ease-in top-full z-50 text-black ${slide ? '-translate-y-full':'translate-y-0'} flex flex-col items-center justify-center gap-6 text-2xl pb-4`} onClick={(e) => e.stopPropagation()} >
+        <button onClick={handleClose} className='w-full flex flex-col justify-end items-start pr-2'>
+          <div className='w-full flex justify-end items-center pr-2 pt-2'>X</div>
+        </button>
+        <Link to='/dashboard' state={{from:location.pathname}} className='px-4 h-[48px] font-bold flex justify-center items-center border-2 border-black  rounded-2xl'>Dashboard</Link>
+        <button onClick={handleLogout} className='px-4 h-[48px] flex justify-center items-center border-2 border-black rounded-2xl'>Logout</button>
+      </div>
     </div>
   )
 }

@@ -1336,16 +1336,24 @@ router.post('/addPet', async(req,res) => {
     req.petId = petId 
   } catch (error) {
     console.log('Error adding pet:' , error)
-    return res.status(400).json({ error: 'Conflicting pet profile.' })
+    return res.status(400).json({ status:'error', message: 'Conflicting pet profile.' })
   }
   
   try{
     await queries.addPetOwnerLink( req.petId,ownerId)
-    return res.status(200).json({ success:'Pet successfully added', addedPetId: req.petId })
+    // return res.status(200).json({ success:'Pet successfully added', addedPetId: req.petId })
   }catch(e){
     console.log('Error occured adding pet: ', e)
-    return res.status(400).json({error:'Server error linking pet and owner.'})
+    return res.status(400).json({status:'error', message:'Server error linking pet and owner.'})
   } 
+  
+  try{
+    const petIdArray = await queries.getOwnersPetIds( ownerId )
+    return res.status(200).json({status:'success', updatedPetIdArray: petIdArray})
+  } catch(e) {
+    return res.status(400).json({status:'error', message:'Error getting pets'})
+  }
+
 })
 
 // router.post('/test', (req,res) => {
