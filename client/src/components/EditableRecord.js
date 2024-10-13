@@ -38,15 +38,15 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
   }
 
   return (
-    <div className='w-full border-[2px] border-accent flex items-start justify-between p-2 rounded-lg'>
-      <div className='flex justify-evenly items-center basis-2/3'>
+    <div className='w-11/12 bg-primary-light flex items-start justify-between rounded-lg p-4 gap-2 shadow-md'>
+      <div className='flex justify-evenly items-center basis-2/3 gap-1'>
         <Checkbox id={record.activity_id} checked={record.pee} activity='pee' setEditableActivityMap={setEditableActivityMap} />
         <Checkbox id={record.activity_id} checked={record.poo} activity='poo' setEditableActivityMap={setEditableActivityMap} />
         {/* <input type='time' value={time} className='invisible absolute' disabled /> */}
         <div>@</div>
-        <div onClick={() => openTimeModal()} >{time}</div>
+        <div onClick={() => openTimeModal()} className='min-w-max'>{time}</div>
       </div>
-      <img className='w-[48px]' onClick={ (e) => openConfirmationModal(e, record.activity_id) } src={deleteIcon} /> 
+      <img className='h-[48px] bg-red-500 rounded-xl p-1' onClick={ (e) => openConfirmationModal(e, record.activity_id) } src={deleteIcon} /> 
     </div>
   )
 }

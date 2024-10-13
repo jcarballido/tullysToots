@@ -16,6 +16,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
   const currentReferencePetId = useRef(null)
+  const [ status, setStatus ] = useState({ viewing: true, adding: true, updating: true })
 
   const activityArr = Array.from(dateMap)
 
@@ -126,6 +127,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     console.log('activeReferenceDate:', activeReferenceDate)
 
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
+    setStatus({ viewing:true, adding:false, updating:false })
   };
 
   const prevCard = (e) => {
@@ -138,6 +140,8 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     // console.log('activeReferenceDate:', activeReferenceDate)
     setReferenceDate(activeReferenceDate)
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
+    setStatus({ viewing:true, adding:false, updating:false })
+
   };
 
   // const updateActivtyMap = (e, activityId) => {
@@ -188,13 +192,13 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
         style={{ transform: `translateX(-${currentIndex * 100}%)`}}
       >
         {
-          activityArr.map(([dateString, activityArray]) => {
+          activityArr.map(([dateString, activityArray], index) => {
             return (
               <div
                 key={dateString}
                 className={`shrink-0 w-full text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} />
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} current={currentIndex == index} status={status} setStatus={setStatus} />
               </div>
             )
           })

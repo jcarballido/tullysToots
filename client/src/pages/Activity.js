@@ -33,7 +33,7 @@ const Activity = () => {
   const [ petIdArray, setPetIdArray ] = useState([])
   const [ addPetModal, setAddPetModal ] = useState({ visible: false })
   const [ pendingInvitations, setPendingInvitations ] = useState(false)
-  const [ switchPetModal, setSwitchPetModal ] = useState({visible:false})
+  const [ switchPetModal, setSwitchPetModal ] = useState({visible:true})
   const [ name, setName ] = useState('')
   const [addPetError, setAddPetError] = useState(false)
 

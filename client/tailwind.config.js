@@ -17,7 +17,8 @@ module.exports = {
           'secondary-dark':'#6B1F7B',
           'secondary-light':'#e6d7e9',
           'primary':'#F0E6D6',
-          'primary-light':'#f4ede2'
+          'primary-dark':'#d8cfc0',
+          'primary-light':'#f6f0e6'
         },
         fontFamily: {
           'Borel': [ 'Borel','cursive' ],

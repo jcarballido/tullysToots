@@ -25,7 +25,7 @@ const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, 
   },[record])
 
   return (
-    <div className='w-full border-[2px] border-solid border-red-400 flex items-start'>
+    <div className='w-10/12 shadow-2xl bg-primary-dark flex items-center justify-between rounded-xl p-4'>
       <Checkbox newRecord={true} id={record.newId} setNewActivity={setNewActivity} checked={record.pee} activity='pee'/>
       <Checkbox newRecord={true} id={record.newId} setNewActivity={setNewActivity} checked={record.poo} activity='poo'/>
       {/* <input type='time' value={timeString} className='invisible absolute' disabled /> */}

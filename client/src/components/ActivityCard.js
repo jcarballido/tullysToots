@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import DateComponent from './Date'
 import NewRecord from './NewRecord'
 // import TimeModal from './TimeModal'
@@ -13,12 +13,16 @@ import add from '../media/add.svg'
 import edit from '../media/edit.svg'
 import confirm from '../media/confirm.svg'
 import cancel from '../media/cancel.svg'
+import ViewButtons from './ViewButtons'
+import AddingButtons from './AddingButtons'
+import UpdatingButtons from './UpdatingButtons'
 
 
-function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex }) {
+function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex, current, status, setStatus }) {
   // console.log(`${dateString} activityArray: `, activityArray)
   //console.log('**ActivityCard Rendered** savedActivityMap: ',  savedActivityMap)
   const axiosPrivate = useAxiosPrivate()
+  const containerRef = useRef(null)
   const [ savedRecords, setSavedRecords ] = useState([])
   const [ editableRecords, setEditableRecords ] = useState([])
 
@@ -34,12 +38,23 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     setSavedRecords(prevRecords => activityArray.map(id => savedActivityMap.get(id)))
     setEditableRecords(prevRecords => activityArray.map(id => editableActivityMap.get(id)))
     
-    setUpdateEnabled(false)
+    // setUpdateEnabled(false)
+    setStatus({viewing: true, adding: false, updating: false})
   },[activityArray])
 
   useEffect( () => {
     setEditableRecords(prevRecords => activityArray.map(id => editableActivityMap.get(id)))
   },[editableActivityMap])
+
+  useEffect( () => {
+    if(status?.viewing) setNewActivity([])
+  }, [ status ])
+
+  useEffect( () => {
+    if(newActivity?.length > 0){
+      containerRef.current.scrollTop = containerRef.current.scrollHeight
+    }
+  }, [newActivity] )
 
   // const { dayName,date, monthName, year, isToday, isYesterday, localTimezoneOffset } = getDateCharacteristics(dateString)
 
@@ -105,7 +120,6 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
         })
         return updatedActivityArray
       })
-      setNewActivity(prevNewActivity => [])
     }catch(e){
       console.log(e)
     }
@@ -231,17 +245,115 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   //   }
   }
 
+  const handleAdding = (e) => {
+    e.preventDefault()
+    setNewActivity( prevNewActivity => {
+      const result = getTimeCharacteristics(new Date().toUTCString())
+      console.log('Activity Card, result: ',result)
+      const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(new Date().toUTCString())
+      const { fullYear, monthIndex, date } = getDateCharacteristics(dateString)
+      // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
+      // console.log('ActivityCard, newTimestamp: ', timestampString)
+      // const newTimestamp = new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
+      // console.log('ActivityCard, newTimestamp: ', newTimestamp)
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false}]
+    })
+    setStatus({ viewing: false, adding:true, updating:false })
+  } 
+
+  const handleEditing = (e) => {
+    e.preventDefault()
+    setStatus({viewing:false, adding:false, updating:true})
+  }
+
+  const handleExit = (e) => {
+    e.preventDefault()
+    setStatus({viewing:true,adding:false,updating:false})
+  }
+
+  const handleConfirmingAdding = async(e) => {
+    e.preventDefault()
+    try{
+      const activity = {
+        pee:newActivity[0].pee,
+        poo:newActivity[0].poo
+      }
+      console.log('Activity being sent:', activity)
+      const newActivityTimestamp = `${newActivity[0].timestampReceived}`
+      const timezoneOffset = newActivity[0].timestampUTCOffset
+      const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp, activity})
+      // expecting: {'YYYY-MM-DD':[ {},{},... ]}
+      const referenceDateActivity = response.data[0]
+      // console.log('*RECORD** response.data: ',referenceDateActivity)
+      setActivity(prevActivity => {
+        const updatedActivityArray = prevActivity.map( dailyActivityLog => {
+          const dailyActivityDate = Object.keys(dailyActivityLog)[0]
+          const referenceDate = Object.keys(referenceDateActivity)[0]
+          if(dailyActivityDate == referenceDate){
+            return referenceDateActivity
+          }else{
+            return dailyActivityLog
+          }
+        })
+        return updatedActivityArray
+      })
+    }catch(e){
+      console.log(e)
+    }
+  }
+  
+  const handleConfirmingUpdating = async() => {
+    // console.log('** Activity Card ** savedRecords',savedRecords)
+    // console.log('** Activity Card ** editableRecords',editableRecords)
+    const updates = compareArrays(savedRecords, editableRecords)
+    // console.log(updates)
+    if(updates.length == 0) {
+      setEditableActivityMap( prevEditableActivityMap => {
+        const originalActivityMap = structuredClone(savedActivityMap)
+        return originalActivityMap
+      })
+      setStatus({viewing:true,adding:false,updating:false})
+      return
+    }else{
+      try{
+        console.log('**ActivityCard** updates: ', updates)
+        const response = await axiosPrivate.patch('/activity/update', {updatedActivity:updates, referencePetId, dateString})
+        const referenceDateActivity = response.data.getSingleDateActivityResult[0]
+        // console.log('*ACTIVITY CARD** response.data[0]: ',referenceDateActivity)
+        setActivity(prevActivity => {
+          const updatedActivityArray = prevActivity.map( dailyActivityLog => {
+            const dailyActivityDate = Object.keys(dailyActivityLog)[0]
+            const referenceDate = Object.keys(referenceDateActivity)[0]
+            if(dailyActivityDate == referenceDate){
+              //const activityAray = referenceDateActivity[0]
+
+              return referenceDateActivity
+            }else{
+              return dailyActivityLog
+            }
+          })
+          console.log('*ActivityCard** result from patch: ', referenceDateActivity)
+          console.log('*ActivityCard** updated array after attempting to update state : ', updatedActivityArray)
+          return updatedActivityArray
+        })
+      }catch(e){
+        console.log('**Activity Card** Error updating activity: ',e)
+        setStatus({viewing:true,adding:false,updating:false})
+      }
+    }
+  }
+
   return(
     <div className='w-full flex flex-col items-center relative h-full gap-12'>
       {/* <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/> */}
       {/* <ConfirmDeleteModal confirmationModalVisibility={confirmationModalVisibility} setConfirmationModalVisibility={setConfirmationModalVisibility} deleteExistingActivity={deleteExistingActivity}/> */}
       <DateComponent dateString={dateString} />
-      <div className='w-full overflow-y-auto flex flex-col justify-start items-center gap-8 shadow-xl bg-primary rounded-xl'>
-        { updateEnabled 
+      <div className='w-full overflow-y-auto flex flex-col justify-start items-center shadow-xl bg-primary rounded-xl' ref={containerRef}>
+        { status?.updating 
             ? editableRecords.map( record => {
               console.log('*Activity Card* record: ',record)
                 return (
-                  <div key={record.activity_id} className='flex items-center justify-center bg-gray-300 w-full my-4 rounded-lg'>
+                  <div key={record.activity_id} className='flex items-center justify-center w-full my-4 rounded-lg'>
                     <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>
                   </div>
                 )
@@ -257,7 +369,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
         }
         { newActivity.map( record => {
           return (
-            <div key={record.newId} className='max-w-full '>
+            <div key={record.newId} className='w-full flex items-center justify-center my-6'>
               <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} setEditableActivityMap={setEditableActivityMap} />
             </div>
           )
@@ -265,44 +377,54 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
 
       </div>
       <div className='flex justify-center gap-8 items-center w-9/12 mb-8'>
-          { updateEnabled
-              ? <img onClick={(e) => sendUpdate(e)} className='rounded-xl h-[48px] bg-accent' src={confirm}/>
-              : <div className='flex gap-1 justify-center items-center rounded-xl bg-accent px-2'>
-                <img onClick={addActivity} disabled={newActivity?.length > 0} className='h-[48px] flex items-center justify-center' src={add} />
-                <div className='flex w-full justify-center items-center font-bold'>Add</div>
-                </div>
-            
-          }
-          { savedRecords.length > 0 
-            ? updateEnabled
-              ? <img onClick={disableUpdate} className='rounded-xl w-[48px]' src={cancel} />
-              : <div className='flex gap-1 justify-center items-center rounded-xl bg-primary-light px-2'>
-                  <img onClick={enableUpdate} className='rounded-xl w-[48px]' src={edit} />
-                  <div className='flex w-full justify-center items-center'>Edit</div>
-                </div>
-            :null
-          } 
-          {
-            newActivity.length > 0
-            ? <div className='flex gap-1 justify-center items-center rounded-xl bg-primary-light px-2'>
-                <div>
-                  <img onClick={sendNewActivity} className='rounded-xl w-[48px]' src={edit} />
-                  <div>
-                    Save
-                  </div>
-                </div>
-                <div>
-                  <div onClick={deleteNewActivity} className='flex w-full justify-center items-center'>X</div>
-                  <div>
-                    Cancel
-                  </div>
-                </div>
-              </div>
-          :null
-          } 
-        </div>
+        {
+          current
+          ? status.viewing
+            ? <ViewButtons handleAdding={handleAdding} handleEditing={handleEditing} savedRecords={savedRecords} />
+            : status.adding
+              ? <AddingButtons handleConfirmAdding={handleConfirmingAdding} handleExit={handleExit}/> 
+              : <UpdatingButtons handleConfirmUpdating={handleConfirmingUpdating} handleExit={handleExit} />
+          : null
+        }
+      </div>
     </div>
   )
 }
 
 export default ActivityCard
+
+        {/* { updateEnabled
+            ? <img onClick={(e) => sendUpdate(e)} className='rounded-xl h-[48px] bg-accent' src={confirm}/>
+            : <div className='flex gap-1 justify-center items-center rounded-xl bg-accent px-2'>
+              <img onClick={addActivity} disabled={newActivity?.length > 0} className='h-[48px] flex items-center justify-center' src={add} />
+              <div className='flex w-full justify-center items-center font-bold'>Add</div>
+              </div>
+          
+        }
+        { savedRecords.length > 0 
+          ? updateEnabled
+            ? <img onClick={disableUpdate} className='rounded-xl w-[48px]' src={cancel} />
+            : <div className='flex gap-1 justify-center items-center rounded-xl bg-primary-light px-2'>
+                <img onClick={enableUpdate} className='rounded-xl w-[48px]' src={edit} />
+                <div className='flex w-full justify-center items-center'>Edit</div>
+              </div>
+          :null
+        } 
+        {
+          newActivity.length > 0
+          ? <div className='flex gap-1 justify-center items-center rounded-xl bg-primary-light px-2'>
+              <div>
+                <img onClick={sendNewActivity} className='rounded-xl w-[48px]' src={edit} />
+                <div>
+                  Save
+                </div>
+              </div>
+              <div>
+                <div onClick={deleteNewActivity} className='flex w-full justify-center items-center'>X</div>
+                <div>
+                  Cancel
+                </div>
+              </div>
+            </div>
+        :null
+        }  */}
