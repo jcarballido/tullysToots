@@ -8,13 +8,12 @@ import ConfirmationModal from './ConfirmationModal.js'
 import leftArrow from '../media/left_arrow.svg' 
 import rightArrow from '../media/right_arrow.svg' 
 
-const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity }) => {
+const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity }) => {
 
   const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState();
   const [ today, setToday ] = useState(false)
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
-  const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
   const currentReferencePetId = useRef(null)
   const [ status, setStatus ] = useState({ viewing: true, adding: true, updating: true })
 
@@ -119,7 +118,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     if(today) return
     setCurrentIndex((prevIndex) => prevIndex + 1);
     const entries = Array.from(dateMap.entries())
-    console.log('Entries:', entries)
+    // console.log('Entries:', entries)
 
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex+1][0]
@@ -149,56 +148,26 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   //   setEditableActivityMap(/* use activityId to update activity map */)
   // }
   
-  const deleteExistingActivity = async(event, activityId, dateString) => {
-    event.preventDefault()
-    // Send delete request
-    const parameters = {
-      activityId,
-      referencePetId,
-      referenceDate:dateString,
-    }
-    const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
-    try{
-      const response = await axiosPrivate.delete(`/activity/delete?data=${encodedParameters}`)
-      const referenceDateActivity = response.data[0]
-      setActivity(prevActivity => {
-        const updatedActivityArray = prevActivity.map( dailyActivityLog => {
-          const dailyActivityDate = Object.keys(dailyActivityLog)[0]
-          const referenceDate = Object.keys(referenceDateActivity)[0]
-          if(dailyActivityDate == referenceDate){
-            return referenceDateActivity
-          }else{
-            return dailyActivityLog
-          }
-        })
-        // console.log('')
-        return updatedActivityArray
-      })
-      setConfirmationModal(prev => { return {visible:false,activityId:null}})
-    }catch(e){
-      console.log('ERROR deleting existing activity: ',e)
-      setConfirmationModal(prev => { return {visible:false,activityId:null}})
-    }
-  }
+
 
   return (
     <div className="w-11/12 flex items-start justify-center relative overflow-x-hidden rounded-xl">
       <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
-      <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/> 
+      {/* <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/>  */}
       <img onClick={prevCard} className="absolute top-4 left-4 z-10 w-[48px]" src={leftArrow} />
       <img onClick={nextCard} className={`w-[48px] absolute top-4 right-4 z-10 disabled:bg-red-500`} src={rightArrow} />
       <div
         className="flex w-screen transition-transform duration-300 ease-in-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)`}}
       >
-        {
+        { 
           activityArr.map(([dateString, activityArray], index) => {
             return (
               <div
                 key={dateString}
                 className={`shrink-0 w-full text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} current={currentIndex == index} status={status} setStatus={setStatus} />
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} current={currentIndex == index} status={status} setStatus={setStatus} confirmationModal={confirmationModal}  deleteExistingActivity={deleteExistingActivity} />
               </div>
             )
           })

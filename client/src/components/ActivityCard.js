@@ -18,8 +18,8 @@ import AddingButtons from './AddingButtons'
 import UpdatingButtons from './UpdatingButtons'
 
 
-function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex, current, status, setStatus }) {
-  // console.log(`${dateString} activityArray: `, activityArray)
+function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex, current, status, setStatus, confirmationModal }) {
+  // console.log('Date string:', dateString)
   //console.log('**ActivityCard Rendered** savedActivityMap: ',  savedActivityMap)
   const axiosPrivate = useAxiosPrivate()
   const containerRef = useRef(null)

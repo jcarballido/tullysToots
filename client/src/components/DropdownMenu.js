@@ -51,22 +51,22 @@ const DropdownMenu = ({ petIdArray, visible, setSwitchPetModal, referencePetId, 
         }
       </div>
       <div className="flex min-w-max flex-col gap-6 mt-4">
+        <div className="flex gap-6 justify-center items-center w-full">
+          <button disabled={ !activeSelection } onClick={updatePetReference} className="flex flex-col justify-center items-center disabled:bg-gray-500 disabled:text-black bg-accent p-2 rounded-xl ">
+            <img className=' h-[48px] flex items-center justify-center' src={ activeSelection ? check:check_black }/>
+            <div className={`flex justify-center items-center ${ activeSelection? 'text-white':'text-black' } `}>Confirm</div>
+          </button>
+          <button onClick={closeMenu} className="flex flex-col bg-primary rounded-xl p-2 justify-center items-center text-gray-900">
+            <img className=' h-[48px] flex items-center justify-center' src={cancel}/>
+            <div className="flex justify-center items-center">Cancel</div>
+          </button>
+        </div>
         <div className="flex justify-center items-center w-full bg-primary text-gray-900 rounded-2xl" onClick={openAddPetModal}>
           Add a pet
         </div>
         <Link to='/pets' className="flex justify-center items-center w-full bg-primary text-gray-900 rounded-2xl">
           Edit pets
         </Link>
-        <div className="flex gap-6 justify-center items-center w-full">
-          <button disabled={ !activeSelection } onClick={updatePetReference} className="flex flex-col justify-center items-center disabled:bg-gray-500 disabled:text-black bg-accent p-2 rounded-xl ">
-            <img className=' h-[48px] flex items-center justify-center' src={ activeSelection ? check:check_black }/>
-            <div className={`flex justify-center items-center ${ activeSelection? 'text-white':'text-black' } `}>Confirm</div>
-          </button>
-          <button className="flex flex-col bg-primary rounded-xl p-2 justify-center items-center text-gray-900">
-            <img onClick={closeMenu} className=' h-[48px] flex items-center justify-center' src={cancel}/>
-            <div className="flex justify-center items-center">Cancel</div>
-          </button>
-        </div>
       </div>
     </div>
   )
