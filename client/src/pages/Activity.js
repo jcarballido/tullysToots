@@ -101,8 +101,8 @@ const Activity = () => {
         setActivity(activityArray)
         setPetIdArray(petIdArray)
         const localStorageReferencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null
-        console.log('localStorageRefPetId:', localStorageReferencePetId)
-        console.log('referencePetId:', referencePetId)
+        // console.log('localStorageRefPetId:', localStorageReferencePetId)
+        // console.log('referencePetId:', referencePetId)
         if( localStorageReferencePetId != referencePetId) localStorage.setItem('referencePetId', JSON.stringify(referencePetId))  
         return 
       }catch(e){

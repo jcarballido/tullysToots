@@ -31,21 +31,32 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     try{
       const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
       const newActivity = response.data.activityArray
-      // console.log('*Activity Carousel* newActivity: ', newActivity)
+      console.log('*Activity Carousel* newActivity: ', newActivity)
       if(timeWindowObj.daysBefore){
         // console.log('Prior history requested.')
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
-          // console.log('raw activity before updates:', rawActivity)
-          rawActivity.unshift(...newActivity)
-          // console.log('raw activity after updates:', rawActivity)
+          console.log('daysBefore:raw activity before updates:', rawActivity)
+          // const splicedRawActivity = rawActivity.map( activity => {
+          //   const 
+          // })
+          // const test = [...newActivity,...rawActivity]
+          // rawActivity.unshift(...newActivity)
+          const overlap=newActivity[3]
+          console.log('overlap',overlap)
+          rawActivity.splice(rawActivity[0],1,overlap)
+          console.log('spliced:', rawActivity)
+          const newArr = [newActivity[0],newActivity[1],...rawActivity]
+          console.log('daysBefore:activity after updates:', newArr)
           // console.log('*Raw activity* : ', rawActivity)
-          return rawActivity
+          return newArr
         })
       }else{
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
+          console.log('daysAfter:raw activity before updates:', rawActivity)
           rawActivity.push(...newActivity)
+          console.log('daysAfter:raw activity after updates:', rawActivity)
           return rawActivity
         })
       }
