@@ -39,6 +39,8 @@ const Activity = () => {
   const [addPetError, setAddPetError] = useState(false)
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
 
+  console.log('activity:', activity)
+
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
     // const petIdString = activePetId? activePetId.replace(/^"|"$/g, ''):null

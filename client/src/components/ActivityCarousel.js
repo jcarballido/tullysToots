@@ -18,6 +18,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   const [ status, setStatus ] = useState({ viewing: true, adding: true, updating: true })
 
   const activityArr = Array.from(dateMap)
+  // console.log('activity Arr:',activityArr)
 
   const fetchAdditionalData = async(timeWindowObj) => {
 

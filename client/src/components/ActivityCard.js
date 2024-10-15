@@ -343,6 +343,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     }
   }
 
+  // console.log('Saved records:', savedRecords)
   return(
     <div className='w-full flex flex-col items-center relative h-full gap-12'>
       {/* <TimeModal newActivity={newActivity} setNewActivity={setNewActivity} timeModalVisible={timeModalVisible} setTimeModalVisible={setTimeModalVisible}/> */}
@@ -350,18 +351,20 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       <DateComponent dateString={dateString} />
       <div className='w-full overflow-y-auto flex flex-col justify-start items-center shadow-xl bg-primary rounded-xl' ref={containerRef}>
         { status?.updating 
-            ? editableRecords.map( record => {
+            ? editableRecords?.map( record => {
               console.log('*Activity Card* record: ',record)
                 return (
-                  <div key={record.activity_id} className='flex items-center justify-center w-full my-4 rounded-lg'>
+                  <div key={`editable_${record.activity_id}`} className='flex items-center justify-center w-full my-4 rounded-lg'>
                     <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>
                   </div>
                 )
             })
             : savedRecords?.map( record => {
                 // console.log(`Record in ${dateString}: `, record)
+                // console.log('DateString/Record ID:', dateString,'/',record.activity_id)
+                if(record.activity_id == undefined) return null
                 return (
-                  <div key={record.activity_id} className='w-full flex items-center justify-center py-4'>
+                  <div key={`saved_${record.activity_id}`} className='w-full flex items-center justify-center py-4'>
                     <SavedRecord record={record} />
                   </div>
                 )
