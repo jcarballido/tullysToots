@@ -30,6 +30,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
   // const [ timeModalVisible, setTimeModalVisible ] = useState(false)
   // const [ confirmationModalVisibility, setConfirmationModalVisibility ] = useState(false)
+  // console.log('Date - status', dateString,'-',status)
 
   useEffect(() => {
     // const parsedActivityArray = activityArray?.map(id => activityMap.get(id)) 
@@ -352,7 +353,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       <div className='w-full overflow-y-auto flex flex-col justify-start items-center shadow-xl bg-primary rounded-xl' ref={containerRef}>
         { status?.updating 
             ? editableRecords?.map( record => {
-              console.log('*Activity Card* record: ',record)
+              
                 return (
                   <div key={`editable_${record.activity_id}`} className='flex items-center justify-center w-full my-4 rounded-lg'>
                     <EditableRecord record={record} setTimeModal={setTimeModal} setEditableActivityMap={setEditableActivityMap} setConfirmationModal={setConfirmationModal} dateString={dateString}/>

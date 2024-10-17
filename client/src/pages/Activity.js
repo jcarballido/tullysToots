@@ -23,7 +23,7 @@ const Activity = () => {
 
   const { referenceDate:initialReferenceDate, referencePetId:initialPetId } = useLoaderData() 
   const actionData = useActionData()
-  const { status, updatedPetIdArray } = actionData || {}
+  const { idk, updatedPetIdArray } = actionData || {}
 
   const [ activity, setActivity ] = useState([])
   const [ dateMap, setDateMap ] = useState(new Map())
@@ -38,8 +38,7 @@ const Activity = () => {
   const [ name, setName ] = useState('')
   const [addPetError, setAddPetError] = useState(false)
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
-
-  console.log('activity:', activity)
+  const [status,setStatus] = useState({ viewing: true, adding: false, updating: false })
 
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
@@ -96,7 +95,6 @@ const Activity = () => {
       try{
         const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`,{ signal:abortController.signal })
         if(response.status == 204) return console.log('No actively linked pets.')
-        console.log('Response recieved from activity request: ', response.data)
         const { activityArray, petIdArray } = response.data 
         setActivity(activityArray)
         setPetIdArray(petIdArray)
@@ -183,24 +181,29 @@ const Activity = () => {
     const encodedParameters = encodeURIComponent(JSON.stringify(parameters))
     try{
       const response = await axiosPrivate.delete(`/activity/delete?data=${encodedParameters}`)
+      console.log('Response from deletion:', response)
       const referenceDateActivity = response.data[0]
       setActivity(prevActivity => {
         const updatedActivityArray = prevActivity.map( dailyActivityLog => {
           const dailyActivityDate = Object.keys(dailyActivityLog)[0]
           const referenceDate = Object.keys(referenceDateActivity)[0]
+          console.log('dailyActivityDate:', dailyActivityDate)
+          console.log('ref ActivityDate:', referenceDate)
           if(dailyActivityDate == referenceDate){
             return referenceDateActivity
           }else{
             return dailyActivityLog
           }
         })
-        // console.log('')
+        console.log('updated Act arr:', updatedActivityArray)
         return updatedActivityArray
       })
       setConfirmationModal(prev => { return {visible:false,activityId:null}})
+      setStatus({ viewing: true, adding: false, updating: false })
     }catch(e){
       console.log('ERROR deleting existing activity: ',e)
       setConfirmationModal(prev => { return {visible:false,activityId:null}})
+      setStatus({ viewing: true, adding: false, updating: false })
     }
   }
 
@@ -213,12 +216,12 @@ const Activity = () => {
       </div>
       {
         referencePetId
-        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} confirmationModal={confirmationModal} setConfirmationModal={ setConfirmationModal } deleteExistingActivity={deleteExistingActivity} />
+        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} confirmationModal={confirmationModal} setConfirmationModal={ setConfirmationModal } deleteExistingActivity={deleteExistingActivity} status={status} setStatus={setStatus} />
         : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } switchPetModal={switchPetModal} setSwitchPetModal={setSwitchPetModal} setAddPetModal={setAddPetModal} addPetModal={addPetModal}/>
       <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } error={addPetError} setAddPetError={setAddPetError} />
-      <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/> 
+      <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity} setStatus={setStatus}/> 
     </main>
   )
 }

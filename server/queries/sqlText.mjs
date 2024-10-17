@@ -11,7 +11,7 @@ const insertIntoText = (tableName,newValuesArr) => {
   const invitationsColumns = ['sender_owner_id','receiver_owner_id','invitation_token']
  
   const singleEntryText = (columnsArr) => {
-    console.log('*sqlText* attempt to insert data to table')
+    // console.log('*sqlText* attempt to insert data to table')
     return `INSERT INTO ${tableName} (${columnsArr.join()})
     VALUES (${columnsArr.map( (_,index) => {return `$${index+1}`}).join()})
     RETURNING *

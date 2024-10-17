@@ -7,16 +7,36 @@ const getDateCharacteristics = (referenceDate) => {
   yesterday.setDate(yesterday.getDate() - 1) // Yesterday's date according to local time
   const workingDate = new Date(referenceDate) // Date being compared
 
-  const monthIndex = workingDate.getMonth()
+  let parsedYear
+  let parsedDate
+  let parsedMonthName
+  let parsedMonth
+  let utcDate
+
+  if(typeof referenceDate == 'string'){
+    const dateParsed = referenceDate.split('-')
+    const dateTrimmed = dateParsed.map( number => number.replace('"','') )
+    console.log('*getDateChar* date parsed:', dateTrimmed)
+    console.log('*getDateChar* date elements:', dateTrimmed[0], dateTrimmed[1] -1, dateTrimmed[2])
+    utcDate = new Date(Date.UTC(dateTrimmed[0], dateTrimmed[1] -1, dateTrimmed[2]))
+    console.log('*getDateChar* utcDate:', utcDate)
+
+    parsedYear = dateParsed[0]
+    parsedMonth = dateParsed[1]
+    parsedMonthName = monthNames[parsedMonth-1]
+    parsedDate = dateParsed[2]
+  }
+
+  const monthIndex = workingDate.getUTCMonth()
   const monthName = monthNames[monthIndex]
-  const fullYear = workingDate.getFullYear()
-  const date = workingDate.getDate()
-  const dayIndex = workingDate.getDay()
+  const fullYear = workingDate.getUTCFullYear()
+  const date = typeof referenceDate == 'string' ? utcDate.getUTCDate() : workingDate.getUTCDate()
+  const dayIndex = workingDate.getUTCDay()
   const dayName = dayNames[dayIndex]
 
   const referenceDateFormatted = `${fullYear}-${monthIndex}-${date}`
-  const isToday = referenceDateFormatted == `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`
-  const isYesterday = referenceDateFormatted == `${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`
+  const isToday = referenceDateFormatted == `${today.getUTCFullYear()}-${today.getUTCMonth()}-${today.getUTCDate()}`
+  const isYesterday = referenceDateFormatted == `${yesterday.getUTCFullYear()}-${yesterday.getUTCMonth()}-${yesterday.getUTCDate()}`
 
   return {
     isToday,
@@ -25,7 +45,11 @@ const getDateCharacteristics = (referenceDate) => {
     monthName,
     monthIndex,
     date,
-    dayName
+    dayName,
+    parsedYear,
+    parsedMonth,
+    parsedMonthName,
+    parsedDate
   }
 
 }

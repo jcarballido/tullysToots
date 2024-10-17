@@ -156,8 +156,9 @@ router.post("/add", async (req, res) => {
   const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
   const timestampUTCString = req.body.timestampUTCString;
+
   // const referenceTimezoneOffset = req.body.referenceTimezoneOffset
-  // console.log('**Activity Router** referenceDate: ', timestampUTCString)
+  console.log('**Activity Router** referenceDate: ', timestampUTCString)
   const { pee, poo } = req.body.activity
   
   try{
@@ -170,10 +171,10 @@ router.post("/add", async (req, res) => {
   }
 
   try{
-    console.log('*activityRouter* attempting to retrieve singleDayActivity')
+    // console.log('*activityRouter* attempting to retrieve singleDayActivity')
     const result = await queries.getSingleDayActivity(petId, timestampUTCString); 
     // console.log('*activityRouter* Result from querying single day activity: ', result)
-    console.log(util.inspect(result, { depth: null }))
+    // console.log(util.inspect(result, { depth: null }))
     return res.status(200).json(result)
   }catch(e){
     console.log('*activityRouter* error getting single day activity: ', e)
@@ -204,9 +205,9 @@ router.delete("/delete", async (req, res) => {
   const encodedData = req.query.data
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
+  console.log('Decoded Data:', decodedData)
   const { activityId, referenceDate, referencePetId } = decodedData
   try{
-
     await queries.deleteActivityById(activityId)
     console.log('Successfully deleted')
   }catch(e){
@@ -218,6 +219,7 @@ router.delete("/delete", async (req, res) => {
     const result = await queries.getSingleDayActivity(referencePetId, referenceDate); 
     console.log('Result from querying single day activity: ')
     console.log(util.inspect(result, { depth: null }))
+
     return res.status(200).json(result)
   }catch(e){
     return res.status(400).json({error:e})

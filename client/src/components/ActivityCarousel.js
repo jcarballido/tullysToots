@@ -8,14 +8,14 @@ import ConfirmationModal from './ConfirmationModal.js'
 import leftArrow from '../media/left_arrow.svg' 
 import rightArrow from '../media/right_arrow.svg' 
 
-const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity }) => {
+const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity, status, setStatus }) => {
 
   const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState();
   const [ today, setToday ] = useState(false)
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const currentReferencePetId = useRef(null)
-  const [ status, setStatus ] = useState({ viewing: true, adding: true, updating: true })
+  // const [ status, setStatus ] = useState()
 
   const activityArr = Array.from(dateMap)
   // console.log('activity Arr:',activityArr)
@@ -33,30 +33,17 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       const newActivity = response.data.activityArray
       console.log('*Activity Carousel* newActivity: ', newActivity)
       if(timeWindowObj.daysBefore){
-        // console.log('Prior history requested.')
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
-          console.log('daysBefore:raw activity before updates:', rawActivity)
-          // const splicedRawActivity = rawActivity.map( activity => {
-          //   const 
-          // })
-          // const test = [...newActivity,...rawActivity]
-          // rawActivity.unshift(...newActivity)
-          const overlap=newActivity[3]
-          console.log('overlap',overlap)
-          rawActivity.splice(rawActivity[0],1,overlap)
-          console.log('spliced:', rawActivity)
-          const newArr = [newActivity[0],newActivity[1],...rawActivity]
-          console.log('daysBefore:activity after updates:', newArr)
-          // console.log('*Raw activity* : ', rawActivity)
-          return newArr
+          rawActivity.splice(0,1)
+          rawActivity.unshift(...newActivity)
+          return rawActivity
         })
       }else{
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
-          console.log('daysAfter:raw activity before updates:', rawActivity)
+          rawActivity.splice(rawActivity.length - 1,1)
           rawActivity.push(...newActivity)
-          console.log('daysAfter:raw activity after updates:', rawActivity)
           return rawActivity
         })
       }
@@ -66,7 +53,6 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   }
 
   useEffect(() => {
-    console.log('Current index after initial render:', currentIndex)
     if(currentIndex == null || undefined){
       const mapKeys = dateMap.keys()
       const mapKeysArray = Array.from(mapKeys)

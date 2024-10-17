@@ -94,16 +94,18 @@ const addPetOwnerLink = async(petId,ownerId) => {
 
 const addActivity = async(petId, ownerId, timestampUTCString, pee, poo) => {
   // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
+  console.log('*Queries* timestamp passed in: ', timestampUTCString)
   const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
+  console.log('*Queries* date:', date)
   const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString)
   const timestamp = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
-  // console.log('**Queries** addActivity timestamp: ', timestamp)
+  console.log('**Queries** addActivity timestamp: ', timestamp)
   try{
     
     const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo])
     // console.log('Queries, addActivity, result: ',result)
     const data = result.rows[0]
-    console.log('*queries* data: ', data)
+    // console.log('*queries* data: ', data)
     return data
   }catch(e){
     console.log('ERROR adding activity',e)
@@ -506,6 +508,8 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
   const { daysBefore, daysAfter } = timeWindowObj
   // console.log('TargetDate: ', targetDate)
   const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
+  console.log('*Queries* targetDate:', targetDate)
+  console.log('*Queries* parsed date:', date)
   // console.log('${year}-${monthIndex+1}-${date}: ', `${fullYear}-${monthIndex+1}-${date}`)
   const dateArray = []
   for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
@@ -513,27 +517,35 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
     let newDate = referenceDate.setDate(referenceDate.getDate() + i)
     dateArray.push(newDate)
   }
-  const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
-  // console.log('Queries result: ', result)
   
-  const data = result.rows
-  // console.log('Line 342, data: ', data)
-  const formattedData = dateArray.map( dateAsTimestamp => {
-    const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
-    // console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
-    const filteredActivityArray = data.filter( activity => { 
-      const activityDate = new Date(activity.set_on_at)
-      return (
-        fullYear == activityDate.getFullYear() &&
-        monthIndex == activityDate.getMonth() &&
-        date == activityDate.getDate()
-      )
+  try {
+    const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
+    // console.log('Queries result: ', result)
+    
+    const data = result.rows
+    // console.log('Line 342, data: ', data)
+    const formattedData = dateArray.map( dateAsTimestamp => {
+      console.log('*queries* dateAsTimestamp:', dateAsTimestamp)
+      const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
+      // console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
+      const filteredActivityArray = data.filter( activity => { 
+        const activityDate = new Date(activity.set_on_at)
+        return (
+          fullYear == activityDate.getFullYear() &&
+          monthIndex == activityDate.getMonth() &&
+          date == activityDate.getDate()
+        )
+      })
+      return { [`${fullYear}-${monthIndex + 1}-${date}`]:filteredActivityArray }
     })
-    return { [`${fullYear}-${monthIndex + 1}-${date}`]:filteredActivityArray }
-  })
-  // console.log('Line 357, formattedData: ', formattedData)
+    // console.log('Line 357, formattedData: ', formattedData)
+  
+    return formattedData  
+  } catch (error) {
+    console.log('*Queries* Error getting activity:', error)
+    throw error
+  }
 
-  return formattedData  
 }
 
 const getSingleDayActivity = async(petId,targetDate) => {
@@ -541,34 +553,40 @@ const getSingleDayActivity = async(petId,targetDate) => {
   //const { daysBefore, daysAfter } = timeWindow
   // console.log('TargetDate: ', targetDate)
   const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
-  // console.log('${year}-${monthIndex+1}-${date}: ', `${year}-${monthIndex+1}-${date}`)
+  // console.log('${year}-${monthIndex+1}-${date}: ', `${fullYear}-${monthIndex+1}-${date}`)
   const dateArray = [targetDate]
+
+  try{
+    const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${fullYear}-${monthIndex+1}-${date}`])
+    const data = result.rows
+    // console.log('**Queries** getSingleDayActivity, data: ', data)
+    const formattedData = dateArray.map( dateAsTimestamp => {
+      const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
+      // console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
+      const filteredActivityArray = data.filter( activity => { 
+        const activityDate = new Date(activity.set_on_at)
+        return (
+          fullYear == activityDate.getFullYear() &&
+          monthIndex == activityDate.getMonth() &&
+          date == activityDate.getDate()
+        )
+      })
+      return { [`${fullYear}-${monthIndex + 1}-${date}`]:filteredActivityArray }
+    })
+    return formattedData  
+  }catch(e){
+    throw e
+  }
+
   // for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
   //   const referenceDate = new Date(targetDate)
   //   let newDate = referenceDate.setDate(referenceDate.getDate() + i)
   //   dateArray.push(newDate)
   // }
-  const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${fullYear}-${monthIndex+1}-${date}`])
   // console.log('Queries result: ', result)
   // START HERE; RESULT.ROWS IS UNDEFINED AS THE QUERY ABOVE IT ONLY RETURNS A SINGLE OBJECT
-  const data = result.rows
-  // console.log('**Queries** getSingleDayActivity, data: ', data)
-  const formattedData = dateArray.map( dateAsTimestamp => {
-    const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
-    // console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
-    const filteredActivityArray = data.filter( activity => { 
-      const activityDate = new Date(activity.set_on_at)
-      return (
-        fullYear == activityDate.getFullYear() &&
-        monthIndex == activityDate.getMonth() &&
-        date == activityDate.getDate()
-      )
-    })
-    return { [`${fullYear}-${monthIndex + 1}-${date}`]:filteredActivityArray }
-  })
   // console.log('Line 357, formattedData: ', formattedData)
 
-  return formattedData  
 }
 
 const getPetActivityByOwner = async(ownerData) => {
@@ -716,9 +734,8 @@ const checkOwnerLink = async(ownerId,petId) => {
 const deleteActivityById = async (activityId) => {
   try{
     await pool.query(sqlText.deleteActivityByIdText, [activityId])
-    return 
   }catch(e){
-    return e
+    throw e
   }
 }
 
