@@ -9,6 +9,31 @@ import jwt from 'jsonwebtoken'
 const router = express.Router();
 router.use(cookieParser())
 
+router.post('/testEndpoint', async(req,res) => {  
+  console.log('**BEGIN: Activity Router/testEndpoint...')
+  const { currentTimestampFromClient, timezoneOffset } = req.body
+  const recievedTimestamp = new Date(currentTimestampFromClient)
+  console.log('*ActivityRouter* Receieved timestamp: ',recievedTimestamp, '+', timezoneOffset)
+
+  const petId = '20';
+  const ownerId = '2';
+  const pee = true;
+  const poo = false;
+
+  try {
+      const response = await queries.testEndpoint(petId, ownerId, recievedTimestamp, pee, poo)
+      console.log('*Activity Router* Stored timestamp: ', response) 
+      console.log('...Activity Router/testEndpoint** END')
+      return res.status(200).json({ result: response })
+      
+  } catch (error) {
+      console.log('Error attempting to store timestamp: ', error)
+      console.log('...Activity Router/testEndpoint** END')
+      return res.status(400).json({ err: error})
+  }
+  
+})
+
 router.get('/testInterceptor', (req,res) => {
   console.log('VERIFYING ACCESS TOKEN')
   const accessToken = req.headers['authorization']
@@ -42,7 +67,7 @@ router.get("/get", async (req, res) => {
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
-  console.log('Reference Pet id:')
+  // console.log('Reference Pet id:')
   console.log(referencePetId)
   let petId
   if(typeof(referencePetId) == 'number') petId = referencePetId
@@ -50,9 +75,7 @@ router.get("/get", async (req, res) => {
     const petIdString = referencePetId.replace(/^"|"$/g, '');
     petId = parseInt(petIdString)
   }
-    // console.log('Type of reference pet id:', typeof(referencePetId))
 
-  console.log('Pet id received from request: ', petId)
   if(!petId){
     console.log('No pet id found')
     try{
@@ -70,7 +93,7 @@ router.get("/get", async (req, res) => {
 
   try {
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, req.petId);   
-    console.log('Active link determined as: ', confirmActiveLink)
+    // console.log('Active link determined as: ', confirmActiveLink)
     req.activeLink = confirmActiveLink   
   } catch (error) {
     console.log('Error checking link with owner: ', error)
@@ -80,12 +103,21 @@ router.get("/get", async (req, res) => {
   if(req.activeLink){
     try {
       const activityArray = await queries.getActivity(petId, referenceDate, timeWindowObj);
-      console.log('Activity array received:', activityArray)
+      // console.log('Activity array received:', activityArray)
+      // console.log('Activity array received',util.inspect(activityArray, { depth: null }));
       const petIdArray = await queries.getOwnersPetIds(ownerId)        
       return res.status(200).json({ activityArray, petIdArray })
+      // return res.status(200)
     } catch (error) {
-      console.log('Error caught getting activity or pet ids:', error)
-      return res.status(400).json({error})
+    //   console.log('Error caught getting activity or pet ids:', error)
+    //   return res.status(400).json({error})
+    // }
+    // try {
+    //   console.log('Processed request.')
+    //   return res.status(400)
+    // } catch (error) {
+      console.log('Error with get request:', error)
+      return res.status(400)
     }
   }else{
     try {
@@ -156,6 +188,7 @@ router.post("/add", async (req, res) => {
   const petIdString = req.body.referencePetId.toString().replace(/^"|"$/g, '');
   const petId = parseInt(petIdString)
   const timestampUTCString = req.body.timestampUTCString;
+  const { timezoneOffset } = req.body
 
   // const referenceTimezoneOffset = req.body.referenceTimezoneOffset
   console.log('**Activity Router** referenceDate: ', timestampUTCString)
@@ -163,7 +196,7 @@ router.post("/add", async (req, res) => {
   
   try{
     // console.log('Attempt to add activity is being made.')
-    const result = await queries.addActivity(petId, ownerId, timestampUTCString, pee,poo)
+    const result = await queries.addActivity(petId, ownerId, timestampUTCString,timezoneOffset, pee,poo)
     // console.log('Line 71, result: ', result)
   }catch(e){
     console.log('Error adding activity; error code sent to client: ',e)
@@ -173,8 +206,8 @@ router.post("/add", async (req, res) => {
   try{
     // console.log('*activityRouter* attempting to retrieve singleDayActivity')
     const result = await queries.getSingleDayActivity(petId, timestampUTCString); 
-    // console.log('*activityRouter* Result from querying single day activity: ', result)
-    // console.log(util.inspect(result, { depth: null }))
+    console.log('*activityRouter* Result from querying single day activity: ', result)
+    console.log(util.inspect(result, { depth: null }))
     return res.status(200).json(result)
   }catch(e){
     console.log('*activityRouter* error getting single day activity: ', e)

@@ -1,14 +1,17 @@
-const getTimeCharacteristics = ( referenceTimestampUTC ) => {
+const getTimeCharacteristics = ( referenceTimestampUTC, referenceTimezoneMinutes ) => {
 
   const convertedReferenceTimestamp = new Date(referenceTimestampUTC)
-  // const localTimezoneOffset = new Date().getTimezoneOffset()
-  // const timezoneOffsetDifference = ( referenceTimestampOffsetMinutes - localTimezoneOffset ) * 60 * 1000 // ms
-  // const workingReferenceTimestamp = timezoneOffsetDifference == 0? convertedReferenceTimestamp : new Date(convertedReferenceTimestamp.getTime() - timezoneOffsetDifference)
-    
-    // const hour = workingReferenceTimestamp.getHours()
-    // const minutes = workingReferenceTimestamp.getMinutes()
-  const hour = convertedReferenceTimestamp.getHours()
-  const minutes = convertedReferenceTimestamp.getMinutes()
+  // console.log('convertedReferenceTimestamp:',convertedReferenceTimestamp)
+  const localTimezoneOffset = new Date().getTimezoneOffset()
+  // console.log('local TZ offset:',localTimezoneOffset)
+  const timezoneOffsetDifference = ( parseInt(referenceTimezoneMinutes) - localTimezoneOffset )
+  // console.log('difference: ', timezoneOffsetDifference)
+  const workingReferenceTimestamp = timezoneOffsetDifference == 0? convertedReferenceTimestamp : new Date(convertedReferenceTimestamp.getTime() - timezoneOffsetDifference)
+  // console.log('getTimeChar: ', workingReferenceTimestamp)
+  const hour = workingReferenceTimestamp.getHours()
+  const minutes = workingReferenceTimestamp.getMinutes()
+  // const hour = convertedReferenceTimestamp.getHours()
+  // const minutes = convertedReferenceTimestamp.getMinutes()
   const meridianString = hour > 12 ? 'PM':'AM'
 
   const paddedHourString = hour < 10 

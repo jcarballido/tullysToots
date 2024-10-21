@@ -63,7 +63,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
     e.preventDefault()
     setNewActivity( prevNewActivity => {
       const result = getTimeCharacteristics(new Date().toUTCString())
-      console.log('Activity Card, result: ',result)
+      // console.log('Activity Card, result: ',result)
       const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(new Date().toUTCString())
       const { fullYear, monthIndex, date } = getDateCharacteristics(dateString)
       // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
@@ -102,7 +102,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
         pee:newActivity[0].pee,
         poo:newActivity[0].poo
       }
-      console.log('Activity being sent:', activity)
+      // console.log('Activity being sent:', activity)
       const newActivityTimestamp = `${newActivity[0].timestampReceived}`
       const timezoneOffset = newActivity[0].timestampUTCOffset
       const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp, activity})
@@ -249,15 +249,19 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   const handleAdding = (e) => {
     e.preventDefault()
     setNewActivity( prevNewActivity => {
-      const result = getTimeCharacteristics(new Date().toUTCString())
-      console.log('Activity Card, result: ',result)
-      const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(new Date().toUTCString())
+      // const result = getTimeCharacteristics(new Date().toUTCString())
+      // console.log('Activity Card, result: ',result)
+      const currentTime = new Date()
+      const localTimezoneOffset = currentTime.getTimezoneOffset()
+      const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(currentTime,localTimezoneOffset)
+      console.log('On ADD, new date to UTC string:', new Date() )
+      console.log('parsed data from new Date:', paddedHourString,' ', paddedMinutesString,' ',meridianString)
       const { fullYear, monthIndex, date } = getDateCharacteristics(dateString)
       // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
       // console.log('ActivityCard, newTimestamp: ', timestampString)
-      // const newTimestamp = new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
+      // console.log(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
       // console.log('ActivityCard, newTimestamp: ', newTimestamp)
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false}]
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false, timestampUTCOffset:localTimezoneOffset}]
     })
     setStatus({ viewing: false, adding:true, updating:false })
   } 
@@ -282,7 +286,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       console.log('Activity being sent:', activity)
       const newActivityTimestamp = `${newActivity[0].timestampReceived}`
       const timezoneOffset = newActivity[0].timestampUTCOffset
-      const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp, activity})
+      const response = await axiosPrivate.post('/activity/add', {referencePetId, timestampUTCString:newActivityTimestamp,timezoneOffset, activity})
       // expecting: {'YYYY-MM-DD':[ {},{},... ]}
       const referenceDateActivity = response.data[0]
       // console.log('*RECORD** response.data: ',referenceDateActivity)

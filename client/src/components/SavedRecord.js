@@ -7,7 +7,7 @@ const SavedRecord = ({ record }) => {
   // console.log('Record: ', record)
   // console.log('Record set on at: ', record.set_on_at)
   // const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.timestamp_received, record.timestamp_utc_offset)
-  const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.set_on_at)
+  const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.set_on_at, record.timezone_offset_hours  )
 
   // console.log('**Saved Record** Parsed: ',convertedHour, convertedMinutes, meridian)
   const time = `${paddedHourString}:${paddedMinutesString} ${meridianString}`

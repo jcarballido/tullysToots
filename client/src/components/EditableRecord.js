@@ -9,7 +9,9 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
   const [ time, setTime ] = useState('')
   
   useEffect( () => {
-    const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.set_on_at)
+    console.log('*Editable Record*: ', record)
+    const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.set_on_at,record.timezone_offset_hours)
+    console.log('Parsed time:',paddedHourString,'  ', paddedMinutesString,'   ', meridianString)
     setTime(`${paddedHourString}:${paddedMinutesString} ${meridianString}`)
   },[record])
 
@@ -19,7 +21,7 @@ const EditableRecord = ({ record,setConfirmationModal,setTimeModal, setEditableA
         visible:true,
         new:false,
         recordId:record.activity_id,
-        time:{ timestampUTC: record.set_on_at } ,
+        time:{ timestampUTC: record.set_on_at, timezoneOffset: record.timezone_offset_hours } ,
         dateString
       }
     })

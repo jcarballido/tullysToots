@@ -92,17 +92,21 @@ const addPetOwnerLink = async(petId,ownerId) => {
 }
 
 
-const addActivity = async(petId, ownerId, timestampUTCString, pee, poo) => {
+const addActivity = async(petId, ownerId, timestampUTCString, timezoneOffset, pee, poo) => {
   // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
   console.log('*Queries* timestamp passed in: ', timestampUTCString)
-  const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
+  const recievedDate = new Date(timestampUTCString)
+  const fullYear = recievedDate.getUTCFullYear()
+  const monthIndex = recievedDate.getUTCMonth()
+  const date = recievedDate.getUTCDate()
+  // const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
   console.log('*Queries* date:', date)
-  const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString)
+  const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString,timezoneOffset)
   const timestamp = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
   console.log('**Queries** addActivity timestamp: ', timestamp)
   try{
     
-    const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo])
+    const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo,timezoneOffset,`${fullYear}-${monthIndex+1}-${date}`])
     // console.log('Queries, addActivity, result: ',result)
     const data = result.rows[0]
     // console.log('*queries* data: ', data)
@@ -481,7 +485,7 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 //   }
 //   // console.log(sqlText.getActivityText(3))
 //   const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${month+1}-${date}`,`${daysBeforeAndAfter} days`])
-//   // console.log('Queries console.log: ',util.inspect(result, { depth: null }));
+  // console.log('Queries console.log: ',util.inspect(result, { depth: null }));
 
 //   // Result.rows returns an array of objects, holding a key-value pair of the column name and its corresponding value.
 //   const data = result.rows
@@ -506,43 +510,50 @@ const getInvitedOwnerIdFromInvite = async (inviteToken) => {
 const getActivity = async(petId,targetDate, timeWindowObj) => {
 
   const { daysBefore, daysAfter } = timeWindowObj
+  // console.log('daybefore:', daysBefore)
   // console.log('TargetDate: ', targetDate)
-  const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
-  console.log('*Queries* targetDate:', targetDate)
-  console.log('*Queries* parsed date:', date)
+  // const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
+  // console.log('*Queries* targetDate:', targetDate) // EX: '2022-02-19'
+  // console.log('*Queries* parsed date:', date)
   // console.log('${year}-${monthIndex+1}-${date}: ', `${fullYear}-${monthIndex+1}-${date}`)
   const dateArray = []
+
   for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
-    const referenceDate = new Date(targetDate)
-    let newDate = referenceDate.setDate(referenceDate.getDate() + i)
-    dateArray.push(newDate)
+    // console.log('*Queries* i:', i)
+    const referenceDate = new Date(targetDate) 
+    // console.log('*Queries* initial reference date: ', referenceDate)
+    referenceDate.setUTCDate(referenceDate.getUTCDate() + i)
+    // console.log('*Queries* updated reference date: ', referenceDate)
+    const year = referenceDate.getUTCFullYear()
+    const month = referenceDate.getUTCMonth()
+    const date = referenceDate.getUTCDate()
+    // console.log('*Queries* date:', date)
+    let paddedMonth
+    let paddedDate = date
+    if(month.toString().length != 2) {
+      paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
+    }
+    if(date.toString().length != 2) {
+      paddedDate = `0${date}`
+    }
+    dateArray.push(`${year}-${paddedMonth}-${paddedDate}`)
   }
-  
+  // console.log('*queries* getActivity => dateArray:', dateArray)
   try {
-    const result = await pool.query(sqlText.getActivityText(), [ petId, `${fullYear}-${monthIndex+1}-${date}`,`${daysBefore} days`, `${daysAfter} days`])
+    const result = await pool.query(sqlText.getActivityText(), [ petId, targetDate,`${daysBefore} days`, `${daysAfter} days`])
     // console.log('Queries result: ', result)
-    
     const data = result.rows
-    // console.log('Line 342, data: ', data)
     const formattedData = dateArray.map( dateAsTimestamp => {
-      console.log('*queries* dateAsTimestamp:', dateAsTimestamp)
-      const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
+      // const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
       // console.log('Line 347 parsed timestamp: ', year,monthIndex, date)
       const filteredActivityArray = data.filter( activity => { 
-        const activityDate = new Date(activity.set_on_at)
-        return (
-          fullYear == activityDate.getFullYear() &&
-          monthIndex == activityDate.getMonth() &&
-          date == activityDate.getDate()
-        )
+        // console.log('activity_ref date:', activity.reference_date.toISOString().split('T')[0])
+        return activity.reference_date.toISOString().split('T')[0] == dateAsTimestamp
       })
-      return { [`${fullYear}-${monthIndex + 1}-${date}`]:filteredActivityArray }
-    })
-    // console.log('Line 357, formattedData: ', formattedData)
-  
+      return { [`${dateAsTimestamp}`]:filteredActivityArray }
+    })  
     return formattedData  
   } catch (error) {
-    console.log('*Queries* Error getting activity:', error)
     throw error
   }
 
@@ -552,26 +563,58 @@ const getSingleDayActivity = async(petId,targetDate) => {
 
   //const { daysBefore, daysAfter } = timeWindow
   // console.log('TargetDate: ', targetDate)
-  const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
-  // console.log('${year}-${monthIndex+1}-${date}: ', `${fullYear}-${monthIndex+1}-${date}`)
-  const dateArray = [targetDate]
+  // const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
+  // const singleDate = new Date(targetDate)
+  const referenceDate = new Date(targetDate) 
+  const fullYear = referenceDate.getUTCFullYear()
+  const monthIndex = referenceDate.getUTCMonth()
+  const date = referenceDate.getUTCDate()
+  // console.log('*Queries* date:', date)
+  let paddedMonth
+  let paddedDate = date
+  if(monthIndex.toString().length != 2) {
+    paddedMonth = monthIndex < 10? (monthIndex + 1 == 10 ? '10':`0${monthIndex + 1}`): `${monthIndex + 1}`
+  }
+  if(date.toString().length != 2) {
+    paddedDate = `0${date}`
+  }
+  const dateArray = [ `${fullYear}-${paddedMonth}-${paddedDate}` ]
 
   try{
-    const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${fullYear}-${monthIndex+1}-${date}`])
+    const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${fullYear}-${paddedMonth}-${paddedDate}`])
     const data = result.rows
-    // console.log('**Queries** getSingleDayActivity, data: ', data)
+    console.log('**Queries** getSingleDayActivity, data: ', data)
     const formattedData = dateArray.map( dateAsTimestamp => {
-      const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
+      // const { fullYear, monthIndex, date } = getDateCharacteristics(dateAsTimestamp)
       // console.log('**Queries** getSingleDayActivity, parsed timestamp: ', year,monthIndex, date)
+      // const referenceDate = new Date(dateAsTimestamp)
+      // const fullYear = referenceDate.getUTCFullYear()
+      // const monthIndex = referenceDate.getUTCMonth()
+      // const date = referenceDate.getUTCDate()
+      // // console.log('*Queries* date:', date)
+      // let paddedMonth
+      // let paddedDate = date
+      // if(monthIndex.toString().length != 2) {
+      //   paddedMonth = monthIndex < 10? (monthIndex + 1 == 10 ? '10':`0${monthIndex + 1}`): `${monthIndex + 1}`
+      // }
+      // if(date.toString().length != 2) {
+      //   paddedDate = `0${date}`
+      // }
+      // const filteredActivityArray = data.filter( activity => { 
+      //   const activityDate = new Date(activity.reference_date)
+      //   return (
+      //     fullYear == activityDate.getUTCFullYear() &&
+      //     monthIndex == activityDate.getUTCMonth() &&
+      //     date == activityDate.getUTCDate()
+      //   )
+      // })
+      // return { [`${fullYear}-${paddedMonth}-${paddedDate}`]:filteredActivityArray }
       const filteredActivityArray = data.filter( activity => { 
-        const activityDate = new Date(activity.set_on_at)
-        return (
-          fullYear == activityDate.getFullYear() &&
-          monthIndex == activityDate.getMonth() &&
-          date == activityDate.getDate()
-        )
+        console.log('activity_ref date:', activity.reference_date.toISOString().split('T')[0])
+        console.log('dateAsTimestamp:', dateAsTimestamp)
+        return activity.reference_date.toISOString().split('T')[0] == dateAsTimestamp
       })
-      return { [`${fullYear}-${monthIndex + 1}-${date}`]:filteredActivityArray }
+      return { [`${dateAsTimestamp}`]:filteredActivityArray }
     })
     return formattedData  
   }catch(e){
@@ -979,6 +1022,29 @@ const verifyPendingResetTokenExists = async(resetToken) => {
   }
 }
 
+const testEndpoint = async(petId, ownerId, timestampUTCString, pee, poo) => {
+  // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
+  // console.log('*Queries* timestamp passed in: ', timestampUTCString)
+  // const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
+  // console.log('*Queries* date:', date)
+  // const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString)
+  // const timestamp = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
+  // console.log('**Queries** addActivity timestamp: ', timestamp)
+  try{
+    
+    const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestampUTCString, pee, poo])
+    // console.log('Queries, addActivity, result: ',result)
+    const data = result.rows
+    // console.log('*queries* data: ', data)
+    return data
+  }catch(e){
+    throw e
+  }
+  // const { year,monthIndex,date,convertedHour,convertedMinute, meridian } = (timestampWithoutTZ)
+  // const timestamp = `${year}-${monthIndex+1}-${date} ${convertedHour}:${convertedMinute} ${meridian}`
+  // console.log('**Queries** addActivity timestamp: ', timestamp)
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -1042,6 +1108,7 @@ export default {
   verifyValidResetTokenExists,
   setResetTokenExpired,
   addResetTokenAccessedTimestamp,
-  verifyPendingResetTokenExists
+  verifyPendingResetTokenExists,
+  testEndpoint
 }
 

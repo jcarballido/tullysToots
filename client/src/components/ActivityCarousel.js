@@ -8,12 +8,11 @@ import ConfirmationModal from './ConfirmationModal.js'
 import leftArrow from '../media/left_arrow.svg' 
 import rightArrow from '../media/right_arrow.svg' 
 
-const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity, status, setStatus }) => {
+const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity, status, setStatus, setTimeModal }) => {
 
   const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState();
   const [ today, setToday ] = useState(false)
-  const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
   const currentReferencePetId = useRef(null)
   // const [ status, setStatus ] = useState()
 
@@ -31,7 +30,8 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     try{
       const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`)
       const newActivity = response.data.activityArray
-      console.log('*Activity Carousel* newActivity: ', newActivity)
+      // console.log('*Activity Carousel* activity: ', activity)
+      // console.log('*Activity Carousel* new activity: ', newActivity)
       if(timeWindowObj.daysBefore){
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
@@ -43,6 +43,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
         setActivity( (prevActivity) => {
           const rawActivity = structuredClone(prevActivity)
           rawActivity.splice(rawActivity.length - 1,1)
+          console.log('raw activity after splice:', rawActivity)
           rawActivity.push(...newActivity)
           return rawActivity
         })
@@ -88,22 +89,22 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   useEffect( () =>{
     // console.log('Current index after dateMap changes:', currentIndex)
     if(currentReferencePetId.current == referencePetId && (currentIndex == 0 || currentIndex == activityArr.length - 1)){
-      console.log('current ref matches pet ID in state' )
+      // console.log('current ref matches pet ID in state' )
       const mapKeys = dateMap.keys()
-      console.log('mapKeys:', mapKeys)
+      // console.log('mapKeys:', mapKeys)
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
-      console.log('index:', index)
+      // console.log('index:', index)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
     } 
     if(currentReferencePetId.current != referencePetId){
       console.log("pet change!")
-      console.log('dateMap:', dateMap)
+      // console.log('dateMap:', dateMap)
       const mapKeys = dateMap.keys()
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
-      console.log('index:', index)
+      // console.log('index:', index)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
       currentReferencePetId.current = referencePetId
@@ -121,7 +122,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex+1][0]
     setReferenceDate(activeReferenceDate)
-    console.log('activeReferenceDate:', activeReferenceDate)
+    // console.log('activeReferenceDate:', activeReferenceDate)
 
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
     setStatus({ viewing:true, adding:false, updating:false })
@@ -150,7 +151,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
 
   return (
     <div className="w-11/12 flex items-start justify-center relative overflow-x-hidden rounded-xl">
-      <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
+      {/* <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } /> */}
       {/* <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity}/>  */}
       <img onClick={prevCard} className="absolute top-4 left-4 z-10 w-[48px]" src={leftArrow} />
       <img onClick={nextCard} className={`w-[48px] absolute top-4 right-4 z-10 disabled:bg-red-500`} src={rightArrow} />

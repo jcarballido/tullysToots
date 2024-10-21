@@ -1,6 +1,6 @@
 // import UpdateUsername from "../../client/src/components/UpdateUsername"
 
-const activityColumns = ['pet_id','set_by','set_on_at','pee','poo']
+const activityColumns = ['pet_id','set_by','set_on_at','pee','poo','timezone_offset_hours','reference_date']
 
 const insertIntoText = (tableName,newValuesArr) => {
   // const activityColumns = ['pet_id','entered_by','meridiem','set_on_at','pee','poo']
@@ -132,7 +132,7 @@ const getActivityText = () => {
   return `
     SELECT activity_id,${activityColumns.join()}
     FROM activities
-    WHERE pet_id = $1 AND set_on_at > $2::timestamp - $3::interval AND set_on_at < $2::timestamp + $4::interval
+    WHERE pet_id = $1 AND reference_date > $2::timestamp - $3::interval AND reference_date < $2::timestamp + $4::interval
   `
 }
 

@@ -9,11 +9,12 @@ import useAuth from '../hooks/useAuth'
 import ActivityCarousel from '../components/ActivityCarousel'
 import PetSelector from '../components/PetSelector'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
-import { axiosPrivate } from '../api/axios'
+import  axios, { axiosPrivate } from '../api/axios'
 // import timestampParser from '../util/timestampParser'
 // import axios from 'axios'
 import AddPetModal from '../components/AddPetModal'
 import ConfirmationModal from '../components/ConfirmationModal'
+import TimeModal from '../components/TimeModal'
 
 const Activity = () => { 
 
@@ -39,6 +40,8 @@ const Activity = () => {
   const [addPetError, setAddPetError] = useState(false)
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
   const [status,setStatus] = useState({ viewing: true, adding: false, updating: false })
+  const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
+
 
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
@@ -140,9 +143,6 @@ const Activity = () => {
     
   },[activity])
 
-  // console.log('Date map:', dateMap)
-
-
   useEffect( () => {
     if(actionData?.status == 'success'){
       console.log('pet added!')
@@ -170,6 +170,19 @@ const Activity = () => {
     setSwitchPetModal({visible:true})
   }
 
+  const sendTimestamp = async() => {
+    const currentTimestampFromClient = new Date()
+    const timezoneOffset = currentTimestampFromClient.getTimezoneOffset()
+    // console.log('currentTimestampClinet:', currentTimestampFromClient, '+', timezoneOffset)
+    try{
+        const response = await axios.post('activity/testEndpoint', { currentTimestampFromClient, timezoneOffset })
+        const data = response.data
+        // console.log('Data recieved back:', data)
+    }catch(e){
+        console.log(e)
+    }
+}
+
   const deleteExistingActivity = async(event, activityId, dateString) => {
     event.preventDefault()
     // Send delete request
@@ -187,15 +200,15 @@ const Activity = () => {
         const updatedActivityArray = prevActivity.map( dailyActivityLog => {
           const dailyActivityDate = Object.keys(dailyActivityLog)[0]
           const referenceDate = Object.keys(referenceDateActivity)[0]
-          console.log('dailyActivityDate:', dailyActivityDate)
-          console.log('ref ActivityDate:', referenceDate)
+          // console.log('dailyActivityDate:', dailyActivityDate)
+          // console.log('ref ActivityDate:', referenceDate)
           if(dailyActivityDate == referenceDate){
             return referenceDateActivity
           }else{
             return dailyActivityLog
           }
         })
-        console.log('updated Act arr:', updatedActivityArray)
+        // console.log('updated Act arr:', updatedActivityArray)
         return updatedActivityArray
       })
       setConfirmationModal(prev => { return {visible:false,activityId:null}})
@@ -216,12 +229,13 @@ const Activity = () => {
       </div>
       {
         referencePetId
-        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} confirmationModal={confirmationModal} setConfirmationModal={ setConfirmationModal } deleteExistingActivity={deleteExistingActivity} status={status} setStatus={setStatus} />
+        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} confirmationModal={confirmationModal} setConfirmationModal={ setConfirmationModal } deleteExistingActivity={deleteExistingActivity} status={status} setStatus={setStatus} setTimeModal={setTimeModal}/>
         : <button onClick={openAddPetModal}>Add a new pet!</button>
       }
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } switchPetModal={switchPetModal} setSwitchPetModal={setSwitchPetModal} setAddPetModal={setAddPetModal} addPetModal={addPetModal}/>
       <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } error={addPetError} setAddPetError={setAddPetError} />
       <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity} setStatus={setStatus}/> 
+      <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
     </main>
   )
 }
@@ -230,17 +244,65 @@ export default Activity
 
 export const loader = () => {
   // Get exisiting reference date from local storage or set to the current date
-  let referenceDate = localStorage.getItem('referenceDate') || null
-  if(!referenceDate){
-    referenceDate = new Date()
-    localStorage.setItem('referenceDate', JSON.stringify(referenceDate.toLocaleString().split(',')[0]))
-  }
+  let localStorageReferenceDate = localStorage.getItem('referenceDate') || null
+  if(!localStorageReferenceDate){
+    localStorageReferenceDate = new Date()
+    const year = localStorageReferenceDate.getUTCFullYear()
+    const month = localStorageReferenceDate.getUTCMonth()
+    const paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
+    const date = localStorageReferenceDate.getUTCDate()
+    const paddedDate = date < 10? `0${date}`:`${date}`
+    localStorage.setItem('referenceDate', JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))
+  }else {
+    // console.log('ref date present:', localStorageReferenceDate)
+    let newReferenceDate = new Date(localStorageReferenceDate)
+    let year = newReferenceDate.getUTCFullYear()
+    let month = newReferenceDate.getUTCMonth()
+    let date = newReferenceDate.getUTCDate()
+    let paddedMonth
+    let paddedDate = date
+    // console.log('year,month,date:', year,month,date)
+    if(newReferenceDate.getUTCMonth().toString().length != 2) {
+          paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
+          // console.log('year,month,date:', year,paddedMonth,date)
+          // newReferenceDate = new Date(`${year}`,`${paddedMonth}`,`${date}`)
+          // console.log('updated ref date:', newReferenceDate.getUTCMonth())
+        }
+    if(newReferenceDate.getUTCDate().toString().length != 2) {
+        paddedDate = `0${date}`
+      //     newReferenceDate.setUTCMonth(paddedDate)
+      //   }
+    console.log('date to store:',JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))}
+    localStorage.setItem('referenceDate', JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))
+
+  }// else{
+  //   console.log('local storage ref date: ', JSON.parse(localStorageReferenceDate))
+  //   const newReferenceDate = new Date(localStorageReferenceDate)
+  //   console.log('new Ref date:', newReferenceDate)
+  //   let year = newReferenceDate.getUTCFullYear()
+  //   let month = newReferenceDate.getUTCMonth()
+  //   let date = newReferenceDate.getUTCDate()
+  //   let paddedMonth
+  //   let paddedDate
+  //   if(newReferenceDate.getUTCMonth().toString().length != 2) {
+  //     const paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
+  //     newReferenceDate.setUTCMonth(paddedMonth)
+  //   }
+  //   if(newReferenceDate.getUTCDate().toString().length != 2) {
+  //     const paddedDate = date < 10? (date + 1 == 10 ? '10':`0${date + 1}`): `${date + 1}`
+  //     newReferenceDate.setUTCMonth(paddedDate)
+  //   }
+  //   year = newReferenceDate.getUTCFullYear()
+  //   month = newReferenceDate.getUTCMonth()
+  //   date = newReferenceDate.getUTCDate()
+
+  // }
 
   // Get exisiting reference pet ID from local storage or set to null
   const referencePetIdLocalStorage = localStorage.getItem('referencePetId') || null
   const referencePetId = referencePetIdLocalStorage == 'undefined' || referencePetIdLocalStorage == 'null'  ? null : JSON.parse(referencePetIdLocalStorage)  
 
-  return { referenceDate, referencePetId}
+  return { referenceDate:localStorageReferenceDate, referencePetId}
 }
 
 export const action = async({ request }) => {
