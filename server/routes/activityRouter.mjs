@@ -197,7 +197,11 @@ router.post("/add", async (req, res) => {
   try{
     // console.log('Attempt to add activity is being made.')
     const result = await queries.addActivity(petId, ownerId, timestampUTCString,timezoneOffset, pee,poo)
-    // console.log('Line 71, result: ', result)
+    console.log('Line 71, result: ', result)
+    const referenceDate = result.reference_date.toISOString()
+    const referenceDateSplit = referenceDate.split('T')[0]
+    console.log('Ref date split:', referenceDateSplit)
+    req.referenceDate = referenceDateSplit
   }catch(e){
     console.log('Error adding activity; error code sent to client: ',e)
     return res.status(400).json({error:'Error adding activity to db'})
@@ -205,7 +209,7 @@ router.post("/add", async (req, res) => {
 
   try{
     // console.log('*activityRouter* attempting to retrieve singleDayActivity')
-    const result = await queries.getSingleDayActivity(petId, timestampUTCString); 
+    const result = await queries.getSingleDayActivity(petId, req.referenceDate); 
     console.log('*activityRouter* Result from querying single day activity: ', result)
     console.log(util.inspect(result, { depth: null }))
     return res.status(200).json(result)

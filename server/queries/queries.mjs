@@ -96,9 +96,9 @@ const addActivity = async(petId, ownerId, timestampUTCString, timezoneOffset, pe
   // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
   console.log('*Queries* timestamp passed in: ', timestampUTCString)
   const recievedDate = new Date(timestampUTCString)
-  const fullYear = recievedDate.getUTCFullYear()
-  const monthIndex = recievedDate.getUTCMonth()
-  const date = recievedDate.getUTCDate()
+  const fullYear = recievedDate.getFullYear()
+  const monthIndex = recievedDate.getMonth()
+  const date = recievedDate.getDate()
   // const { fullYear, monthIndex, date } = getDateCharacteristics(timestampUTCString)
   console.log('*Queries* date:', date)
   const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString,timezoneOffset)
@@ -581,7 +581,7 @@ const getSingleDayActivity = async(petId,targetDate) => {
   const dateArray = [ `${fullYear}-${paddedMonth}-${paddedDate}` ]
 
   try{
-    const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${fullYear}-${paddedMonth}-${paddedDate}`])
+    const result = await pool.query(sqlText.getSingleDayActivityText(), [ petId, `${targetDate}`])
     const data = result.rows
     console.log('**Queries** getSingleDayActivity, data: ', data)
     const formattedData = dateArray.map( dateAsTimestamp => {
