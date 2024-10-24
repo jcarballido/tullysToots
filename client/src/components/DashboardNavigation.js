@@ -23,7 +23,7 @@ const DashboardNavigation = () => {
   }
 
   return(
-    <div className='flex flex-col w-full text-xl gap-2 pt-2'>
+    <div className='flex flex-col w-full text-xl   gap-2 pt-2'>
       <Link to='/account' state={{ from: location.pathname }} className='w-full flex items-center h-[48px]'>Account Info</Link>
       <Link to='/pets' state={{ from: location.pathname }} className='w-full flex items-center h-[48px]'>Pets</Link>
       <Link to='/sendInvite' state={{ from: location.pathname }} className='w-full flex items-center h-[48px]'> Share Pet Info </Link>

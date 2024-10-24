@@ -82,50 +82,52 @@ const Pet = ({ pet, editMode, disabled, handleEditMode,setPetsArray, setEditMode
 
   return (
     <div className="flex flex-col text-black w-full">
-      <input type="text" className="text-black" disabled={disabled} {...petNameInput} />
-      <fieldset className="flex max-w-full">
-        Birthday:
-        <input type="date" value={dateValue} disabled={disabled} onChange={handleBirthdayChange} />
-      </fieldset>
-      <fieldset>
-        <label className={`${sexValue === "male" ? 'border-black border-2':''}`}>
-          MALE
-          <input
-            type="radio"
-            name="sex"
-            value="male"
-            disabled={disabled}
-            checked={sexValue === "male"}
-            onChange={updateSex}
-            className="invisible"
-          />
-        </label>
-        <label className={`${sexValue === "female" ? 'border-black border-2':''}`}>
-          FEMALE
-          <input
-            type="radio"
-            name="sex"
-            value="female"
-            disabled={disabled}
-            checked={sexValue === "female"}
-            onChange={updateSex}
-            className="invisible"
-          />
-        </label>
-      </fieldset>
-      {/* <input type='text' disabled={disabled} {...sex} /> */}
-      <button
-        className="disabled:bg-red-500"
-        disabled={editMode.state}
-        onClick={(e) => handleEditMode(e, pet.pet_id)}
-      >
-        Edit
-      </button>
-      {!disabled ? (
-        <button className="" onClick={handleSave}>
-          Save
+      <div className="">
+        <input type="text" className="text-black" disabled={disabled} {...petNameInput} />
+        <fieldset className="flex max-w-full">
+          Birthday:
+          <input type="date" value={dateValue} disabled={disabled} onChange={handleBirthdayChange} />
+        </fieldset>
+        <fieldset>
+          <label className={`${sexValue === "male" ? 'border-black border-2':''}`}>
+            MALE
+            <input
+              type="radio"
+              name="sex"
+              value="male"
+              disabled={disabled}
+              checked={sexValue === "male"}
+              onChange={updateSex}
+              className="invisible"
+            />
+          </label>    
+          <label className={`${sexValue === "female" ? 'border-black border-2':''}`}>
+            FEMALE
+            <input
+              type="radio"
+              name="sex"
+              value="female"
+              disabled={disabled}
+              checked={sexValue === "female"}
+              onChange={updateSex}
+              className="invisible"
+            />
+          </label>
+        </fieldset>
+        {/* <input type='text' disabled={disabled} {...sex} /> */}
+        <button
+          className="disabled:bg-red-500"
+          disabled={editMode.state}
+          onClick={(e) => handleEditMode(e, pet.pet_id)}
+        >
+          Edit
         </button>
-      ) : null}
+        {!disabled ? (
+          <button className="" onClick={handleSave}>
+            Save
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 };

@@ -64,7 +64,7 @@ const DropdownMenu = ({ petIdArray, visible, setSwitchPetModal, referencePetId, 
         <div className="flex justify-center items-center w-full bg-primary text-gray-900 rounded-2xl" onClick={openAddPetModal}>
           Add a pet
         </div>
-        <Link to='/pets' className="flex justify-center items-center w-full bg-primary text-gray-900 rounded-2xl">
+        <Link to='/pets' state={{from:location.pathname}} className="flex justify-center items-center w-full bg-primary text-gray-900 rounded-2xl">
           Edit pets
         </Link>
       </div>

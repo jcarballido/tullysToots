@@ -5,8 +5,12 @@ import useTextInput from '../hooks/useTextInput';
 
 const NewPetModal = ({ newPetModal, setNewPetModal, setPetsArray }) => {
 
-  const { fullYear, paddedMonth, paddedDate } = getDateCharacteristics(new Date())
-  const [ dateValue, setDateValue ] = useState(`${fullYear}-${paddedMonth}-${paddedDate}`)
+  // const { fullYear, paddedMonth, paddedDate } = getDateCharacteristics(new Date())
+
+  const currentDate = new Date()
+  const currentDateISOFormat = currentDate.toISOString().split('T')[0]
+
+  const [ dateValue, setDateValue ] = useState(`${currentDateISOFormat}`)
   const [ sexValue, setSexValue ] = useState('')
 
   const axiosPrivate = useAxiosPrivate()
@@ -44,45 +48,50 @@ const NewPetModal = ({ newPetModal, setNewPetModal, setPetsArray }) => {
     setSexValue(e.target.value);
   };
 
+  if(newPetModal.visible){
+
   return (
-    <div className={`z-50 bg-gray-400 text-black top-[150px] transition duration-300 ease-in ${newPetModal.visible? 'opaque-100 scale-y-100':'opaque-0 scale-y-0'} `}>
-      <input type="text" className="text-black" {...newPetInput} />
-      <fieldset className="flex max-w-full">
-        Birthday:
-        <input type="date" value={dateValue} onChange={handleBirthdayChange} />
-      </fieldset>
-      <fieldset>
-        <label className={`${sexValue === "male" ? 'border-black border-2':''}`}>
-          MALE
-          <input
-            type="radio"
-            name="sex"
-            value="male"
-            checked={sexValue === "male"}
-            onChange={updateSex}
-            className="invisible"
-          />
-        </label>
-        <label className={`${sexValue === "female" ? 'border-black border-2':''}`}>
-          FEMALE
-          <input
-            type="radio"
-            name="sex"
-            value="female"
-            checked={sexValue === "female"}
-            onChange={updateSex}
-            className="invisible"
-          />
-        </label>
-      </fieldset>
-      <button className="" onClick={handleSave}>
-        Save
-      </button>
-      <button className="" onClick={() => setNewPetModal({visible:false})}>
-        Cancel
-      </button>
+    <div className={`absolute inset-0 flex justify-center items-start text-black font-Fredoka text-2xl z-40 backdrop-grayscale backdrop-blur-sm`}> 
+      <div className={`z-50 bg-gray-400 text-black top-[150px] transition duration-300 ease-in ${newPetModal.visible? 'opaque-100 scale-y-100':'opaque-0 scale-y-0'} `}>
+        <input type="text" className="text-black" {...newPetInput} />
+        <fieldset className="flex max-w-full">
+          Birthday:
+          <input type="date" value={dateValue} onChange={handleBirthdayChange} />
+        </fieldset>
+        <fieldset>
+          <label className={`${sexValue === "male" ? 'border-black border-2':''}`}>
+            MALE
+            <input
+              type="radio"
+              name="sex"
+              value="male"
+              checked={sexValue === "male"}
+              onChange={updateSex}
+              className="invisible"
+            />
+          </label>
+          <label className={`${sexValue === "female" ? 'border-black border-2':''}`}>
+            FEMALE
+            <input
+              type="radio"
+              name="sex"
+              value="female"
+              checked={sexValue === "female"}
+              onChange={updateSex}
+              className="invisible"
+            />
+          </label>
+        </fieldset>
+        <button className="" onClick={handleSave}>
+          Save
+        </button>
+        <button className="" onClick={() => setNewPetModal({visible:false})}>
+          Cancel
+        </button>
+      </div>
     </div>
-  )
+  )} else null
+  
 }
 
 export default NewPetModal
