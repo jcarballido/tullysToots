@@ -17,7 +17,7 @@ const Logo = ({ slide,setSlide, auth }) => {
         <div className='flex items-end justify-center text-xl h-full'>Tully's Toots</div>
       </Link>
       { auth?.accessToken
-        ? <img disabled={slide} className={`flex justify-center items-center mr-2 h-[48px] ${slide? 'invisible':'visible'}`} onClick={handleOpen} src={burger} />
+        ? <img className={`flex justify-center items-center mr-2 h-[48px] ${slide? 'invisible':'visible'}`} onClick={handleOpen} src={burger} />
         : null
       }
     </div>

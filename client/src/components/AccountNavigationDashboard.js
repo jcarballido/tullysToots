@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import useAuth from '../hooks/useAuth'
 // import {axiosPrivate} from '../api/axios'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -6,24 +6,15 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate'
 // import { axiosPrivate } from '../api/axios'
 import Toast from './Toast'
 
-function AccountNavigation({ slide, setSlide, from }) {
+function AccountNavigation({ slide, setSlide }) {
 
   const location = useLocation()
   const navigate = useNavigate()
 
   const { auth,setAuth } = useAuth() 
   const axiosPrivate = useAxiosPrivate()
-  const [prevLocation, setPrevLocation] = useState(null)
 
-  useEffect( () => {
-    if(from){
-      const previousLocationPath = from
-      const previousLocationPathSplit = previousLocationPath.split('/')
-      const previousPageName = previousLocationPathSplit[previousLocationPathSplit.length - 1] || null
-      const previousPageNameCapitalized = previousPageName.charAt(0).toUpperCase() + previousPageName.slice(1)
-      setPrevLocation(previousPageNameCapitalized)
-    }
-  }, [from])
+
 
   const handleClose = (e) => {
     e.preventDefault()
@@ -52,7 +43,7 @@ function AccountNavigation({ slide, setSlide, from }) {
             <div className=' flex justify-center items-center font-bold p-1 rounded-xl'>X</div>
           </div>
         </button>
-        <Link to={`${from}`} state={{from:location.pathname}} className='px-4 h-[48px] font-bold text-white flex justify-center items-center bg-accent rounded-2xl'>{`${prevLocation}`}</Link>
+        <Link to='/dashboard' state={{from:location.pathname}} className='px-4 h-[48px] font-bold text-white flex justify-center items-center bg-accent rounded-2xl'>Dashboard</Link>
         <button onClick={handleLogout} className='px-4 h-[48px] flex justify-center items-center text-white bg-red-500 rounded-2xl'>Logout</button>
       </div>
     </div>

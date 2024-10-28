@@ -17,10 +17,10 @@ function Account() {
   // }
 
   return (
-    <div className='h-full w-full border-4 border-black'>
+    <div className='h-full w-full'>
       {/* <button className='w-full grow-0 flex items-center' onClick={sendBack}>{`<= ${previousPageNameCapitalized}`}</button> */}
-      <div>Update Account</div>
-      <div className='flex flex-col'>
+      <div className='w-full flex items-center font-bold mb-2  text-xl'>Update Account</div>
+      <div className='flex flex-col gap-4 mt-4 text-lg'>
         <Link to='/updateUsername' state={{ from: location.pathname }}>Update Username</Link>
         <Link to='/updatePassword' state={{ from: location.pathname }}>Update Password</Link>
       </div>

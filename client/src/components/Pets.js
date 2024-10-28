@@ -10,10 +10,9 @@ function Pets({ no }) {
 
   const axiosPrivate = useAxiosPrivate()
   // const loaderData = useLoaderData()
-  const [petsArray, setPetsArray, setNewPetModal] = useOutletContext()
+  const [petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal] = useOutletContext()
   
-  const [ editMode, setEditMode ] = useState({state:false, petId:null})
-  const [ toast, setToast ] = useState({visible:null, result:'', message:''})
+  // const [ toast, setToast ] = useState({visible:null, result:'', message:''})
   
   // const [ editPetsArray, setEditPetsArray ] = useState([])
   
@@ -70,23 +69,26 @@ function Pets({ no }) {
     <div className='w-full h-full flex flex-col items-center overflow-hidden'>
       {/* <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } />        */}
       {/* <NewPetModal newPetModal={newPetModal} setNewPetModal={setNewPetModal} setPetsArray={setPetsArray} /> */}
-      <div className='w-full flex items-center font-bold'>Pets</div>
+      <div className='w-full flex items-center font-bold mb-2 pl-2 text-xl'>Pets</div>
       <div className='w-full grow flex flex-col overflow-y-auto'>
-        {petsArray?.map( pet => {
-          if(editMode?.petId == pet.pet_id){
+        {petsArray?.map( (pet, index) => {
+          // if(editMode?.petId == pet.pet_id){
             return(
-              <Pet pet={pet} editMode={editMode} disabled={false} handleEditMode={handleEditMode} setPetsArray={setPetsArray} setEditMode={setEditMode} /> 
+              <Pet pet={pet} disabled={false} handleEditMode={handleEditMode} setPetsArray={setPetsArray} index={index} unlinkPetModal={unlinkPetModal} setUnlinkPetModal={setUnlinkPetModal} editPetModal={editPetModal} setEditPetModal={setEditPetModal} /> 
             )
-          }else{
-            return(
-              <Pet pet={pet} editMode={editMode} disabled={true} handleEditMode={handleEditMode} setPetsArray={setPetsArray} setEditMode={setEditMode} /> 
-            )
-          }
+        //   }else{
+        //     return(
+        //       <Pet pet={pet} editMode={editMode} disabled={true} handleEditMode={handleEditMode} setPetsArray={setPetsArray} setEditMode={setEditMode} /> 
+        //     )
+        //   }
           
-        })}
+        // 
+        }
+        )
+        }
 
       </div>
-      <button disabled={newPetInProcess()} onClick={addPet} className='flex justify-center items-center rounded-xl bg-accent px-2 text-white max-w-max h-[48px]'>Add a Pet</button>
+      <button disabled={newPetInProcess()} onClick={addPet} className='flex justify-center items-center rounded-xl bg-accent px-2 text-white max-w-max  my-4'>Add a Pet</button>
     </div>
   )
 }

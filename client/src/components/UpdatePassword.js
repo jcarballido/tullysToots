@@ -48,25 +48,25 @@ const UpdatePassword = () => {
 
   return (
     <div className='w-full flex flex-col'>
-      <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast }/>
-      Update Password
+      {/* <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast }/> */}
+      <div className='w-full flex items-center font-bold mb-2  text-xl'>Update Password</div>
       <Form className='text-black w-full flex flex-col' method='post' action='/updatePassword'>
         <label className='w-full flex flex-col items-start'>
           <div className='flex w-full'>Current Password</div>
-          <input className='w-full' type='text' name='currentPassword' {...currentPasswordInput} />
+          <input className='rounded-md w-full focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none  px-2 text-lg' type='text' name='currentPassword' {...currentPasswordInput} />
         </label>
         <label className='w-full flex flex-col items-start'>
           <div className='flex w-full'>New Password</div>
-          <input className='w-full' type='text' name='newPassword' {...newPasswordInput} />
+          <input className='rounded-md w-full focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none  px-2 text-lg' type='text' name='newPassword' {...newPasswordInput} />
         </label>
         <label className='w-full flex flex-col items-start'>
           <div className='flex w-full'>Confirm Password</div>
-          <input className='w-full' type='text' name='confirmPassword' {...confirmPasswordInput} />
+          <input className='rounded-md w-full focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none  px-2 text-lg' type='text' name='confirmPassword' {...confirmPasswordInput} />
         </label>
         <div className={`${passwordMismatch? 'visible':'invisible'}` } >
           Passwords must match
         </div>
-        <button type='submit' disabled={passwordMismatch || !newPasswordInput.value || !confirmPasswordInput.value || !currentPasswordInput.value} >SUBMIT</button>
+        <button type='submit' className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md text-white text-lg font-bold max-w-min' disabled={passwordMismatch || !newPasswordInput.value || !confirmPasswordInput.value || !currentPasswordInput.value} >SUBMIT</button>
       </Form>
     </div>
   )

@@ -263,7 +263,7 @@ const getPets = async(ownerId) => {
     const result = await pool.query(sqlText.getPets,[ ownerId ])
     return result.rows
   }catch(e){
-    return e
+    throw e
   }
 }
 
@@ -336,13 +336,12 @@ const updatePet = async(updatedData) => {
   // const [ ...newValues ] = updatedData.newValues
   //console.log('newValues => ',newValues)
 
-  const { petId, pet_name, dob, sex } = updatedData
+  const { pet_id, pet_name, dob, sex } = updatedData
   try{
-    const result = await pool.query(sqlText.updateText('pets',['pet_name','dob','sex'],'pet_id'),[pet_name,dob,sex, petId])
+    const result = await pool.query(sqlText.updateText('pets',['pet_name','dob','sex'],'pet_id'),[pet_name,dob,sex, pet_id])
     return result
   }catch(e){
-    console.log('Error in updatePet query: ', e)
-    return e
+    throw e
   }
 
   //,[pet_name,dob,sex, petId]) Two queries:
@@ -352,9 +351,9 @@ const updatePet = async(updatedData) => {
   //console.log('ownerId =>', ownerId)
   //2. Pass in owner ID that needs updating
   //console.log("Sql Text =>", sqlText.updateText('owners',fields,'owner_id'))
-  const result = await pool.query(sqlText.updateText('pets',fields,'petId'),[...newValues,petId])
+  // const result = await pool.query(sqlText.updateText('pets',fields,'petId'),[...newValues,petId])
   // console.log(result)
-  return result
+  // return result
 }
 
 const updateActivity = async(updatedActivityArray) => {
@@ -1045,6 +1044,15 @@ const testEndpoint = async(petId, ownerId, timestampUTCString, pee, poo) => {
   // console.log('**Queries** addActivity timestamp: ', timestamp)
 }
 
+const unlinkPet = async(ownerId,petIdToUnlink) => {
+  try {
+    await pool.query(sqlText.unlinkPetText, [ ownerId, petIdToUnlink ])
+    return
+  } catch (error) {
+    throw error
+  }
+}
+
 export default {
   addPet,
   addInvitationLink,
@@ -1109,6 +1117,7 @@ export default {
   setResetTokenExpired,
   addResetTokenAccessedTimestamp,
   verifyPendingResetTokenExists,
-  testEndpoint
+  testEndpoint,
+  unlinkPet
 }
 

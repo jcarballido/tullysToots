@@ -57,7 +57,7 @@ export const Home = () => {
     <div className='w-screen h-screen max-h-screen bg-secondary flex flex-col justify-start items-center relative overflow-hidden'>
       <Banner slide={slide} setSlide={setSlide} auth={auth} />
       { auth?.accessToken
-        ? <AccountNavigation slide={slide} setSlide={setSlide} />
+        ? <AccountNavigation slide={slide} setSlide={setSlide} from='dashboard' />
         : null
       }
       <Outlet />

@@ -1417,38 +1417,59 @@ router.post('/addPets', async(req,res,next) => {
   return next()
 })
 
+//TEST Route
 router.put('/updatePet', async(req,res) => {
+  console.log('**Update Pet route** Data received: ',req.body)
   const ownerId = req.ownerId
-  console.log('Owner ID: ', ownerId)
-  // if (!ownerId) return res.send('User is not logged in or does not have an account')
-  // Check the request object inlcudes all the correct keys
-  console.log('Request body: ', req.body)
-  const updatedData = req.body
-  // const expectedKeys = ['petId','fields','newValues']
-  // const validateUpdateData = expectedKeys.map( key => {
-  //   const test = updatedData.includes(key)
-  //   return test
-  // })
-  // if(validateUpdateData.includes(false)) {
-  //   res.locals.error = 'ERROR: Invalid update request'
-  //   return next()
-  // }
-  // Confirm pet IDs belong to owner making the request
-  const petId = updatedData.petId
-  console.log('petId passed into request body: ', petId)
-  const ownerLinkIsActive = await queries.checkOwnerLink(ownerId,petId)
-  console.log('Is link between owner making request and the pet active?: ',ownerLinkIsActive)
-  if(!ownerLinkIsActive) {
-    return res.status(400).json(new Error('Account not registered with pet.'))
+  const {pet_id,pet_name, sex, dob} = req.body
+  try {
+    await queries.updatePet(req.body)
+  } catch (error) {
+    console.log('Error updating pet:', error)
+    return res.status(400).json({'error':error})
   }
-  try{
-    const result = await queries.updatePet(updatedData)
+  try {
+    const result = await queries.getPets(ownerId)
     return res.status(200).json(result)
-  }catch(e){
-    console.log('Error occured in accountRouter attempting to update pet: ', e)
-    return res.status(400).json(new Error('Error saving new pet data on server. See server for details'))
+  } catch (error) {
+    return res.status(400).json('Error getting updated pets list:', error)
   }
 })
+
+
+//ACTUAL Route
+// router.put('/updatePet', async(req,res) => {
+//   const ownerId = req.ownerId
+//   console.log('Owner ID: ', ownerId)
+//   // if (!ownerId) return res.send('User is not logged in or does not have an account')
+//   // Check the request object inlcudes all the correct keys
+//   console.log('Request body: ', req.body)
+//   const updatedData = req.body
+//   // const expectedKeys = ['petId','fields','newValues']
+//   // const validateUpdateData = expectedKeys.map( key => {
+//   //   const test = updatedData.includes(key)
+//   //   return test
+//   // })
+//   // if(validateUpdateData.includes(false)) {
+//   //   res.locals.error = 'ERROR: Invalid update request'
+//   //   return next()
+//   // }
+//   // Confirm pet IDs belong to owner making the request
+//   const petId = updatedData.petId
+//   console.log('petId passed into request body: ', petId)
+//   const ownerLinkIsActive = await queries.checkOwnerLink(ownerId,petId)
+//   console.log('Is link between owner making request and the pet active?: ',ownerLinkIsActive)
+//   if(!ownerLinkIsActive) {
+//     return res.status(400).json(new Error('Account not registered with pet.'))
+//   }
+//   try{
+//     const result = await queries.updatePet(updatedData)
+//     return res.status(200).json(result)
+//   }catch(e){
+//     console.log('Error occured in accountRouter attempting to update pet: ', e)
+//     return res.status(400).json(new Error('Error saving new pet data on server. See server for details'))
+//   }
+// })
 
 router.post('/breakOwnerLink', async(req,res,next) => {
   const ownerId = req.ownerId
@@ -1594,6 +1615,25 @@ router.get('/getPets', async(req,res) => {
   }catch(e){
     console.log('Error querying for pets: ', e)
     return res.status(400).json({error:'Error querying for pets'})
+  }
+})
+
+router.patch('/unlinkPet', async(req,res) => {
+  const ownerId = req.ownerId
+  const petIdToUnlink = req.body.petId
+  console.log('Owner id and pet id:', ownerId,'+',petIdToUnlink)
+  try {
+    await queries.unlinkPet(ownerId,petIdToUnlink)
+  } catch (e) {
+    console.log('**Account Router/unlinkPet** Error unlinking pet: ', e)
+    return res.status(400).json({error: 'Failed to unlink pet.'})
+  }
+  try {
+    const result = await queries.getPets(ownerId)
+    return res.status(200).json(result)
+  } catch (error) {
+    console.log('**Account Router/unlinkPet** Error getting updated pets list: ', e)
+    return res.status(400).json({error: 'Failed to get updated pet list.'})    
   }
 })
 

@@ -47,25 +47,24 @@ const UpdateUsername = () => {
 
   return (
     <div className='w-full flex flex-col'>
-      <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast }/>
-      Update Username
-      <Form className='text-black w-full flex flex-col' method='post' action='/updateUsername'>
+      <div className='w-full flex items-center font-bold mb-2  text-xl'>Update Username</div>
+      <Form method='post' action='/updateUsername' className={ `flex flex-col gap-5 justify-start items-start text-black z-10   rounded-2xl w-full` }>
         <label className='w-full flex flex-col items-start'>
           <div className='flex w-full'>Current Username</div>
-          <input className='w-full' type='text' name='currentUsername' {...currentUsernameInput} />
+          <input type='text' name='currentUsername' {...currentUsernameInput} className='rounded-md w-full focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none  px-2 text-lg'/>
         </label>
         <label className='w-full flex flex-col items-start'>
           <div className='flex w-full'>New Username</div>
-          <input className='w-full' type='text' name='newUsername' {...newUsernameInput} />
+          <input className='w-full rounded-md focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none  px-2 text-lg' type='text' name='newUsername' {...newUsernameInput} />
         </label>
         <label className='w-full flex flex-col items-start'>
-          <div className='flex w-full'>Confirm Username</div>
-          <input className='w-full' type='text' name='confirmUsername' {...confirmUsernameInput} />
+          <div className='flex w-full'>Confirm New Username</div>
+          <input className='w-full rounded-md focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none  px-2 text-lg' type='text' name='confirmUsername' {...confirmUsernameInput} />
         </label>
         <div className={`${usernameMismatch? 'visible':'invisible'}` } >
           Username must match
         </div>
-        <button type='submit' disabled={usernameMismatch || !newUsernameInput.value || !confirmUsernameInput.value || !currentUsernameInput.value} >SUBMIT</button>
+        <button type='submit' className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md text-white text-lg font-bold' disabled={usernameMismatch || !newUsernameInput.value || !confirmUsernameInput.value || !currentUsernameInput.value} >SUBMIT</button>
       </Form>
     </div>
   )
@@ -101,3 +100,22 @@ export const action = async({ request }) => {
   
 
 export default UpdateUsername
+
+{/* <Form className='text-black w-full flex flex-col' method='post' action='/updateUsername'>
+        <label className='w-full flex flex-col items-start'>
+          <div className='flex w-full'>Current Username</div>
+          <input className='w-full' type='text' name='currentUsername' {...currentUsernameInput} />
+        </label>
+        <label className='w-full flex flex-col items-start'>
+          <div className='flex w-full'>New Username</div>
+          <input className='w-full' type='text' name='newUsername' {...newUsernameInput} />
+        </label>
+        <label className='w-full flex flex-col items-start'>
+          <div className='flex w-full'>Confirm Username</div>
+          <input className='w-full' type='text' name='confirmUsername' {...confirmUsernameInput} />
+        </label>
+        <div className={`${usernameMismatch? 'visible':'invisible'}` } >
+          Username must match
+        </div>
+        <button type='submit' disabled={usernameMismatch || !newUsernameInput.value || !confirmUsernameInput.value || !currentUsernameInput.value} >SUBMIT</button>
+      </Form> */}

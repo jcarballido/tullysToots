@@ -67,7 +67,7 @@ function Invite({ }) {
   }
 
   return (
-    <div className='w-full'>
+    <div className='w-full text-xl'>
       <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } />
       {
         petsList.length == 0
@@ -75,35 +75,38 @@ function Invite({ }) {
           Looks like there are no pets to share! Change that by clicking <Link to='/pets'>here.</Link>
           </div>
         : <div>
-            <div>
-              SHARE YOUR PET'S ACTIVITY
+            <div className='w-full flex items-center font-bold mb-2  text-xl mt-4'>
+              Share Your Pet's Activity
             </div>
-            <div>
+            <div className='my-4'>
               Send and invite to someone you want to share your pet's activity with.
             </div>
-            {
-              petsList?.length > 1
-                ? petsList.map( pet => {
-                  return(
-                    <div>
-                      {pet.pet_name}
-                      <input key={pet.pet_id} id={pet.pet_id} type='checkbox' value={pet.pet_id} checked={selectedPets.includes(pet.pet_id.toString())} onChange={ e => handleCheck(e)} />          
-                    </div>
-                  )})
-                : <div>
-                    {petsList[0].pet_name}
-                    <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
-                  </div>
-            }
-            <input type='email' className='text-black' {...emailInviteeInput} />
-            <div>
-              The person you are inviting will have the same privileges to your pet, such as updating their info. Please only send this to a trusted individual.
+            <div className='my-4'>
+              The person you are inviting will have your same privileges to your pet, such as updating their info. <b>Please only send this to a trusted individual(s).</b>
             </div>
             <div>
               Check this box to accept the statement above and allow submission.
               <input type='checkbox' checked={checked} value='submitApproved' onChange={handleSubmissionCheck} />
             </div>
-            <button disabled={!checked || petsList?.length == 0} onClick={handleInvite}>SUBMIT</button>
+            <div className='font-bold my-4'>Select the Pet to Share...
+            {
+              petsList?.length > 1
+                ? petsList.map( pet => {
+                  return(
+                    <div className='font-normal'>
+                      {pet.pet_name}
+                      <input key={pet.pet_id} id={pet.pet_id} type='checkbox' value={pet.pet_id} checked={selectedPets.includes(pet.pet_id.toString())} onChange={ e => handleCheck(e)} />          
+                    </div>
+                  )})
+                : <div className='font-normal'>
+                    {petsList[0].pet_name}
+                    <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
+                  </div>
+            }
+            </div>
+            <div className='font-bold my-4'>Send Invite to This Email...</div>
+            <input type='email' className='text-black' {...emailInviteeInput} />
+            <button disabled={!checked || petsList?.length == 0} onClick={handleInvite} className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md text-white text-lg font-bold max-w-min my-6 disabled:bg-gray-500'>SUBMIT</button>
           </div>
           
       }    

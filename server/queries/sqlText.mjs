@@ -497,7 +497,11 @@ const addResetTokenTimestamp = `
   WHERE reset_token_id = $1
   `
 
-
+const unlinkPetText = `
+  UPDATE pet_owners
+  SET active = false
+  WHERE owner_id = $1 AND pet_id = $2
+`
 
 
 export default {
@@ -562,7 +566,8 @@ export default {
   getValidResetToken,
   setResetTokenExpired,
   addResetToken,
-  addResetTokenTimestamp
+  addResetTokenTimestamp,
+  unlinkPetText
 }
 
 // const getActivity = (dateToday,dateReference,pastDatesToCapture) => {
