@@ -17,7 +17,7 @@ import DashboardNavigation from './components/DashboardNavigation.js';
 import RequireAuth from './components/RequireAuth.js'
 import Account from './components/Account.js'
 import Invite from './components/Invite.js'
-import Pets from './components/Pets.js'
+import Pets, { action as petsAction } from './components/Pets.js'
 import AcceptInvite from './components/AcceptInvite.js'
 import UpdatePassword, { action as updatePasswordAction } from './components/UpdatePassword.js'
 import ForgotPassword, {action as forgotPasswordAction} from './pages/ForgotPassword.js'
@@ -45,7 +45,7 @@ const router = createBrowserRouter(
           <Route path="dashboard" element={<DashboardNavigation />} />
           <Route path="account" element={<Account />} />
           <Route path="sendInvite" element={<Invite />} />
-          <Route path="pets" element={<Pets />} />
+          <Route path="pets" element={<Pets />} action={petsAction}/>
           <Route path="acceptInvite" element={<AcceptInvite />} />
           <Route path="updatePassword" element={<UpdatePassword />} action={updatePasswordAction} />
           <Route path="updateUsername" element={<UpdateUsername />} action={updateUsernameAction}/>

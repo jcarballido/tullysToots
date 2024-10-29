@@ -1348,7 +1348,8 @@ router.post('/addPet', async(req,res) => {
   } 
   
   try{
-    const petIdArray = await queries.getOwnersPetIds( ownerId )
+    // const petIdArray = await queries.getOwnersPetIds( ownerId )
+    const petIdArray = await queries.getPets(ownerId)
     return res.status(200).json({status:'success', updatedPetIdArray: petIdArray})
   } catch(e) {
     return res.status(400).json({status:'error', message:'Error getting pets'})

@@ -3,7 +3,7 @@ import { Form } from 'react-router-dom'
 import StatusMessage from './StatusMessage'
 import Toast from './Toast'
 
-const AddPetModal = ({ visible, setAddPetModal, error, setAddPetError }) => {
+const AddPetModal = ({ visible, setAddPetModal, sendTo }) => {
   
   const [ message, setMessage ] = useState({})
   const [ petNameInput, setPetNameInput ] = useState('')
@@ -34,15 +34,15 @@ const AddPetModal = ({ visible, setAddPetModal, error, setAddPetError }) => {
     setDobInput(value)
   }
 
-  useEffect(() => {
-    if(error){
-      const closeModal = setTimeout( () => {
-        setAddPetError(false)
-      },3000)
+  // useEffect(() => {
+  //   if(error){
+  //     const closeModal = setTimeout( () => {
+  //       setAddPetError(false)
+  //     },3000)
 
-      return () => clearTimeout(closeModal)
-    }
-  },[error])
+  //     return () => clearTimeout(closeModal)
+  //   }
+  // },[error])
 
   // useEffect( () => {
   //   if(error) {
@@ -66,8 +66,8 @@ const AddPetModal = ({ visible, setAddPetModal, error, setAddPetError }) => {
     return (
       <div className={`absolute inset-0 flex justify-center items-start text-black font-Fredoka text-2xl z-40 backdrop-grayscale backdrop-blur-sm`}> 
         {/* <Toast visible={visible} result={result} message={message} setToast={setToast}/> */}
-        {error ? <div className='absolute mt-16 bg-red-700 z-50 '>'Error adding pet</div>:null}
-        <Form method='post' action='/activity' className={ `transition ${visible? '':'invisible scale-0'} flex flex-col gap-5 justify-start items-start text-black z-10 mt-16 bg-primary border-8 border-secondary-dark p-4 rounded-2xl w-11/12 ` }>
+        {/* {error ? <div className='absolute mt-16 bg-red-700 z-50 '>'Error adding pet</div>:null} */}
+        <Form method='post' action={`${sendTo == '/pets'? '/pets':'/activity'} `} className={ ` flex flex-col gap-5 justify-start items-start text-black z-10 mt-16 bg-primary border-8 border-secondary-dark p-4 rounded-2xl w-11/12 ` }>
           <legend className='flex justify-center items-center w-full font-bold mb-4 tracking-wide' >Tell us about your pet...</legend>
           <label htmlFor='name' className='border-b-2 border-gray-400 pb-5 flex justify-between items-center flex-nowrap w-full' >
             <div className='w-1/4 '> Name: </div>

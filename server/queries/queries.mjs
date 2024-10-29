@@ -423,7 +423,7 @@ const updateUsername = async(ownerId, newUsername) => {
     await pool.query(sqlText.updateUsername,[ownerId, newUsername])
     return true
   }catch(e){
-    return e
+    throw e
   }
 }
 
@@ -436,7 +436,8 @@ const deactivatePetOwnerLink = async( ownerId,petId ) => {
 const getOwnersPetIds = async(ownerId) => {
   const result = await pool.query(sqlText.getOwnersPetIdsText(), [ownerId])
   // console.log('getOwnersPetIds result: ', result)
-  const petIdsArr = result.rows.map(row => {return {id:row.pet_id, petName:row.pet_name}})
+  // const petIdsArr = result.rows.map(row => {return {id:row.pet_id, petName:row.pet_name}})
+  const petIdsArr = result.rows
   // May not be needed
   // const filteredPetIdsArray = petIdsArr.filter( petId => !petId)
   return petIdsArr

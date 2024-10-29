@@ -95,7 +95,7 @@ const updatePassword = `
 
 const updateUsername = `
   UPDATE owners
-  SET username = $2,
+  SET username = $2
   WHERE owner_id = $1
 `
 

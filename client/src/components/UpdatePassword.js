@@ -22,13 +22,11 @@ const UpdatePassword = () => {
 
   useEffect( () => {
     if(actionResult?.error){
-      setToast({ visible:true, message: 'Error', result:'-' })  
+      // setToast({ visible:true, message: 'Error', result:'-' })  
+      console.log('Error updating.')
     }else if(actionResult?.success){
-      setToast({ visible:true, message: actionResult.success, result:'+' })
-      const redirectTimer = setTimeout( () => {
-        navigate('/account')
-      },5000)
-      return () => clearTimeout(redirectTimer)
+      // setToast({ visible:true, message: actionResult.success, result:'+' })
+      console.log('Successfullyt changed')
     }
   },[actionResult])
 

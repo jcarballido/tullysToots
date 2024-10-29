@@ -49,13 +49,14 @@ const Activity = () => {
     // const petId = petIdString? parseInt(petIdString):null
     // console.log('petIdArray: ',petIdArray)
     if(referencePetId && petIdArray){
+      console.log('Pet ID array:', petIdArray)
       const activePetRecord = petIdArray.filter( petRecord => {
-        return petRecord.id == referencePetId
+        return petRecord.pet_id == referencePetId
       })
       // console.log('activePetRecord: ',activePetRecord)
       const activePetName = activePetRecord[0]
       // console.log('Active pet name: ', activePetName)
-      if(activePetName) setName(activePetName['petName'])
+      if(activePetName) setName(activePetName['pet_name'])
       // setName(activePetName)
     }
   },[ referencePetId, petIdArray ])

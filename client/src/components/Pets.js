@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, Outlet, useLoaderData, useOutletContext } from 'react-router-dom'
+import { Link, Outlet, useActionData, useLoaderData, useOutletContext } from 'react-router-dom'
 import { axiosPrivate } from '../api/axios'
 import Pet from './Pet'
 import Toast from './Toast'
@@ -9,8 +9,9 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate'
 function Pets({ no }) {
 
   const axiosPrivate = useAxiosPrivate()
+  const actionData = useActionData()
   // const loaderData = useLoaderData()
-  const [petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal] = useOutletContext()
+  const [petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal,addPetModal, setAddPetModal] = useOutletContext()
   
   // const [ toast, setToast ] = useState({visible:null, result:'', message:''})
   
@@ -27,7 +28,7 @@ function Pets({ no }) {
 
   const addPet = (e) => {
     e.preventDefault()
-    setNewPetModal({visible:true})
+    setAddPetModal({visible:true})
   }
 
   const newPetInProcess = () => {
@@ -63,6 +64,18 @@ function Pets({ no }) {
     getPets()
   },[])
 
+  useEffect( () => {
+    if(actionData?.status == 'success'){
+      console.log('pet added!')
+      console.log('Action data Updated array:', actionData.updatedPetIdArray)
+      setPetsArray(actionData.updatedPetIdArray)
+      setAddPetModal({visible:false})
+    }
+    if(actionData?.status == 'error'){
+      console.log('Error adding pet')
+    }
+  },[ actionData ])
+
   // console.log
   
   return (
@@ -95,6 +108,25 @@ function Pets({ no }) {
 
 export const loader = async() => {
   return null
+}
+
+export const action = async({ request }) => {
+  const formData = await request.formData()
+  const name = formData.get('name')
+  const dob = formData.get('dob')
+  const sex = formData.get('sex')
+
+  const petInfo = { name,dob, sex }
+
+  try {
+    const response = await axiosPrivate.post('/account/addPet', petInfo)
+    const { status, updatedPetIdArray } = response.data
+    return {status, updatedPetIdArray }
+  } catch (err) {
+    console.log('Error attempting to add a pet: ', err)
+    const { status, message } = err.response.data
+    return { status, message }
+  }
 }
 
 export default Pets

@@ -67,8 +67,8 @@ function Invite({ }) {
   }
 
   return (
-    <div className='w-full text-xl'>
-      <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } />
+    <div className='w-full text-xl overflow-y-auto'>
+      {/* <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } /> */}
       {
         petsList.length == 0
         ? <div>
@@ -84,12 +84,33 @@ function Invite({ }) {
             <div className='my-4'>
               The person you are inviting will have your same privileges to your pet, such as updating their info. <b>Please only send this to a trusted individual(s).</b>
             </div>
-            <div>
+            <label>
               Check this box to accept the statement above and allow submission.
-              <input type='checkbox' checked={checked} value='submitApproved' onChange={handleSubmissionCheck} />
-            </div>
-            <div className='font-bold my-4'>Select the Pet to Share...
-            {
+              <input type='checkbox' className='invisible peer appearance-none' checked={checked} value='submitApproved' onChange={handleSubmissionCheck} />
+              <div className='max-w-min italic p-2 rounded-xl border-2 border-gray-600 text-gray-700 peer-checked:bg-green-500 peer-checked:text-black flex items-center justify-center'>
+                <div>Accept</div>
+              </div>
+            </label>
+            <div className='font-bold my-4'>Select the Pet(s) to Share...
+              <div className='flex flex-col gap-4 items-start'>
+              {
+                petsList?.length > 1 
+                  ? petsList?.map( pet => {
+                    // if(pet.id == referencePetId) return null
+                    return(
+                      <label key={pet.pet_id} htmlFor={`${pet.pet_id}`} className="flex justify-start items-center w-full">
+                        <input type='checkbox' name='pets' value={pet.pet_id} id={`${pet.pet_id}`} onChange={(e)=> handleCheck(e) } checked={selectedPets.includes(pet.pet_id.toString())} className={`appearance-none peer invisible`} />
+                        <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{pet.pet_name}</div>
+                      </label>)})
+                  : 
+                      <div className='font-normal'>
+                        <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
+                        <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{petsList[0].pet_name}</div>
+                      </div>
+                
+              }
+              </div>
+            {/* {
               petsList?.length > 1
                 ? petsList.map( pet => {
                   return(
@@ -102,10 +123,10 @@ function Invite({ }) {
                     {petsList[0].pet_name}
                     <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
                   </div>
-            }
+            } */}
             </div>
             <div className='font-bold my-4'>Send Invite to This Email...</div>
-            <input type='email' className='text-black' {...emailInviteeInput} />
+            <input type='email' className='px-2 w-full text-black border-none outline-none ring-4 ring-gray-300 rounded-lg h-[40px] focus:ring-accent' {...emailInviteeInput} />
             <button disabled={!checked || petsList?.length == 0} onClick={handleInvite} className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md text-white text-lg font-bold max-w-min my-6 disabled:bg-gray-500'>SUBMIT</button>
           </div>
           

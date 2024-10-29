@@ -11,6 +11,7 @@ import UnlinkPetModal from '../components/UnlinkPetModal.js'
 import UpdateUsernameModal from '../components/UpdateUsernameModal.js';
 import UpdatePasswordModal from '../components/UpdatePasswordModal.js';
 import AccountNavigation from '../components/AccountNavigation.js';
+import AddPetModal from '../components/AddPetModal.js';
 
 export const Dashboard = () => {
   
@@ -22,6 +23,7 @@ export const Dashboard = () => {
   const [ editPetModal, setEditPetModal ] = useState({ visible: false, pet: null })
   const [ updateUsernameModal, setUpdateUsernameModel ] = useState({ visible:false })
   const [ updatePasswordModal, setUpdatePasswordModal ] = useState({ visible:false })
+  const [ addPetModal, setAddPetModal ] = useState({ visible: false })
 
   const { auth } = useAuth()
   const location = useLocation()
@@ -65,14 +67,15 @@ export const Dashboard = () => {
             <div className='w-11/12 grow flex flex-col items-center justify-center border-2 border-black rounded-2xl mb-2 p-4 bg-primary overflow-hidden'>
               <div className='flex items-center justify-center text-2xl font-bold' >USERNAME</div>
               
-              <Outlet context={[petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal]}/>
+              <Outlet context={[petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal, addPetModal, setAddPetModal]}/>
             </div>
           {/* </div> */}
         </div>
       </div>
       <EditPetModal editPetModal={editPetModal} setEditPetModal={setEditPetModal} setPetsArray={setPetsArray} />
       <UnlinkPetModal unlinkPetModal={unlinkPetModal} setUnlinkPetModal={setUnlinkPetModal} setPetsArray={setPetsArray} />
-      <NewPetModal newPetModal={newPetModal} setNewPetModal={setNewPetModal} setPetsArray={setPetsArray}/>
+      {/* <NewPetModal newPetModal={newPetModal} setNewPetModal={setNewPetModal} setPetsArray={setPetsArray}/> */}
+      <AddPetModal visible={addPetModal.visible} setAddPetModal={setAddPetModal} sendTo='/pets' />
       <UpdateUsernameModal updateUsernameModal={updateUsernameModal} setUpdateUsernameModel={setUpdateUsernameModel} />
       <UpdatePasswordModal updatePasswordModal={updatePasswordModal} setUpdatePasswordModal={setUpdatePasswordModal}  />
       <Footer />
