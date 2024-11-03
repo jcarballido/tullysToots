@@ -256,12 +256,14 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(currentTime,localTimezoneOffset)
       console.log('On ADD, new date to UTC string:', new Date() )
       console.log('parsed data from new Date:', paddedHourString,' ', paddedMinutesString,' ',meridianString)
-      const { fullYear, monthIndex, date } = getDateCharacteristics(dateString)
+      console.log('Date string passed into handleAdding fn:', dateString)
+      const { year, month, date, yDayCapt,tDayCapt,wDayCapt } = getDateCharacteristics(dateString)
       // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
       // console.log('ActivityCard, newTimestamp: ', timestampString)
-      // console.log(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
+      console.log('dates captured:', yDayCapt,'+',tDayCapt,'+',wDayCapt)
+      console.log('getDateChar:',`${year}-${month}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
       // console.log('ActivityCard, newTimestamp: ', newTimestamp)
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false, timestampUTCOffset:localTimezoneOffset}]
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${year}-${month}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false, timestampUTCOffset:localTimezoneOffset}]
     })
     setStatus({ viewing: false, adding:true, updating:false })
   } 

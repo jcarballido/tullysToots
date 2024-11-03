@@ -60,16 +60,19 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
       const index = mapKeysArray.indexOf(referenceDate)
       if(index != -1) setCurrentIndex(index)
       else{
-        console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
+        // console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
         setCurrentIndex(3)
       }
     }
   }, [])
 
   useEffect( () => {
-    const { isToday } = getDateCharacteristics(referenceDate)
+    // console.log('Reference date bein passed into \'getDateChar\' :', referenceDate)
+    const { isToday,today,yesterday, updatedTest } = getDateCharacteristics(referenceDate)
+    console.log('Reference date/today/yesterday/isToday/updatedTest?:',referenceDate,' ',today,' ',yesterday,' ',isToday, ' ', updatedTest )
     setToday(isToday)
-  },[referenceDate])
+
+    },[referenceDate])
 
   useEffect(() => {
     if(referencePetId && currentReferencePetId.current == null) {
@@ -87,24 +90,25 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   }, [currentIndex])
 
   useEffect( () =>{
-    // console.log('Current index after dateMap changes:', currentIndex)
+    console.log('Current index after dateMap changes:', currentIndex)
+    console.log('Date map in useEffect:', dateMap)
     if(currentReferencePetId.current == referencePetId && (currentIndex == 0 || currentIndex == activityArr.length - 1)){
-      // console.log('current ref matches pet ID in state' )
+      console.log('current ref matches pet ID in state' )
       const mapKeys = dateMap.keys()
       // console.log('mapKeys:', mapKeys)
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
-      // console.log('index:', index)
+      console.log('index:', index)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
     } 
     if(currentReferencePetId.current != referencePetId){
       console.log("pet change!")
-      // console.log('dateMap:', dateMap)
+      console.log('dateMap:', dateMap)
       const mapKeys = dateMap.keys()
       const mapKeysArray = Array.from(mapKeys)
       const index = mapKeysArray.indexOf(referenceDate)
-      // console.log('index:', index)
+      console.log('index:', index)
       if(index != -1) setCurrentIndex(index)
       else console.log('Did not find reference date in updated dateMap. Reference date/dateMap: ', referenceDate,'/', dateMap)
       currentReferencePetId.current = referencePetId

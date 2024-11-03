@@ -35,9 +35,9 @@ const InvitationActionButtons = ({ invitationId,setActiveInvites }) => {
   }
 
   return(
-    <div>
-      <button onClick={handleAccept}>Accept</button>
-      <button onClick={handleReject}>Reject</button>
+    <div className='flex gap-4 items-center'>
+      <button onClick={handleAccept} className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md font-bold text-white'>Accept</button>
+      <button onClick={handleReject} className='flex justify-center items-center h-[48px] bg-red-500 px-2 rounded-md '>Decline</button>
     </div>
   )
 }

@@ -49,7 +49,7 @@ const Activity = () => {
     // const petId = petIdString? parseInt(petIdString):null
     // console.log('petIdArray: ',petIdArray)
     if(referencePetId && petIdArray){
-      console.log('Pet ID array:', petIdArray)
+      // console.log('Pet ID array:', petIdArray)
       const activePetRecord = petIdArray.filter( petRecord => {
         return petRecord.pet_id == referencePetId
       })
@@ -89,6 +89,10 @@ const Activity = () => {
 
     const getActivity = async() => {
       const timeWindowObj = { daysBefore:3, daysAfter:3 }
+      // const isoString = referenceDate.toISOString()
+      // const isoStringSplit = isoString.split('T')
+      // const dateCaptured = isoStringSplit[0]
+      // console.log(dateCaptured)
       const parameters = {
         referencePetId,
         referenceDate, 
@@ -100,6 +104,7 @@ const Activity = () => {
         const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`,{ signal:abortController.signal })
         if(response.status == 204) return console.log('No actively linked pets.')
         const { activityArray, petIdArray } = response.data 
+        // console.log('Activity Array received from serve:', activityArray)
         setActivity(activityArray)
         setPetIdArray(petIdArray)
         const localStorageReferencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null
@@ -246,17 +251,27 @@ export default Activity
 export const loader = () => {
   // Get exisiting reference date from local storage or set to the current date
   let localStorageReferenceDate = localStorage.getItem('referenceDate') || null
-  if(!localStorageReferenceDate){
+  const dateFormatCheck = /^\d{4}-\d{2}-\d{2}$/
+  if(localStorageReferenceDate == null || !dateFormatCheck.test(JSON.parse(localStorageReferenceDate))){
     localStorageReferenceDate = new Date()
+    const toISOString = localStorageReferenceDate.toISOString()
+    const stringSplit = toISOString.split('T')
+    const dateCaptured = stringSplit[0]
     const year = localStorageReferenceDate.getUTCFullYear()
     const month = localStorageReferenceDate.getUTCMonth()
     const paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
     const date = localStorageReferenceDate.getUTCDate()
     const paddedDate = date < 10? `0${date}`:`${date}`
-    localStorage.setItem('referenceDate', JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))
+    // localStorage.setItem('referenceDate', JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))
+    localStorage.setItem('referenceDate', JSON.stringify(`${dateCaptured}`))
   }else {
     // console.log('ref date present:', localStorageReferenceDate)
     let newReferenceDate = new Date(localStorageReferenceDate)
+
+    const toISOString = newReferenceDate.toISOString()
+    // console.log('Loader refernce date found, converted to ISO string:', toISOString)
+    const stringSplit = toISOString.split('T')
+    const dateCaptured = stringSplit[0]
     let year = newReferenceDate.getUTCFullYear()
     let month = newReferenceDate.getUTCMonth()
     let date = newReferenceDate.getUTCDate()
@@ -273,31 +288,10 @@ export const loader = () => {
         paddedDate = `0${date}`
       //     newReferenceDate.setUTCMonth(paddedDate)
       //   }
-    console.log('date to store:',JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))}
-    localStorage.setItem('referenceDate', JSON.stringify(`${year}-${paddedMonth}-${paddedDate}`))
+    console.log('date to store:',JSON.stringify(`${dateCaptured}`))}
+    localStorage.setItem('referenceDate', JSON.stringify(`${dateCaptured}`))
 
-  }// else{
-  //   console.log('local storage ref date: ', JSON.parse(localStorageReferenceDate))
-  //   const newReferenceDate = new Date(localStorageReferenceDate)
-  //   console.log('new Ref date:', newReferenceDate)
-  //   let year = newReferenceDate.getUTCFullYear()
-  //   let month = newReferenceDate.getUTCMonth()
-  //   let date = newReferenceDate.getUTCDate()
-  //   let paddedMonth
-  //   let paddedDate
-  //   if(newReferenceDate.getUTCMonth().toString().length != 2) {
-  //     const paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
-  //     newReferenceDate.setUTCMonth(paddedMonth)
-  //   }
-  //   if(newReferenceDate.getUTCDate().toString().length != 2) {
-  //     const paddedDate = date < 10? (date + 1 == 10 ? '10':`0${date + 1}`): `${date + 1}`
-  //     newReferenceDate.setUTCMonth(paddedDate)
-  //   }
-  //   year = newReferenceDate.getUTCFullYear()
-  //   month = newReferenceDate.getUTCMonth()
-  //   date = newReferenceDate.getUTCDate()
-
-  // }
+  }
 
   // Get exisiting reference pet ID from local storage or set to null
   const referencePetIdLocalStorage = localStorage.getItem('referencePetId') || null

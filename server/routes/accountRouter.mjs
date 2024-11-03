@@ -415,13 +415,26 @@ const updateInvitationStatus = async(req,res, next) => {
       return res.status(207).json({accessToken:req.accessToken, invitationError:  'Error storing invitation token. Please request a new invite.' })
     }
 
-    try{
-      console.log('Attempting to store token with owner')
-      await queries.storeInvitationToken(req.invitationId, req.ownerId)
-    } catch(e){
-      console.log('Error returned from trying to store the invitation token to the user: ', e)
-      return res.status(207).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
+    try {
+      const invitationTokens = await queries.getPendingInvitationTokens(req.ownerId)
+      // console.log('Invitation Tokens received from the backend: ', invitationTokens)
+      req.invitationTokens = invitationTokens
+    } catch (error) {
+      console.log('Error querying for invites: ', error)
+      return res.status(400).json({queryError:`Error querying for invites: ${error}`})
     }
+
+    if(!req.invitationTokens.includes(req.invitationId)){
+      try{
+        console.log('Attempting to store token with owner')
+  
+        await queries.storeInvitationToken(req.invitationId, req.ownerId)
+      } catch(e){
+        console.log('Error returned from trying to store the invitation token to the user: ', e)
+        return res.status(207).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
+      }
+    }3
+
     return res.status(200).json({ accessToken: req.accessToken, activeInvite: true })
   }
 
@@ -454,11 +467,35 @@ router.post('/forgotPassword', async(req,res) => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>HTML Form</title>
       </head>
-      <body>
-          <h1>Reset Password Link</h1>
-          <h2>Please click the link below to reset your password</h2>
-          <h3>If you did not request to reset your password, please ignore this message.<h3>
-          <a href=${resetPasswordlink} target="_blank">RESET PASSWORD</a>
+      <body style="margin:0;padding:0;height:100vh">
+        <table width="100%" height="100%" bgcolor="#DCC6E0">
+          <tr>
+            <td align="center" style="">
+              <table width="60%" height="90%" bgcolor="white" style="border-collapse:collapse;border-radius:20px">
+                <tr style='padding:0px;'>
+                  <td align="center" style="background-color:#f0e6d6; border-top-right-radius:20px;border-top-left-radius:20px; height:20px;padding:0px;margin:0px">
+                    <h2 style="height:5px">Tully's Toots <3</h2>
+                  </td>
+                </tr>
+                <tr style='padding:0px'>
+                  <td align="center" valign="top" style="border-collapse:collapse;padding:0px">
+                    <h3 style="">Please click the link below to reset your password</h3>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" valign="top" style=";border-collapse:collapse">
+                    <h3>If you did not request to reset your password, please ignore this message.</h3>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="border-collapse:collapse;padding:5px 0 20px 0">
+                    <a href=${resetPasswordlink} target="_blank" style="background-color:#77b5fe;padding:4px;border-radius:10px;color:#fff">Reset Password</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
     `
   }
@@ -824,6 +861,75 @@ router.use(verifyAccessToken)
 //   return res.status(200).json(req.petInfo)
 // })
 
+const verifyPendingInvites = async(pendingInvitationTokens, invitationSecret) => {
+  const verifiedInvitePromises = pendingInvitationTokens.map( async(invitationToken) => {
+    try {
+      const decodedInvitation = jwt.verify(invitationToken.invitationToken, invitationSecret )
+      const { sendingOwnerId, petIdsArray } = decodedInvitation
+      const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
+      return { sendingOwnerUsername, petIdsArray, invitationId: invitationToken.invitationId }
+    } catch (error) {
+      console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
+      if(error.name == 'TokenExpiredError'){
+        try {
+          await queries.setInviteExpiredByToken(invitationToken.invitationToken)
+          console.log('Successfully set invitation token to expired.')         
+        } catch (error) {
+          console.log('Error setting invitation to EXPIRED.')
+          return null
+        }
+      }
+      return null
+    }
+  })
+  const verifiedInviteResults = await Promise.allSettled(verifiedInvitePromises)
+  const verifiedInviteValues = verifiedInviteResults.map( verifiedInvite => verifiedInvite.value)
+  const verifiedInvites = verifiedInviteValues.filter( value => value != null )
+
+  return verifiedInvites
+} // Verifies token validity and returns { sendingOwnerUsername, petIdArray }
+
+const processPetIds = async(petIdsArray) => {
+  const petDataPromises = petIdsArray.map( async( petId ) => {
+    try {
+      const result = await queries.getPetInfo(petId)
+      // console.log('Result from getting pet info: ', result)
+      if(result.rowCount == 0) throw new Error('Pet info not found')
+      return result.rows[0]
+    } catch (error) {
+      console.log(`Error getting pet Info for petId ${petId}: `, error)
+      return null
+    }
+  })
+
+  const petDataResults = await Promise.allSettled(petDataPromises)
+  const petDataValues = petDataResults.map( petInfoResult => petInfoResult.value)
+  const petData = petDataValues.filter( petDataValues => petDataValues != null )
+  return petData
+
+    // Values returned are non-null
+}
+
+const getPetDataByInvitation = async(decodedInvitationTokens) => {
+  const petDataPromise = decodedInvitationTokens.map( async(decodedInvitationToken) => {
+    console.log('Decoded invitation token: ', decodedInvitationToken)
+    const { petIdsArray,sendingOwnerUsername, invitationId } = decodedInvitationToken
+    try {
+      const petData = await processPetIds(petIdsArray)
+      return {sendingOwnerUsername,petData, invitationId}
+    } catch (error) {
+      throw error
+    } 
+  })
+
+  const petDataResults = await Promise.allSettled(petDataPromise)
+  // console.log('Pet data results: ', petDataResults)
+  const petDataValues = petDataResults.map( result => result.value )
+  const petDataByInvitation = petDataValues.filter( petDataResult => petDataResult.petData.length > 0 )
+  return petDataByInvitation
+
+}
+
 router.get('/verifyInvite', async(req,res) => {
   const ownerId = req.ownerId
   const invitationSecret = process.env.INVITATION_SECRET
@@ -846,138 +952,72 @@ router.get('/verifyInvite', async(req,res) => {
   //   return pendingInvitationTokens
   // } // Returns pending tokens
 
-  const verifyPendingInvites = async(pendingInvitationTokens) => {
-    const verifiedInvitePromises = pendingInvitationTokens.map( async(invitationToken) => {
-      try {
-        const decodedInvitation = jwt.verify(invitationToken.invitationToken, invitationSecret )
-        const { sendingOwnerId, petIdsArray } = decodedInvitation
-        const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
-        return { sendingOwnerUsername, petIdsArray, invitationId: invitationToken.invitationId }
-      } catch (error) {
-        console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
-        if(error.name == 'TokenExpiredError'){
-          try {
-            await queries.setInviteExpiredByToken(invitationToken.invitationToken)
-            console.log('Successfully set invitation token to expired.')         
-          } catch (error) {
-            console.log('Error setting invitation to EXPIRED.')
-            return null
-          }
-        }
-        return null
-      }
-    })
-    const verifiedInviteResults = await Promise.allSettled(verifiedInvitePromises)
-    const verifiedInviteValues = verifiedInviteResults.map( verifiedInvite => verifiedInvite.value)
-    const verifiedInvites = verifiedInviteValues.filter( value => value != null )
-
-    return verifiedInvites
-  } // Verifies token validity and returns { sendingOwnerUsername, petIdArray }
-
-  const processPetIds = async(petIdsArray) => {
-    const petDataPromises = petIdsArray.map( async( petId ) => {
-      try {
-        const result = await queries.getPetInfo(petId)
-        console.log('Result from getting pet info: ', result)
-        if(result.rowCount == 0) throw new Error('Pet info not found')
-        return result.rows[0]
-      } catch (error) {
-        console.log(`Error getting pet Info for petId ${petId}: `, error)
-        return null
-      }
-    })
-
-    const petDataResults = await Promise.allSettled(petDataPromises)
-    const petDataValues = petDataResults.map( petInfoResult => petInfoResult.value)
-    const petData = petDataValues.filter( petDataValues => petDataValues != null )
-    return petData
-
-      // Values returned are non-null
-  }
-
-  const getPetDataByInvitation = async(decodedInvitationTokens) => {
-    const petDataPromise = decodedInvitationTokens.map( async(decodedInvitationToken) => {
-      console.log('Decoded invitation token: ', decodedInvitationToken)
-      const { petIdsArray,sendingOwnerUsername, invitationId } = decodedInvitationToken
-      try {
-        const petData = await processPetIds(petIdsArray)
-        return {sendingOwnerUsername,petData, invitationId}
-      } catch (error) {
-        throw error
-      } 
-    })
-
-    const petDataResults = await Promise.allSettled(petDataPromise)
-    console.log('Pet data results: ', petDataResults)
-    const petDataValues = petDataResults.map( result => result.value )
-    const petDataByInvitation = petDataValues.filter( petDataResult => petDataResult.petData.length > 0 )
-    return petDataByInvitation
-
-  }
-
-  // const getArrayPetIdArrays = async(invitationsArray) => {
-  //   const promiseArray = invitationsArray.map( async(inviteObj)=> {
-  //     const invite = inviteObj.invitation_token
+  // const verifyPendingInvites = async(pendingInvitationTokens) => {
+  //   const verifiedInvitePromises = pendingInvitationTokens.map( async(invitationToken) => {
   //     try {
-  //       const decodeInvite = jwt.verify(invite,invitationSecret)
-  //       const petIdArray = decodeInvite.petIdArray
-  //       const sendingOwnerId = decodeInvite.sendingOwnerId
+  //       const decodedInvitation = jwt.verify(invitationToken.invitationToken, invitationSecret )
+  //       const { sendingOwnerId, petIdsArray } = decodedInvitation
   //       const sendingOwnerUsername = await queries.getUsername(sendingOwnerId)
-  //       const inviteId = await queries.getInvitationId(invite)
-  //       return { inviteId, sendingOwnerUsername, petIdArray }
+  //       return { sendingOwnerUsername, petIdsArray, invitationId: invitationToken.invitationId }
   //     } catch (error) {
-  //       console.log('Error decoding invitation: ', error)
-  //       try{
-  //         await queries.setInviteExpiredByToken(invite) 
-  //       }catch(error){
-  //         console.log('Error setting token as expired: ', error)
-  //         return 
+  //       console.log('Error processing invitation. Attempting to set expired to true. Error: ', error)
+  //       if(error.name == 'TokenExpiredError'){
+  //         try {
+  //           await queries.setInviteExpiredByToken(invitationToken.invitationToken)
+  //           console.log('Successfully set invitation token to expired.')         
+  //         } catch (error) {
+  //           console.log('Error setting invitation to EXPIRED.')
+  //           return null
+  //         }
   //       }
   //       return null
   //     }
   //   })
-  //   try {
-  //     const arrayPetIdArrays = await Promise.allSettled(promiseArray)
-  //     const filteredArrayPetIdArrays = arrayPetIdArrays?.filter( petIdArray => petIdArray.value != null)
-  //     const arrayPetIdArrayValues = filteredArrayPetIdArrays.map( nonNullPetIdAray => nonNullPetIdAray.value)
-  //     return arrayPetIdArrayValues 
-  //   } catch (error) {
-  //     console.log('Error processing invitations: ', error)
-  //   }
-  // }
+  //   const verifiedInviteResults = await Promise.allSettled(verifiedInvitePromises)
+  //   const verifiedInviteValues = verifiedInviteResults.map( verifiedInvite => verifiedInvite.value)
+  //   const verifiedInvites = verifiedInviteValues.filter( value => value != null )
 
-  // const getArrayPetInfoArrays = async(arrayDecodedJWT) => {
-  //   // console.log('array of decoded JWT: ', arrayDecodedJWT)
-  //   // const sendingOwnerId = arrayDecodedJWT.sendingOwnerId
-  //   // const petIdArray = arrayDecodedJWT.petIdArray
-  //   const promiseArray = arrayDecodedJWT.map( async(decodedInvite) => {
-  //     const petIdArray = decodedInvite.petIdArray
-  //     const sendingOwnerUsername = decodedInvite.sendingOwnerUsername
-  //     const inviteId = decodedInvite.inviteId
+  //   return verifiedInvites
+  // } // Verifies token validity and returns { sendingOwnerUsername, petIdArray }
+
+  // const processPetIds = async(petIdsArray) => {
+  //   const petDataPromises = petIdsArray.map( async( petId ) => {
   //     try {
-  //       const petInfo = await processPetIds(petIdArray)
-  //       return {inviteId, sendingOwnerUsername, petInfo}
+  //       const result = await queries.getPetInfo(petId)
+  //       console.log('Result from getting pet info: ', result)
+  //       if(result.rowCount == 0) throw new Error('Pet info not found')
+  //       return result.rows[0]
   //     } catch (error) {
-  //       throw error
+  //       console.log(`Error getting pet Info for petId ${petId}: `, error)
+  //       return null
   //     }
   //   })
 
-  //   try {
-  //     const petInfo = await Promise.allSettled(promiseArray)  
-  //     const valuesPetInfo = petInfo.map( petInfoPromiseResult => {
-  //       // console.log('Pet info promise result: ', petInfoPromiseResult)
-  //       const promisesArray = petInfoPromiseResult.value 
-  //       // console.log('Promise array: ', promisesArray)
-  //       // const infoArray = promisesArray.map( promise => promise.value)
-  //       // console.log('Info array: ', infoArray)
-  //       return promisesArray
-  //     })
-  //     // console.log('Values from pet info promises returned: ', valuesPetInfo)
+  //   const petDataResults = await Promise.allSettled(petDataPromises)
+  //   const petDataValues = petDataResults.map( petInfoResult => petInfoResult.value)
+  //   const petData = petDataValues.filter( petDataValues => petDataValues != null )
+  //   return petData
 
-  //     return valuesPetInfo    
-  //   } catch (error) {
-  //     throw error
-  //   }
+  //     // Values returned are non-null
+  // }
+
+  // const getPetDataByInvitation = async(decodedInvitationTokens) => {
+  //   const petDataPromise = decodedInvitationTokens.map( async(decodedInvitationToken) => {
+  //     console.log('Decoded invitation token: ', decodedInvitationToken)
+  //     const { petIdsArray,sendingOwnerUsername, invitationId } = decodedInvitationToken
+  //     try {
+  //       const petData = await processPetIds(petIdsArray)
+  //       return {sendingOwnerUsername,petData, invitationId}
+  //     } catch (error) {
+  //       throw error
+  //     } 
+  //   })
+
+  //   const petDataResults = await Promise.allSettled(petDataPromise)
+  //   console.log('Pet data results: ', petDataResults)
+  //   const petDataValues = petDataResults.map( result => result.value )
+  //   const petDataByInvitation = petDataValues.filter( petDataResult => petDataResult.petData.length > 0 )
+  //   return petDataByInvitation
 
   // }
 
@@ -996,7 +1036,7 @@ router.get('/verifyInvite', async(req,res) => {
 
   try {
     // const invitationTokensJwt = invitationTokens.map(invitationTokenObject => invitationTokenObject.invitationToken)
-    const verifiedInvites = await verifyPendingInvites(invitationTokens)
+    const verifiedInvites = await verifyPendingInvites(invitationTokens, invitationSecret)
     req.verifiedInvites = verifiedInvites
   } catch (error) {
     console.log('Error querying for pet Ids: ', error)
@@ -1008,7 +1048,7 @@ router.get('/verifyInvite', async(req,res) => {
     // Parse the invite to capture the pet IDs being shared
   try {
     const invitationData = await getPetDataByInvitation(req.verifiedInvites)
-    console.log('Invitation data: ',invitationData)    
+    // console.log('Invitation data: ',invitationData)    
     req.invitationData = invitationData 
   } catch (error) {
     console.log('Error getting pet info: ', error)
@@ -1274,6 +1314,7 @@ router.post('/rejectInvite', async(req,res) => {
   console.log('An attempt to reject an invite was recieved.')
   // Remove invite from owner table, need owner id, need invite token
   const ownerId = req.ownerId
+  const invitationSecret = process.env.INVITATION_SECRET
   // const ownerId = req.body.ownerId
   const inviteId = req.body.invitationId
   if(!ownerId || !inviteId) {
@@ -1292,11 +1333,47 @@ router.post('/rejectInvite', async(req,res) => {
   // Update invite in invite table so rejected is true
   try {
     await queries.rejectInvitation(inviteId)
-    return res.status(200).json({success: 'Rejected invitation'})
   } catch (error) {
     console.log('Error rejecting invitation: ', error)
     return res.status(400).json({ error:'Failed to update invitation to \'rejected\' ' })
   }
+
+  try {
+    const invitationTokens = await queries.getPendingInvitationTokens(ownerId)
+    // console.log('Invitation Tokens received from the backend: ', invitationTokens)
+    req.invitationTokens = invitationTokens
+  } catch (error) {
+    console.log('Error querying for invites: ', error)
+    return res.status(400).json({queryError:`Error querying for invites: ${error}`})
+  }
+
+  if(req.invitationTokens?.length == 0) return res.status(200).json({ emptyInvitations:true })
+
+  const invitationTokens = [...req.invitationTokens]
+
+  try {
+    // const invitationTokensJwt = invitationTokens.map(invitationTokenObject => invitationTokenObject.invitationToken)
+    const verifiedInvites = await verifyPendingInvites(invitationTokens, invitationSecret)
+    req.verifiedInvites = verifiedInvites
+  } catch (error) {
+    console.log('Error querying for pet Ids: ', error)
+    return res.status(400).json({queryError:`Error querying for pet Ids: ${error}`})
+  }
+
+  if(req.verifiedInvites?.length == 0) return res.status(400).json({emptyInvitations: true })
+
+    // Parse the invite to capture the pet IDs being shared
+  try {
+    const invitationData = await getPetDataByInvitation(req.verifiedInvites)
+    // console.log('Invitation data: ',invitationData)    
+    req.invitationData = invitationData 
+  } catch (error) {
+    console.log('Error getting pet info: ', error)
+    return res.status(400).json({queryError:`Error querying for pet info: ${error}`})
+  }
+  // console.log('Pet Info returned: ', petInfo)
+  console.log('Pet info successfully processed.')
+  return res.status(200).json(req.invitationData)
   
 })
 
@@ -1501,7 +1578,7 @@ router.post('/sendInvite', async(req,res) => {
   // Confirm active link between the sender and pet id(s) included in req.body
   try {
     const activePetLinks = await queries.getOwnersPetIds(sendingOwnerId)
-    const activePetLinkIds = activePetLinks.map( petData => petData.id )
+    const activePetLinkIds = activePetLinks.map( petData => petData.pet_id )
     console.log('Active Pet Links: ', activePetLinkIds)
     req.activePetLinkIds = activePetLinkIds
   } catch (error) {
@@ -1539,13 +1616,39 @@ router.post('/sendInvite', async(req,res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>HTML Form</title>
     </head>
-    <body>
-        <h1>Someone wants share their pet's activity with you!</h1>
-        <h2>If you are ready to accept, click the link below.</h2>
-        <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.<h3>
-        <a href=${link} target="_blank">Show me the activity</a>
+    <body style="margin:0;padding:0;height:100vh">
+      <table width="100%" bgcolor="#DCC6E0">
+        <tr>
+          <td align="center" style="">
+          <table width="60%" height="90%" bgcolor="white" style="border-collapse:collapse;border-radius:20px">
+            <tr style='padding:0px;'>
+            <td align="center" style="background-color:#f0e6d6; border-top-right-radius:20px;border-top-left-radius:20px; height:20px;padding:0px;margin:0px">
+              <h2 style="height:5px">Tully's Toots <3 </h2>
+            </td>
+            </tr>
+            <tr style='padding:0px'>
+            <td align="center" valign="top" style="border-collapse:collapse;padding:0px">
+              <h3 style="">Someone wants share their pet's activity with you!</h3>
+            </td>
+            </tr>
+            <tr>
+            <td align="center" valign="top" style=";border-collapse:collapse">
+              <h3>If you are ready to accept, click the link below.</h3>
+              <h3>This is a one-time link. It will expire after clicking it or 24 hours from now. If you need a new one, please request a new invitation from the member attempting to add you.</h3>
+            </td>
+            </tr>
+            <tr>
+            <td align="center" style="border-collapse:collapse;padding:5px 0 20px 0">
+              <a href=${link} target="_blank" style="height:48px;width:48px;background-color:#77b5fe;padding:4px;border-radius:10px;color:#fff">Accept</a>
+            </td>
+            </tr>
+          </table>
+          </td>
+        </tr>
+      </table>
     </body>
     `}
+    
 
   try{
     // add token to invite table

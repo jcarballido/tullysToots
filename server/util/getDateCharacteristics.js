@@ -6,6 +6,9 @@ const getDateCharacteristics = (referenceDate) => {
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1) // Yesterday's date according to local time
   const workingDate = new Date(referenceDate) // Date being compared
+  const isoString = workingDate.toISOString()
+  const isoStringSplit = isoString.split('T')
+  const dateCaptured = isoStringSplit[0]
 
   let parsedYear
   let parsedDate
@@ -34,7 +37,7 @@ const getDateCharacteristics = (referenceDate) => {
   const dayIndex = workingDate.getUTCDay()
   const dayName = dayNames[dayIndex]
 
-  const referenceDateFormatted = `${fullYear}-${monthIndex}-${date}`
+  const referenceDateFormatted = `${dateCaptured}`
   const isToday = referenceDateFormatted == `${today.getUTCFullYear()}-${today.getUTCMonth()}-${today.getUTCDate()}`
   const isYesterday = referenceDateFormatted == `${yesterday.getUTCFullYear()}-${yesterday.getUTCMonth()}-${yesterday.getUTCDate()}`
 

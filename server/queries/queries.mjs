@@ -511,7 +511,7 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
 
   const { daysBefore, daysAfter } = timeWindowObj
   // console.log('daybefore:', daysBefore)
-  // console.log('TargetDate: ', targetDate)
+  console.log('TargetDate: ', targetDate)
   // const { fullYear,monthIndex,date } = getDateCharacteristics(targetDate)
   // console.log('*Queries* targetDate:', targetDate) // EX: '2022-02-19'
   // console.log('*Queries* parsed date:', date)
@@ -521,9 +521,15 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
   for(let i = (daysBefore*-1) ; i <= daysAfter ; i++){
     // console.log('*Queries* i:', i)
     const referenceDate = new Date(targetDate) 
-    // console.log('*Queries* initial reference date: ', referenceDate)
+    console.log('*Queries* initial reference date: ', referenceDate)
     referenceDate.setUTCDate(referenceDate.getUTCDate() + i)
-    // console.log('*Queries* updated reference date: ', referenceDate)
+    console.log('*Queries* updated reference date: ', referenceDate)
+    const isoString = referenceDate.toISOString()
+    console.log('isoString:',isoString)
+    const isoStringSplit = isoString.split('T')
+    console.log('isoStringSplit:', isoStringSplit)
+    const dateCaptured = isoStringSplit[0]
+    console.log('Date captured: ', dateCaptured)
     const year = referenceDate.getUTCFullYear()
     const month = referenceDate.getUTCMonth()
     const date = referenceDate.getUTCDate()
@@ -531,12 +537,12 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
     let paddedMonth
     let paddedDate = date
     if(month.toString().length != 2) {
-      paddedMonth = month < 10? (month + 1 == 10 ? '10':`0${month + 1}`): `${month + 1}`
+      paddedMonth = month < 10 && month + 1 != 10 ? `0${month + 1}`: `${month + 1}`
     }
     if(date.toString().length != 2) {
       paddedDate = `0${date}`
     }
-    dateArray.push(`${year}-${paddedMonth}-${paddedDate}`)
+    dateArray.push(`${dateCaptured}`)
   }
   // console.log('*queries* getActivity => dateArray:', dateArray)
   try {
@@ -552,6 +558,7 @@ const getActivity = async(petId,targetDate, timeWindowObj) => {
       })
       return { [`${dateAsTimestamp}`]:filteredActivityArray }
     })  
+    console.log('Formatted Data:', formattedData)
     return formattedData  
   } catch (error) {
     throw error

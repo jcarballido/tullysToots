@@ -34,18 +34,18 @@ const DropdownMenu = ({ petIdArray, visible, setSwitchPetModal, referencePetId, 
   }
 
   return(
-    <div className={`border-primary border-4 bg-secondary flex flex-col gap-4 rounded-2xl items-center justify-start transform transition duration-1000 ease-in-out ${visible ? 'scale-100 ':'scale-0'}  w-3/4 z-10 p-4  overflow-auto my-8`}>
+    <div className={`border-primary border-4 bg-secondary flex flex-col gap-4 rounded-2xl items-center justify-start transform transition duration-1000 ease-in-out ${visible ? 'scale-100 ':'scale-0'}  w-3/4 z-10 p-4  overflow-auto my-8`} onClick={(e)=>e.stopPropagation()}>
       <div className="font-bold mb-4">
         Switch Pets?
       </div>
       <div className='flex flex-wrap max-w-full gap-4 justify-center' >
         {
           petIdArray?.map( pet => {
-            if(pet.id == referencePetId) return null
+            if(pet.pet_id == referencePetId) return null
             return(
-              <label key={pet.id} htmlFor={`${pet.id}`} className="flex justify-center items-center">
-                <input type='radio' name='pets' value={pet.id} id={`${pet.id}`} onChange={(e)=> selectPet(e) } checked={activeSelection == pet.id} className={`appearance-none peer invisible`} />
-                <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{pet.petName}</div>
+              <label key={pet.pet_id} htmlFor={`${pet.pet_id}`} className="flex justify-center items-center">
+                <input type='radio' name='pets' value={pet.pet_id} id={`${pet.pet_id}`} onChange={(e)=> selectPet(e) } checked={activeSelection == pet.pet_id} className={`appearance-none peer invisible`} />
+                <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{pet.pet_name}</div>
               </label>
             )})
         }

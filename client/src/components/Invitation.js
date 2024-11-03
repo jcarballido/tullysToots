@@ -2,12 +2,12 @@ import React from 'react'
 import InvitationActionButtons from './InvitationActionButtons'
 import PetData from './PetData'
 
-const Invitation = ({ invitation,setActiveInvites }) => {
+const Invitation = ({ invitation,setActiveInvites, index }) => {
 
   const { petData, sendingOwnerUsername, invitationId } = invitation
 
   return(
-    <div key={invitationId} className='border-2 border-blue-700 w-full'>
+    <div key={invitationId} className={`flex flex-col justify-between text-black w-full  rounded-lg my-2 p-2 items-start ${index % 2 == 0 ? 'bg-secondary-light':'bg-secondary'} shadow-xl`}>
       {
         petData?.map( pet =>{
           return(
@@ -15,7 +15,7 @@ const Invitation = ({ invitation,setActiveInvites }) => {
           )
         })
       }
-      <div>Sent By: {sendingOwnerUsername}</div>
+      <div className='font-bold mb-4'>Sent By: {sendingOwnerUsername}</div>
       <InvitationActionButtons invitationId={invitationId} setActiveInvites={setActiveInvites} />
     </div>
   )

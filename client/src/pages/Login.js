@@ -68,10 +68,10 @@ const Login = () => {
 
   return (
     <CredentialsModal>
-      <div className="flex justify-center items-center my-4">LOGIN</div>
+      <div className="flex justify-center items-center my-4 font-bold text-xl">Login</div>
       <LoginForm error={ error } setError={ setError } invitationToken={ invitationToken } />
       <button className="min-w-[48px] min-h-[40px] flex flex-col justify-center items-center my-4">
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center text-lg font-bold">
           New to Tully's Toots?
         </div>
         <Link to={invitationToken? `/signup?invite=${invitationToken}`:'signup'} className="flex justify-center items-center pl-1">

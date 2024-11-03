@@ -145,8 +145,8 @@ const SignUp = () => {
 
   return(
     <CredentialsModal>
-      <div className='flex justify-center items-center my-4'>
-          WELCOME!
+      <div className='flex justify-center items-center my-4 font-bold text-xl'>
+          Welcome!
       </div>
       <SignUpForm error={ error } setError={ setError } invitationToken={invitationToken}/>
       <div className='flex justify-center items-center pr-1'>Already have an account?</div>

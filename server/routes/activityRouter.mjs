@@ -67,6 +67,7 @@ router.get("/get", async (req, res) => {
   if(!encodedData) return res.status(400).json({ error:new Error('No data received') })
   const decodedData = JSON.parse(decodeURIComponent(encodedData))
   const { referencePetId, referenceDate, timeWindowObj } = decodedData
+  console.log('Decoded data:', decodedData)
   // console.log('Reference Pet id:')
   console.log(referencePetId)
   let petId
