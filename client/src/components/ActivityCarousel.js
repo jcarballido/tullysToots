@@ -69,7 +69,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   useEffect( () => {
     // console.log('Reference date bein passed into \'getDateChar\' :', referenceDate)
     const { isToday,today,yesterday, updatedTest } = getDateCharacteristics(referenceDate)
-    console.log('Reference date/today/yesterday/isToday/updatedTest?:',referenceDate,' ',today,' ',yesterday,' ',isToday, ' ', updatedTest )
+    // console.log('Reference date/today/yesterday/isToday/updatedTest?:',referenceDate,' ',today,' ',yesterday,' ',isToday, ' ', updatedTest )
     setToday(isToday)
 
     },[referenceDate])
@@ -90,8 +90,8 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
   }, [currentIndex])
 
   useEffect( () =>{
-    console.log('Current index after dateMap changes:', currentIndex)
-    console.log('Date map in useEffect:', dateMap)
+    // console.log('Current index after dateMap changes:', currentIndex)
+    // console.log('Date map in useEffect:', dateMap)
     if(currentReferencePetId.current == referencePetId && (currentIndex == 0 || currentIndex == activityArr.length - 1)){
       console.log('current ref matches pet ID in state' )
       const mapKeys = dateMap.keys()
@@ -125,6 +125,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
 
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex+1][0]
+    console.log('nextCArd, activeReferenceDate:', activeReferenceDate)
     setReferenceDate(activeReferenceDate)
     // console.log('activeReferenceDate:', activeReferenceDate)
 
@@ -140,6 +141,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex-1][0]
     // console.log('activeReferenceDate:', activeReferenceDate)
+    console.log('prevCard, activeReferenceDate:', activeReferenceDate)
     setReferenceDate(activeReferenceDate)
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
     setStatus({ viewing:true, adding:false, updating:false })

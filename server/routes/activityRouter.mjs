@@ -192,14 +192,15 @@ router.post("/add", async (req, res) => {
   const { timezoneOffset } = req.body
 
   // const referenceTimezoneOffset = req.body.referenceTimezoneOffset
-  console.log('**Activity Router** referenceDate: ', timestampUTCString)
+  // console.log('**Activity Router** referenceDate: ', timestampUTCString)
   const { pee, poo } = req.body.activity
   
   try{
     // console.log('Attempt to add activity is being made.')
     const result = await queries.addActivity(petId, ownerId, timestampUTCString,timezoneOffset, pee,poo)
-    console.log('Line 71, result: ', result)
+    // console.log('Line 71, result: ', result)
     const referenceDate = result.reference_date.toISOString()
+    console.log('**ActivityRouter/ add** Reference date result split:',referenceDate)
     const referenceDateSplit = referenceDate.split('T')[0]
     console.log('Ref date split:', referenceDateSplit)
     req.referenceDate = referenceDateSplit
@@ -211,7 +212,7 @@ router.post("/add", async (req, res) => {
   try{
     // console.log('*activityRouter* attempting to retrieve singleDayActivity')
     const result = await queries.getSingleDayActivity(petId, req.referenceDate); 
-    console.log('*activityRouter* Result from querying single day activity: ', result)
+    // console.log('*activityRouter* Result from querying single day activity: ', result)
     console.log(util.inspect(result, { depth: null }))
     return res.status(200).json(result)
   }catch(e){

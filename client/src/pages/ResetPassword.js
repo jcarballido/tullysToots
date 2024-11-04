@@ -44,7 +44,7 @@ const ResetPassword = () => {
 
   return (
     <>
-      <div>Reset Password</div>
+      <div className='flex justify-center items-center my-4 font-bold text-xl font-Lato'>Reset Password</div>
       {
         validationError
         ? <ExpiredResetToken/>

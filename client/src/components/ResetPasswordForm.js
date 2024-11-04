@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Form } from 'react-router-dom'
+import PasswordInput from './PasswordInput'
 
 
 const ResetPasswordForm = ({ message,resetToken }) => {
@@ -9,6 +10,9 @@ const ResetPasswordForm = ({ message,resetToken }) => {
   
   const [ confirmPasswordValue, setConfirmPasswordValue ] = useState('')
   const [ confirmPasswordVisible, setConfirmPasswordVisible ] = useState(false)
+  const [ invalidPassword, setInvalidPassword ] = useState(true)
+  const [ invalidConfirmPassword, setInvalidConfirmPassword ] = useState(true)
+
 
 
   const handlePasswordChange = (e) => {
@@ -34,30 +38,18 @@ const ResetPasswordForm = ({ message,resetToken }) => {
   }
 
   return(
-    <>
+    <div className='grow '>
       <div>
         { message.status == 'error'? `${message.message}`:null }
       </div>
-      <Form method='post' action={`/resetPassword?resetToken=${resetToken}`}>
-        <label htmlFor='newPassword' className='flex flex-col mb-2 min-h-[44px]'>
-          <div>Password:</div>
-          <div className='flex'>
-            <input id='newPassword' name='newPassword' type={passwordVisible ? 'text':'password'} onChange={handlePasswordChange} className='grow text-black border-none outline-none ring-2 ring-gray-300 focus:ring-accent-blue' value={passwordValue} />
-            <button className='flex justify-center items-center max-w-max' onClick={ handlePasswordShow } >SHOW</button>
-          </div>
-        </label>
-        <label htmlFor='confirmPassword' className='flex flex-col mb-2 min-h-[44px]'>
-          <div>Confirm Password:</div>
-          <div className='flex'>
-            <input id='confirmPassword' name='confirmPassword' type={confirmPasswordVisible ? 'text':'password'} onChange={handleConfirmPasswordChange} className='grow text-black border-none outline-none ring-2 ring-gray-300 focus:ring-accent-blue' value={confirmPasswordValue} />
-            <button className='flex justify-center items-center max-w-max' onClick={ handleConfirmPasswordShow } >SHOW</button>
-          </div>
-        </label>
-        <button type='submit'> 
-          SUBMIT  
+      <Form method='post' action={`/resetPassword?resetToken=${resetToken} `} className='max-h-max flex flex-col w-full px-8 mb-4 relative rounded-2xl bg-transparent blur-small shadow-2xl py-8 items-center'>
+        <PasswordInput setInvalidField={setInvalidPassword} label={'Password'} inputName={'newPassword'}/>
+        <PasswordInput setInvalidField={setInvalidConfirmPassword} label={'Confirm Password'} inputName={'confirmPassword'}/>
+        <button type='submit' className={`flex justify-center items-center min-w-[48px] min-h-[48px] px-2 rounded-lg bg-accent text-white mt-2 disabled:bg-gray-300 disabled:text-gray-500`}> 
+          Submit 
         </button>
       </Form>
-    </>
+    </div>
   )
 }
 

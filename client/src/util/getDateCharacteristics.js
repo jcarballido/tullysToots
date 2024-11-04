@@ -21,6 +21,7 @@ const getDateCharacteristics = (referenceDate) => {
 
   // const convertedReferenceDate = new Date(workingReferenceDateOffsetAdjusted)
   // const monthIndex = convertedReferenceDate.getMonth()
+  // console.log(referenceDate, 'typeof:',typeof(referenceDate))
   const referenceDateSplit = referenceDate.split('-')
   const year = referenceDateSplit[0]
   const date = referenceDateSplit[2]

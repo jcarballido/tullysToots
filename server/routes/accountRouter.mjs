@@ -77,6 +77,7 @@ router.get('/checkLoginSession', async(req,res, next) => {
     if(decodedInviteToken){
       req.invitationToken = decodedInviteToken
       req.guest = true
+      console.log('Check login session route sending a GUEST to next middleware.')
       return next()
     }
     return res.status(401).json({ message: 'Missing refresh token'})    
@@ -95,7 +96,8 @@ router.get('/checkLoginSession', async(req,res, next) => {
     req.invitationToken = decodedInviteToken
     req.accessToken = accessToken
     req.ownerId = ownerId
-    next()
+    console.log('Check login session route sending a USER to next middleware.')
+    return next()
   }
   return res.status(200).json({accessToken})
 })
@@ -371,38 +373,48 @@ const updateInvitationStatus = async(req,res, next) => {
       const { accessed_at, expired } = tokenData
       if((req.signIn || req.signUp) && expired){
         console.log('Expired token, middleware complete.')
-        if(expired) return res.status(207).json({ accessToken:req.accessToken, invitationError: 'Invitation token is expired.' })
+        return res.status(207).json({ accessToken:req.accessToken, invitationError: 'Invitation token is expired.' })
       }
       if(req.guest && (accessed_at || expired)){
         console.log('Accessed_at property found or expired token, middleware complete.')
-        if(req.guest) return res.status(401).json({ guest:true, message: 'Invitation token is expired.' })
+        return res.status(401).json({ guest:true, message: 'Invitation token is expired.' })
       }
       if(!accessed_at){
         // Set a timestamp
+        console.log('Attempting to add an accessed_at timestamp.')
         try {
           await queries.setInvitationAccessedAtTimestamp(req.invitationToken)
         } catch (error) {
           console.log('Failed to set expiration to true. Error returned: ', error)
+          throw error
         }
       }
       if(!expired){
         // Decode the invite to check for expiry
+        console.log("confirming this invitation token has not expired")
         try {
           jwt.verify(req.invitationToken, process.env.INVITATION_SECRET)
         } catch (error) {
           console.log('Token is expired.')
           try {
+            console.log('Token was confirmed to be expired, attmepting to update the invite...')
             await queries.setInviteExpiredByToken(req.invitationToken)
           } catch (error) {
             throw error
           } 
+          console.log('An error checking if the token is expired occurred.')
           throw error
         }
       }
     } catch (error) {
       console.log('Error retrieving token data: ', error)
-      if(req.guest) return res.status(401).json({ guest:true, message:'Issue validating invitation token.'}) 
-      else res.status(207).json({ accessToken:req.accessToken,invitationError: 'Token is expired.' })
+      if(req.guest) {
+        console.log('Guest detected, expired token message sent')
+        return res.status(401).json({ guest:true, message:'Issue validating invitation token.'}) 
+      } else {
+        console.log('User detected, expired token message sent.')
+        return res.status(207).json({ accessToken:req.accessToken,invitationError: 'Token is expired.' })
+      }
     }
 
     if(req.guest) return res.status(200).json({ message: 'New session and a valid invite is present.' })
@@ -427,14 +439,14 @@ const updateInvitationStatus = async(req,res, next) => {
     if(!req.invitationTokens.includes(req.invitationId)){
       try{
         console.log('Attempting to store token with owner')
-  
         await queries.storeInvitationToken(req.invitationId, req.ownerId)
       } catch(e){
         console.log('Error returned from trying to store the invitation token to the user: ', e)
         return res.status(207).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
       }
-    }3
+    }
 
+    console.log('Reached the end of updateInvitationStatus')
     return res.status(200).json({ accessToken: req.accessToken, activeInvite: true })
   }
 
@@ -471,7 +483,7 @@ router.post('/forgotPassword', async(req,res) => {
         <table width="100%" height="100%" bgcolor="#DCC6E0">
           <tr>
             <td align="center" style="">
-              <table width="60%" height="90%" bgcolor="white" style="border-collapse:collapse;border-radius:20px">
+              <table width="60%" bgcolor="white" style="border-collapse:collapse;border-radius:20px">
                 <tr style='padding:0px;'>
                   <td align="center" style="background-color:#f0e6d6; border-top-right-radius:20px;border-top-left-radius:20px; height:20px;padding:0px;margin:0px">
                     <h2 style="height:5px">Tully's Toots <3</h2>
@@ -1620,7 +1632,7 @@ router.post('/sendInvite', async(req,res) => {
       <table width="100%" bgcolor="#DCC6E0">
         <tr>
           <td align="center" style="">
-          <table width="60%" height="90%" bgcolor="white" style="border-collapse:collapse;border-radius:20px">
+          <table width="60%" bgcolor="white" style="border-collapse:collapse;border-radius:20px">
             <tr style='padding:0px;'>
             <td align="center" style="background-color:#f0e6d6; border-top-right-radius:20px;border-top-left-radius:20px; height:20px;padding:0px;margin:0px">
               <h2 style="height:5px">Tully's Toots <3 </h2>
