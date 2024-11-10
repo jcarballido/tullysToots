@@ -24,6 +24,7 @@ export const Dashboard = () => {
   const [ updateUsernameModal, setUpdateUsernameModel ] = useState({ visible:false })
   const [ updatePasswordModal, setUpdatePasswordModal ] = useState({ visible:false })
   const [ addPetModal, setAddPetModal ] = useState({ visible: false })
+  const [ error, setPetError ]  = useState({ status:'false'})
 
   const { auth } = useAuth()
   const location = useLocation()
@@ -67,12 +68,12 @@ export const Dashboard = () => {
             <div className='w-11/12 grow flex flex-col items-center justify-center border-2 border-black rounded-2xl mb-2 p-4 bg-primary overflow-hidden'>
               <div className='flex items-center justify-center text-2xl font-bold' >USERNAME</div>
               
-              <Outlet context={[petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal, addPetModal, setAddPetModal]}/>
+              <Outlet context={[petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal, addPetModal, setAddPetModal, error, setPetError]}/>
             </div>
           {/* </div> */}
         </div>
       </div>
-      <EditPetModal editPetModal={editPetModal} setEditPetModal={setEditPetModal} setPetsArray={setPetsArray} />
+      <EditPetModal editPetModal={editPetModal} setEditPetModal={setEditPetModal} setPetsArray={setPetsArray} error={error} setPetError={setPetError} />
       <UnlinkPetModal unlinkPetModal={unlinkPetModal} setUnlinkPetModal={setUnlinkPetModal} setPetsArray={setPetsArray} />
       {/* <NewPetModal newPetModal={newPetModal} setNewPetModal={setNewPetModal} setPetsArray={setPetsArray}/> */}
       <AddPetModal visible={addPetModal.visible} setAddPetModal={setAddPetModal} sendTo='/pets' />

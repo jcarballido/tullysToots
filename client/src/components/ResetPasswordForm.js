@@ -10,8 +10,8 @@ const ResetPasswordForm = ({ message,resetToken }) => {
   
   const [ confirmPasswordValue, setConfirmPasswordValue ] = useState('')
   const [ confirmPasswordVisible, setConfirmPasswordVisible ] = useState(false)
-  const [ invalidPassword, setInvalidPassword ] = useState(true)
-  const [ invalidConfirmPassword, setInvalidConfirmPassword ] = useState(true)
+  const [ invalidPassword, setInvalidPassword ] = useState(false)
+  const [ invalidConfirmPassword, setInvalidConfirmPassword ] = useState(false)
 
 
 

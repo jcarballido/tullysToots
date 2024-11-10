@@ -12,6 +12,7 @@ const NewPetModal = ({ newPetModal, setNewPetModal, setPetsArray }) => {
 
   const [ dateValue, setDateValue ] = useState(`${currentDateISOFormat}`)
   const [ sexValue, setSexValue ] = useState('')
+  const [ validFields, setValidFields ] = useState(true)
 
   const axiosPrivate = useAxiosPrivate()
   const newPetInput = useTextInput()
@@ -48,6 +49,11 @@ const NewPetModal = ({ newPetModal, setNewPetModal, setPetsArray }) => {
     setSexValue(e.target.value);
   };
 
+  useEffect(() => {
+    if(newPetInput.value != '' && dateValue != '' && sexValue != '') setValidFields(true)
+    else setValidFields(false)
+  },[newPetInput.value,dateValue,sexValue])
+
   if(newPetModal.visible){
 
   return (
@@ -82,7 +88,7 @@ const NewPetModal = ({ newPetModal, setNewPetModal, setPetsArray }) => {
             />
           </label>
         </fieldset>
-        <button className="" onClick={handleSave}>
+        <button className="" onClick={handleSave} disabled={validFields == true}  >
           Save
         </button>
         <button className="" onClick={() => setNewPetModal({visible:false})}>

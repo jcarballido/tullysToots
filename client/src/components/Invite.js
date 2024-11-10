@@ -3,16 +3,21 @@ import useTextInput from '../hooks/useTextInput'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 import {Link} from 'react-router-dom'
 import Toast from './Toast'
+import EmailInput from './EmailInput'
 
 function Invite({ }) {
 
-  const emailInviteeInput = useTextInput('')
+  // const emailInviteeInput = useTextInput('')
+  const [ emailValue, setEmailValue ] = useState('')
+  const [ invalidEmail, setInvalidEmail ] = useState({ status:'false' })
+  const [ emailFormatCheck, setEmailFormatCheck ] = useState({ status:'false' })
   const axiosPrivate = useAxiosPrivate()
   const [ checked, setChecked ] = useState(false)
   const [ toast, setToast ] = useState({ visible:false,result:null,message:'' })
   const [ selectedPets, setSelectedPets ] = useState([])
   const [ petsList, setPetsList ] = useState([])
   const [ singlePetChecked, setSinglePetChecked ] = useState(true)
+  const [ sent, setSent ] = useState({visible:'false'})
 
   useEffect(() => {
     const getPets = async () => {
@@ -39,13 +44,13 @@ function Invite({ }) {
   const handleInvite = async () => {
     console.log('Selected pets:',selectedPets)
     try{
-      const result = await axiosPrivate.post('/account/sendInvite',{email: emailInviteeInput.value,petsToShareArray: selectedPets})
+      const result = await axiosPrivate.post('/account/sendInvite',{email: emailValue,petsToShareArray: selectedPets})
       
-      setToast({ visible:true, result:'+', message: result.data.message })
+      setSent({ visible:'true', message: 'Invitation successfully sent.' })
     }catch(e){
       
       console.log('Error sending invite: ',e)
-      setToast({ visible:true, result:'x', message: e.response.data.error })
+      setSent({ visible:'true', message: 'Invitation failed to send.' })
       return
     }
   }
@@ -66,15 +71,27 @@ function Invite({ }) {
     setChecked(!checked)
   }
 
+  useEffect(() => {
+    const emailValidationRegex = /.+@[a-zA-Z0-9-.]+\.[a-zA-Z0-9]+$/gm
+    if(!emailValidationRegex.test(emailValue)){
+      setEmailFormatCheck({ status:'false' })
+    }else{
+      setEmailFormatCheck({ status:'true' })
+    }
+
+  }, [emailValue])
+
+
+
   return (
-    <div className='w-full text-xl overflow-y-auto'>
+    <div className='w-full text-xl overflow-y-auto px-1'>
       {/* <Toast visible={toast.visible} result={toast.result} message={toast.message} setToast={ setToast } /> */}
       {
         petsList.length == 0
         ? <div>
           Looks like there are no pets to share! Change that by clicking <Link to='/pets'>here.</Link>
           </div>
-        : <div>
+        : <div className='w-9/10'>
             <div className='w-full flex items-center font-bold mb-2  text-xl mt-4'>
               Share Your Pet's Activity
             </div>
@@ -110,27 +127,16 @@ function Invite({ }) {
                 
               }
               </div>
-            {/* {
-              petsList?.length > 1
-                ? petsList.map( pet => {
-                  return(
-                    <div className='font-normal'>
-                      {pet.pet_name}
-                      <input key={pet.pet_id} id={pet.pet_id} type='checkbox' value={pet.pet_id} checked={selectedPets.includes(pet.pet_id.toString())} onChange={ e => handleCheck(e)} />          
-                    </div>
-                  )})
-                : <div className='font-normal'>
-                    {petsList[0].pet_name}
-                    <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
-                  </div>
-            } */}
             </div>
             <div className='font-bold my-4'>Send Invite to This Email...</div>
-            <input type='email' className='px-2 w-full text-black border-none outline-none ring-4 ring-gray-300 rounded-lg h-[40px] focus:ring-accent' {...emailInviteeInput} />
-            <button disabled={!checked || petsList?.length == 0} onClick={handleInvite} className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md text-white text-lg font-bold max-w-min my-6 disabled:bg-gray-500'>SUBMIT</button>
+            <EmailInput invalidField={invalidEmail} setInvalidField={setInvalidEmail} emailValue={emailValue} setEmailValue={setEmailValue} />
+            <button disabled={!checked || petsList?.length == 0  || invalidEmail.status == 'true' || emailValue == '' || emailFormatCheck.status == 'false' } onClick={handleInvite} className='flex justify-center items-center h-[48px] bg-accent px-2 rounded-md text-white text-lg font-bold max-w-min my-6 disabled:bg-gray-500'>SUBMIT</button>
           </div>
-          
+        
       }    
+      <div className={`text-black italic transition ${sent?.visible == 'true' ? 'visible scale-100':'invisible scale-0'}`}>
+        {sent?.message}
+      </div>
     </div>
   )
 }

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react'
 
-function UsernameInput({ usernameValue, setUsernameValue,invalidField,setInvalidField }) {
+function ConfirmUsernameInput({ usernameValue, setUsernameValue,invalidField,setInvalidField }) {
 
   const [ inputError, setInputError ] = useState({ status:'false' }) 
   const [ hasFocused, setHasFocused ] = useState({ status:'false' })
   const [ hasBlurred, setHasBlurred ] = useState({ status:'false' })
-  // const [ checked, setChecked ] = useState(false)
 
   useEffect( () => {
     hasFocused.status == 'true' && hasBlurred.status == 'true'
@@ -33,22 +32,16 @@ function UsernameInput({ usernameValue, setUsernameValue,invalidField,setInvalid
     e.preventDefault()
     const target = e.target
     const input = target.value
-    if(input.length <= 26) {
-      setUsernameValue(input)
-    }
-    // if(input.length >= 3) setChecked(true) 
-    // else setChecked(false)
+    if(input.length <= 26) setUsernameValue(input)
   }
 
   return(
-    <>
-      <label htmlFor='username' className='flex flex-col mb-2'>
+    <label htmlFor='username' className='flex flex-col mb-2'>
         Username:
         <input onBlur={hasBlurred.status == 'false' ? handleBlur : null} onFocus={hasFocused.status == 'false' ? handleFocus : null} id='username' name='username' type='text' onChange={handleInputChange} className={`w-full h-[48px] rounded-lg text-black px-2 focus:outline-none border focus:ring focus:ring-secondary-dark ${ invalidField.message ? 'border-red-500' : 'border-gray-400' }`} value={usernameValue} />
         <div className={`italic text-red-700 transition transform ${ invalidField?.status == 'true' ? 'visible scale-100':'scale-0 invisible'}`}>{invalidField?.message}</div>
-      </label>
-    </>
+    </label>
   )
 }
 
-export default UsernameInput
+export default ConfirmUsernameInput

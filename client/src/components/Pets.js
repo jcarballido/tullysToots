@@ -6,12 +6,14 @@ import Toast from './Toast'
 import NewPetModal from './NewPetModal'
 import useAxiosPrivate from '../hooks/useAxiosPrivate'
 
-function Pets({ no }) {
+function Pets({ }) {
 
   const axiosPrivate = useAxiosPrivate()
   const actionData = useActionData()
   // const loaderData = useLoaderData()
-  const [petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal,addPetModal, setAddPetModal] = useOutletContext()
+  const [petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal,addPetModal, setAddPetModal, error, setPetError] = useOutletContext()
+  // const [ error, setError ] = useState({status:'false'})
+
   
   // const [ toast, setToast ] = useState({visible:null, result:'', message:''})
   
@@ -72,7 +74,8 @@ function Pets({ no }) {
       setAddPetModal({visible:false})
     }
     if(actionData?.status == 'error'){
-      console.log('Error adding pet')
+      console.log('Error adding pet:', actionData)
+      setPetError({ status:'true',message:'A pet with these details already exists. Cannot add at this time.' })
     }
   },[ actionData ])
 
@@ -101,7 +104,7 @@ function Pets({ no }) {
         }
 
       </div>
-      <button disabled={newPetInProcess()} onClick={addPet} className='flex justify-center items-center rounded-xl bg-accent px-2 text-white max-w-max  my-4'>Add a Pet</button>
+      <button disabled={newPetInProcess()} onClick={addPet} className='shrink-0 h-[48px] flex justify-center items-center rounded-xl bg-accent px-2 text-white max-w-max  my-4 font-bold'>Add a Pet</button>
     </div>
   )
 }

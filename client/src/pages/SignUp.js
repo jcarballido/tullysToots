@@ -24,7 +24,7 @@ const SignUp = () => {
   const parsedInvitationToken = invitationToken == 'null'? JSON.parse(invitationToken):invitationToken
 
   const [ activeInvite, setActiveInvite ] = useState(false)
-  const [ error, setError ] = useState(null)
+  const [ error, setError ] = useState({ status:'false' })
 
   useEffect( () => {
     const checkLogin = async() => {
@@ -130,7 +130,8 @@ const SignUp = () => {
       if(activeInvite) setActiveInvite(true)
         setAuth({ accessToken, isLoggedIn })
     } else if(actionData?.error) {
-      setError(actionData.error)
+      console.log('Action data error:', actionData.error)
+      setError({status:'true',message:`${actionData.error.message}`})
     }
   }, [actionData])
 
@@ -177,8 +178,8 @@ export const action = async ({ request }) => {
     // const accessToken = response.data.accessToken
     return { accessToken, activeInvite }
   } catch(e){
-    console.log('Sign Up action resulted in the following error: ',e)
-    const error = e.response.data.error
+    // console.log('Sign Up action resulted in the following error: ',e)
+    const error = e.response.data
     return { error }
   }
 }

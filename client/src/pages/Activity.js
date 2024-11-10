@@ -37,7 +37,7 @@ const Activity = () => {
   const [ pendingInvitations, setPendingInvitations ] = useState(false)
   const [ switchPetModal, setSwitchPetModal ] = useState({visible:false})
   const [ name, setName ] = useState('')
-  const [addPetError, setAddPetError] = useState(false)
+  const [addPetError, setAddPetError] = useState({status:'false'})
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
   const [status,setStatus] = useState({ viewing: true, adding: false, updating: false })
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
@@ -157,8 +157,8 @@ const Activity = () => {
       setAddPetModal({visible:false})
     }
     if(actionData?.status == 'error'){
-      console.log('Error adding pet')
-      setAddPetError(true)
+      console.log('Error adding pet:',actionData)
+      setAddPetError({status:'true',message:'A pet with these same details already exsts. Cannot add at this time.'})
     }
   },[ actionData ])
 
@@ -229,7 +229,7 @@ const Activity = () => {
   return(
     <main className='w-full grow flex flex-col justify-start items-center overflow-y-auto gap-8 mt-4'>
       {pendingInvitations ? <button  onClick={( ) => navigate('/acceptInvite')} >You have pending invites!</button>:null}
-      <div className='flex gap-2 justify-center items-center text-black font-Fredoka text-2xl bg-secondary-light rounded-2xl border-2 border-accent px-2' onClick={openPetSelectorModal}>
+      <div className='flex gap-2 justify-center items-center text-black font-Fredoka text-2xl bg-accent rounded-2xl border-2 border-accent px-2' onClick={openPetSelectorModal}>
         <div className='rounded-lg '>{name ? `${name}'s `:''}</div>
         <div>Log</div>
       </div>

@@ -8,10 +8,9 @@ function ErrorMessage({ error, setError }) {
   }
 
   return (
-    <div className={`w-3/4 h-3/4 z-50 bg-amber-100 flex flex-col items-center text-black absolute ml-[] ${error? 'visible':'invisible'}`}>
-      {error ? error.detail:null}
-      <button onClick={ handleClose } className='bg-red-500 text-black w-[44px] h-[44px]'>Close Window</button>
-    </div>
+    <div className={`w-full h-3/4 transition transform text-red-700 ${error?.status == 'true' ? 'visible scale-100':'invisible scale-0'}`}>
+      {error?.message}
+    </div> 
   )
 }
 

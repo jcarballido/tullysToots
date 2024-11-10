@@ -121,10 +121,10 @@ router.post('/sign-up', async(req,res,next) => {
   // Confirm email is unique
   try {
     const uniqueCredentials = await queries.checkExistingCredentials(username,email)
-    if(!uniqueCredentials) return res.status(200).json({ error: 'Email or username already exists. Please sign in or request a password reset'})
+    if(!uniqueCredentials) return res.status(400).json({ error: true, message: 'Email or username already exists. Please sign in or request a password reset'})
   } catch (error) {
     console.log('Error checking credentials :', error)
-    return res.status(200).json({error:'Error checking credentials'})
+    return res.status(200).json({error:true, message:'Error checking credentials'})
   }
 
   // New Flow:

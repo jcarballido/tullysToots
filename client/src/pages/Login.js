@@ -62,7 +62,7 @@ const Login = () => {
       if(activeInvite) setActiveInvite(true)
       setAuth({ accessToken, isLoggedIn })
     } else if(actionData?.error) {
-      setError(actionData.error)
+      setError({ status:'true', message:'Invalid email and/or password.'})
     }
   }, [actionData])
 

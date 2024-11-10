@@ -25,8 +25,8 @@ function ConfirmPassword({ setInvalidField }) {
   return(
     <label htmlFor='password' className='flex flex-col mb-2 w-full'>
       <div>Confirm Password:</div>
-      <div className='flex w-full h-[40px]'>
-        <input id='password' name='password' type={passwordVisible ? 'text':'password'} onChange={handleInputChange} className='grow text-black border-none outline-none ring-2 ring-gray-300 focus:ring-accent-blue w-full rounded-lg' value={value} />
+      <div className='flex w-full h-[48px]'>
+        <input id='password' name='password' type={passwordVisible ? 'text':'password'} onChange={handleInputChange} className='grow text-black focus:border-secondary-dark focus:ring focus:ring-secondary-dark focus:outline-none w-full rounded-lg px-2' value={value} />
         <img className='grow-0 max-h-[48px] fill-white' onClick={ handleShow } src={passwordVisible? eyeClosed:eyeOpen}/>
       </div>
     </label>
