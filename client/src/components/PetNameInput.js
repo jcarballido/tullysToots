@@ -40,9 +40,9 @@ function PetNameInput({ petNameValue, setPetNameValue,invalidField,setInvalidFie
 
   return(
     <>
-      <label htmlFor='username' className='flex flex-col mb-2'>
+      <label htmlFor='name' className='flex flex-col mb-2'>
         Pet Name:
-        <input onBlur={hasBlurred.status == 'false' ? handleBlur : null} onFocus={hasFocused.status == 'false' ? handleFocus : null} id='username' name='username' type='text' onChange={handleInputChange} className={`w-full h-[48px] rounded-lg text-black px-2 focus:outline-none border focus:ring focus:ring-secondary-dark ${ inputError.message ? 'border-red-500' : 'border-gray-400' }`} value={petNameValue} />
+        <input onBlur={hasBlurred.status == 'false' ? handleBlur : null} onFocus={hasFocused.status == 'false' ? handleFocus : null} id='name' name='name' type='text' onChange={handleInputChange} className={`w-full h-[48px] rounded-lg text-black px-2 focus:outline-none border focus:ring focus:ring-secondary-dark ${ inputError.message ? 'border-red-500' : 'border-gray-400' }`} value={petNameValue} />
         <div className={`italic text-red-700 transition transform ${ inputError?.status == 'true' ? 'visible scale-100':'scale-0 invisible'}`}>{inputError?.message}</div>
       </label>
     </>
