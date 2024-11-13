@@ -1,6 +1,6 @@
 import pg from 'pg'
 import sqlText from './sqlText.mjs'
-// import dotenv from 'dotenv/config'
+import dotenv from 'dotenv/config'
 // import timestampParser from '../../client/src/util/timestampParser.js'
 import util from 'util'
 import getDateCharacteristics from '../util/getDateCharacteristics.js'
@@ -9,7 +9,14 @@ import getTimeCharacteristics from '../util/getTimeCharacteristics.js'
 
 const { Pool } = pg
 
-const pool = new Pool()
+const pool = new Pool({
+  user: process.env.PGUSER,
+  host: process.env.PGHOST,
+  database: process.env.PGDATABASE,
+  password: process.env.PGPASSWORD,
+  port: process.env.PGPORT,
+  ssl: { rejectUnauthorized: false }
+})
 
 // const parse = (timestamp) => {  
 //   const timezoneCheck = /GMT/
