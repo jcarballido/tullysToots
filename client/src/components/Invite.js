@@ -124,9 +124,9 @@ function Invite({ }) {
                       //   <input key={petsList[0].pet_id} id={petsList[0].pet_id} type='checkbox' value={petsList[0].pet_id} checked={singlePetChecked} />          
                       //   <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{petsList[0].pet_name}</div>
                       // </div>
-                      <label key={pet.pet_id} htmlFor={`${pet.pet_id}`} className="flex justify-start items-center w-full">
-                        <input type='checkbox' name='pets' value={pet.pet_id} id={`${pet.pet_id}`} readOnly='true' checked={true} className={`appearance-none peer invisible`} />
-                        <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{pet.pet_name}</div>
+                      <label key={petsList[0].pet_id} htmlFor={`${petsList[0].pet_id}`} className="flex justify-start items-center w-full">
+                        <input type='checkbox' name='pets' value={petsList[0].pet_id} id={`${petsList[0].pet_id}`} readOnly='true' checked={true} className={`appearance-none peer invisible`} />
+                        <div className=" h-[48px] border-2 peer-checked:bg-accent peer-checked:border-0 peer-checked:text-white border-gray-700 rounded-2xl flex justiy-center items-center px-4">{petsList[0].pet_name}</div>
                       </label>
                 
               }
