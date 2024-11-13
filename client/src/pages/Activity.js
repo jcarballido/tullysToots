@@ -42,6 +42,8 @@ const Activity = () => {
   const [status,setStatus] = useState({ viewing: true, adding: false, updating: false })
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
 
+  console.log('Activity.js/ activity state:', [])
+
 
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
