@@ -115,7 +115,8 @@ const addActivity = async(petId, ownerId, timestampUTCString, timezoneOffset, pe
   // console.log('*Queries* date:', date)
   const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(timestampUTCString,timezoneOffset)
   const timestamp = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
-  // console.log('**Queries** addActivity timestamp: ', timestamp)
+  // console.log('Queries.js/addActivity/ getTimeStamp result:',  )
+  console.log('**Queries** addActivity timestamp: ', timestamp)
   try{
     
     const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo,timezoneOffset,`${fullYear}-${monthIndex+1}-${date}`])
