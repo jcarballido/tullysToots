@@ -471,7 +471,7 @@ router.post('/forgotPassword', async(req,res) => {
 
   const resetPasswordToken = jwt.sign( {ownerId}, resetPasswordSecret, {expiresIn: '10m'} )
 
-  const link = `http://localhost:3001/resetPassword?resetToken=${resetPasswordToken}`
+  const link = `https://tullystoots-1.onrender.com/resetPassword?resetToken=${resetPasswordToken}`
   const resetPasswordEmail = (resetPasswordlink) => {
     return `
       <head>
@@ -555,7 +555,7 @@ router.get('/resetRequest', async(req,res) => {
   // 2. Store the userId,resetToken, AccessedAt='null' in a new row in the 'ResetRequest' table. Override existing resetToken.
   // const result = queryServices.resetRequest(userId, resetToken).
   // 3. Create a link that contains this JWT in the URL.
-  const resetLink = `http://localhost:3000/resetPassword?resetToken=${resetToken}`
+  const resetLink = `https://tullystoots-1.onrender.com/resetPassword?resetToken=${resetToken}`
   // 4. Send this link via an email to the user's registered email (confirmed in Line 25)
   const resetPasswordEmailTemplate = (link) => {
     return `
@@ -627,7 +627,7 @@ router.get('/invitation', async(req,res) => {
   const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
   if(!expectedReceivingOwnerId){
     // Redirect to sign-UP page along with invitation token
-    return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+    return res.redirect(`https://tullystoots-1.onrender.com/sign-up?invitationToken=${invitationToken}`)
   }else{
     // Check the client attempting to accept the invite matches with the intended invite recipient
     const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
@@ -642,7 +642,7 @@ router.get('/invitation', async(req,res) => {
     const accessToken = req.headers['authorization']
     if(!accessToken){
     // Redirect to sign-IN page along with invitation token
-    return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+    return res.redirect(`https://tullystoots-1.onrender.com/sign-in?invitationToken=${invitationToken}`)
     }
     const accessTokenSecret = process.env.ACCESS_SECRET
     const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
@@ -673,7 +673,7 @@ router.get('/invitation', async(req,res) => {
     console.log('Error setting Invite Link timestamp', e)
   }
 
-  return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
+  return res.redirect(`https://tullystoots-1.onrender.com/acceptInvite?invitationToken=${invitationToken}`)
   // Check if link has been accessed before.
   // const invitationToken = req.query.invitationToken
   // const invitationSecret = process.env.INVITATION_SECRET
@@ -1620,7 +1620,7 @@ router.post('/sendInvite', async(req,res) => {
   // Check if invitee is already registered
   const invitationSecret = process.env.INVITATION_SECRET
   const invitationToken = jwt.sign({ sendingOwnerId, petIdsArray }, invitationSecret, { expiresIn: '1d'})
-  const addPetOwnerLink = `http://localhost:3001/?invite=${invitationToken}`
+  const addPetOwnerLink = `https://tullystoots-1.onrender.com/?invite=${invitationToken}`
   const invitationForm = (link) => {
     return `
     <head>

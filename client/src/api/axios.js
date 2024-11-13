@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = 'http://localhost:3000'
+const baseURL = 'https://tullystoots.onrender.com'
 
 export default axios.create({
   baseURL
