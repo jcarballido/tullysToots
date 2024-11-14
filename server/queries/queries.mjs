@@ -126,7 +126,7 @@ const addActivity = async(petId, ownerId, timestampUTCString, timezoneOffset, pe
     return data
   }catch(e){
     console.log('ERROR adding activity',e)
-    return
+    throw e
   }
   // const { year,monthIndex,date,convertedHour,convertedMinute, meridian } = (timestampWithoutTZ)
   // const timestamp = `${year}-${monthIndex+1}-${date} ${convertedHour}:${convertedMinute} ${meridian}`

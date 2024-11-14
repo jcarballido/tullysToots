@@ -17,6 +17,22 @@ const insertIntoText = (tableName,newValuesArr) => {
     RETURNING *
     `
   }
+
+  const insertCommandActivity = (columnsArr) => {
+    // console.log('*sqlText* attempt to insert data to table')
+    return `
+      WITH inserted_row AS (INSERT INTO ${tableName} (${columnsArr.join()})
+      VALUES (${columnsArr.map( (_,index) => {return `$${index+1}`}).join()})
+      RETURNING *
+      )
+      SELECT 
+        inserted_row.*,
+        owners.username
+      FROM
+        inserted_row
+      JOIN
+        owners ON inserted_row.set_by = owners.owner_id
+  `}
   // const multipleEntryText = (columnsArr,newValuesArr) => {
   //     const valuesTextArray = newValuesArr.map( (val,index) => return `($1,$${index+3},$2)`)
   //     return `INSERT INTO ${tableName} (${columnsArr.join()})
@@ -35,7 +51,7 @@ const insertIntoText = (tableName,newValuesArr) => {
 
   switch(tableName){
     case 'activities':
-      return singleEntryText(activityColumns)
+      return insertCommandActivity(activityColumns)
     case 'owners':
       return singleEntryText(ownersColumns)
     case 'pets':
