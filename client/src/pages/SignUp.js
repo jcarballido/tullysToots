@@ -15,7 +15,7 @@ import { axiosPrivate } from '../api/axios'
 
 const SignUp = () => {
 
-  const { auth,setAuth } = useAuth()
+  const { auth,setAuth,username } = useAuth()
   const navigate = useNavigate()
   // const loaderData = useLoaderData()
   const actionData = useActionData()
@@ -31,11 +31,11 @@ const SignUp = () => {
       try{
         const encodedInvitationToken = encodeURIComponent(invitationToken)
         const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
-        const { accessToken, message, activeInvite } = response.data
+        const { accessToken, message, activeInvite, username } = response.data
         if(activeInvite) setActiveInvite(true)
         if(accessToken) {
           console.log('Access token returned.')
-          setAuth({accessToken,isLoggedIn:true})
+          setAuth({accessToken,isLoggedIn:true, username})
          
         }          
         if(message) console.log('Message from checking login session: ', message)
@@ -126,9 +126,9 @@ const SignUp = () => {
 
   useEffect(() => {
     if(actionData?.accessToken){
-      const { accessToken, isLoggedIn, activeInvite } = actionData
+      const { accessToken, isLoggedIn, activeInvite,username } = actionData
       if(activeInvite) setActiveInvite(true)
-        setAuth({ accessToken, isLoggedIn })
+        setAuth({ accessToken, isLoggedIn,username })
     } else if(actionData?.error) {
       console.log('Action data error:', actionData.error)
       setError({status:'true',message:`${actionData.error.message}`})
@@ -174,9 +174,9 @@ export const action = async ({ request }) => {
     const response = await axiosPrivate
     .post(`/account/sign-up?invite=${encodedInvitationToken}`, newOwnerData)
     console.log('Response from Sign up: ', response)
-    const { accessToken, activeInvite } = response.data
+    const { accessToken, activeInvite, username } = response.data
     // const accessToken = response.data.accessToken
-    return { accessToken, activeInvite }
+    return { accessToken, activeInvite, username }
   } catch(e){
     // console.log('Sign Up action resulted in the following error: ',e)
     const error = e.response.data

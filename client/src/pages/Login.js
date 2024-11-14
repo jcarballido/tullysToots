@@ -26,11 +26,12 @@ const Login = () => {
       try{
         const encodedInvitationToken = encodeURIComponent(invitationToken)
         const response = await axiosPrivate.get(`/account/checkLoginSession?invite=${encodedInvitationToken}`)
-        const { accessToken,message, activeInvite } = response.data
+        const { accessToken,message, activeInvite,username } = response.data
         if(activeInvite) setActiveInvite(true)
         if(accessToken) {
           console.log('Access token returned.')
-          setAuth({accessToken,isLoggedIn:true})
+          setAuth({accessToken,isLoggedIn:true, username})
+          
         }          
 
         if(message) console.log('Message from checking login session: ', message)
@@ -58,9 +59,9 @@ const Login = () => {
   
   useEffect(() => {
     if(actionData?.accessToken){
-      const { accessToken, isLoggedIn, activeInvite } = actionData
+      const { accessToken, isLoggedIn, activeInvite, username } = actionData
       if(activeInvite) setActiveInvite(true)
-      setAuth({ accessToken, isLoggedIn })
+      setAuth({ accessToken, isLoggedIn, username })
     } else if(actionData?.error) {
       setError({ status:'true', message:'Invalid email and/or password.'})
     }
@@ -107,8 +108,8 @@ export const action = async ({ request }) => {
     const encodedInvitationToken = encodeURIComponent(invitationToken)
     const response = await axiosPrivate
       .post(`/account/sign-in?invite=${encodedInvitationToken}`, credentials)
-    const { accessToken, activeInvite } = response.data
-    return { accessToken, activeInvite }
+    const { accessToken, activeInvite, username } = response.data
+    return { accessToken, activeInvite, username }
   }catch(e){
     console.log('Sign In action resulted in the following error: ',e)
     const error = e.response.data.error

@@ -23,7 +23,7 @@ const SavedRecord = ({ record }) => {
         </div>  
       </div>
       <div className='flex justify-start items-center w-full italic text-gray-700 text-sm'>
-        Entered by: {record.set_by}
+        Entered by: {record.username}
       </div>
     </div>
   )

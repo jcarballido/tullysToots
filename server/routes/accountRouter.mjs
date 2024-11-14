@@ -91,6 +91,14 @@ router.get('/checkLoginSession', async(req,res, next) => {
   }
   const accessSecret = process.env.ACCESS_SECRET
   const ownerId = req.decodedJwt.ownerId
+  try {
+    const username = await queries.getUsername(ownerId)
+    req.username = username
+  } catch (error) {
+    console.log(`Error getting username from owner ID ${ownerId}:`, error)
+    return res.status(401).json({message:'Error getting username.'})    
+  }
+
   const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
   if(decodedInviteToken){
     req.invitationToken = decodedInviteToken
@@ -99,7 +107,7 @@ router.get('/checkLoginSession', async(req,res, next) => {
     console.log('Check login session route sending a USER to next middleware.')
     return next()
   }
-  return res.status(200).json({accessToken})
+  return res.status(200).json({accessToken,username})
 })
 
 router.post('/sign-up', async(req,res,next) => {
@@ -177,12 +185,13 @@ router.post('/sign-up', async(req,res,next) => {
 
   if(!decodedInviteToken){
     console.log('An invite token was not detected, access token sent in response.')
-    return res.status(200).json({accessToken})
+    return res.status(200).json({accessToken,username})
   }
 
   req.invitationToken = decodedInviteToken
   req.accessToken = accessToken
   req.signUp = true
+  req.username = username
   next()
 })
 
@@ -237,11 +246,12 @@ router.post('/sign-in', async(req,res, next) => {
   // const invitationToken = req.query.invite
   if(!decodedInviteToken){
     // console.log('Sign-in does not have an invitation token. Access token to be sent is: ', accessToken)
-    return res.status(200).json({accessToken: accessToken})
+    return res.status(200).json({accessToken: accessToken, username})
   }
   req.invitationToken = decodedInviteToken
   req.accessToken = accessToken
   req.signIn = true
+  req.username = username
   console.log('Sign up endpoint completed. Moving onto next middleware.')
   next()
 })
@@ -373,7 +383,7 @@ const updateInvitationStatus = async(req,res, next) => {
       const { accessed_at, expired } = tokenData
       if((req.signIn || req.signUp) && expired){
         console.log('Expired token, middleware complete.')
-        return res.status(207).json({ accessToken:req.accessToken, invitationError: 'Invitation token is expired.' })
+        return res.status(207).json({ accessToken:req.accessToken, username:req.username, invitationError: 'Invitation token is expired.' })
       }
       if(req.guest && (accessed_at || expired)){
         console.log('Accessed_at property found or expired token, middleware complete.')
@@ -413,7 +423,7 @@ const updateInvitationStatus = async(req,res, next) => {
         return res.status(401).json({ guest:true, message:'Issue validating invitation token.'}) 
       } else {
         console.log('User detected, expired token message sent.')
-        return res.status(207).json({ accessToken:req.accessToken,invitationError: 'Token is expired.' })
+        return res.status(207).json({ accessToken:req.accessToken, username:req.username,invitationError: 'Token is expired.' })
       }
     }
 
@@ -424,7 +434,7 @@ const updateInvitationStatus = async(req,res, next) => {
       req.invitationId = invitationId
     } catch (error) {
       console.log('Error querying for invitation id: ', error);
-      return res.status(207).json({accessToken:req.accessToken, invitationError:  'Error storing invitation token. Please request a new invite.' })
+      return res.status(207).json({accessToken:req.accessToken, username:req.username, invitationError:  'Error storing invitation token. Please request a new invite.' })
     }
 
     try {
@@ -442,12 +452,12 @@ const updateInvitationStatus = async(req,res, next) => {
         await queries.storeInvitationToken(req.invitationId, req.ownerId)
       } catch(e){
         console.log('Error returned from trying to store the invitation token to the user: ', e)
-        return res.status(207).json({accessToken: req.accessToken,invitationError:'Could not attach token to owner'})
+        return res.status(207).json({accessToken: req.accessToken, username:req.username,invitationError:'Could not attach token to owner'})
       }
     }
 
     console.log('Reached the end of updateInvitationStatus')
-    return res.status(200).json({ accessToken: req.accessToken, activeInvite: true })
+    return res.status(200).json({ accessToken: req.accessToken, username:req.username, activeInvite: true })
   }
 
   next()
