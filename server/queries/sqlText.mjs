@@ -146,18 +146,20 @@ const getOwnerText = (identifierString) => {
 const getActivityText = () => {
   // referenceDate example: 'YYYY-MM-DD HH24:MM'
   return `
-    SELECT activity_id,${activityColumns.join()}
+    SELECT activities.*,owners.username
     FROM activities
-    WHERE pet_id = $1 AND reference_date > $2::timestamp - $3::interval AND reference_date < $2::timestamp + $4::interval
+    JOIN owners ON activities.set_by = owners.owner_id
+    WHERE activities.pet_id = $1 AND activities.reference_date > $2::timestamp - $3::interval AND activities.reference_date < $2::timestamp + $4::interval
   `
 }
 
 const getSingleDayActivityText = () => {
   // referenceDate example: 'YYYY-MM-DD HH24:MM'
   return `
-    SELECT activity_id,${activityColumns.join()}
+    SELECT activities.*,owners.username
     FROM activities
-    WHERE pet_id = $1 AND set_on_at >= $2::timestamp AND set_on_at < $2::timestamp + '1 day'::interval
+    JOIN owners ON activities.set_by = owners.owner_id
+    WHERE activities.pet_id = $1 AND activities.reference_date >= $2::timestamp AND activities.reference_date < $2::timestamp + '1 day'::interval
   `
 }
 
