@@ -66,7 +66,7 @@ export const Dashboard = () => {
           }
           {/* <div className='w-full grow flex flex-col items-center justify-center overflow-hidden'> */}
             <div className='w-11/12 grow flex flex-col items-center justify-center border-2 border-black rounded-2xl mb-2 p-4 bg-primary overflow-hidden'>
-              <div className='flex items-center justify-center text-2xl font-bold' >{auth?.username}</div>
+              <div className='flex items-center justify-center text-2xl font-bold' >{auth.username}</div>
               <Outlet context={[petsArray, setPetsArray, setNewPetModal, unlinkPetModal, setUnlinkPetModal, editPetModal, setEditPetModal, addPetModal, setAddPetModal, error, setPetError]}/>
             </div>
           {/* </div> */}
