@@ -120,7 +120,7 @@ const addActivity = async(petId, ownerId, timestampUTCString, timezoneOffset, pe
   try{
     
     const result = await pool.query(sqlText.insertIntoText('activities'),[petId, ownerId, timestamp, pee, poo,timezoneOffset,`${fullYear}-${monthIndex+1}-${date}`])
-    // console.log('Queries, addActivity, result: ',result)
+    console.log('Queries, addActivity, result: ',result)
     const data = result.rows[0]
     // console.log('*queries* data: ', data)
     return data

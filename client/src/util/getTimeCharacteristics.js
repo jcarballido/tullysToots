@@ -1,13 +1,13 @@
 const getTimeCharacteristics = ( referenceTimestampUTC, referenceTimezoneMinutes ) => {
 
   const convertedReferenceTimestamp = new Date(referenceTimestampUTC)
-  // console.log('convertedReferenceTimestamp:',convertedReferenceTimestamp)
+  console.log('convertedReferenceTimestamp:',convertedReferenceTimestamp)
   const localTimezoneOffset = new Date().getTimezoneOffset()
-  // console.log('local TZ offset:',localTimezoneOffset)
+  console.log('local TZ offset:',localTimezoneOffset)
   const timezoneOffsetDifference = ( parseInt(referenceTimezoneMinutes) - localTimezoneOffset )
-  // console.log('difference: ', timezoneOffsetDifference)
+  console.log('difference: ', timezoneOffsetDifference)
   const workingReferenceTimestamp = timezoneOffsetDifference == 0? convertedReferenceTimestamp : new Date(convertedReferenceTimestamp.getTime() - timezoneOffsetDifference)
-  // console.log('getTimeChar: ', workingReferenceTimestamp)
+  console.log('getTimeChar: ', workingReferenceTimestamp)
   const hour = workingReferenceTimestamp.getHours()
   const minutes = workingReferenceTimestamp.getMinutes()
   // const hour = convertedReferenceTimestamp.getHours()

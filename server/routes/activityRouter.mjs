@@ -194,7 +194,7 @@ router.post("/add", async (req, res) => {
   const { timezoneOffset } = req.body
 
   // const referenceTimezoneOffset = req.body.referenceTimezoneOffset
-  // console.log('**Activity Router** referenceDate: ', timestampUTCString)
+  console.log('**Activity Router** referenceDate: ', timestampUTCString)
   const { pee, poo } = req.body.activity
   
   try{
