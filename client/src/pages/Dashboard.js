@@ -5,7 +5,7 @@ import useAuth from '../hooks/useAuth'
 const Dashboard = () => {
 
   const navigate = useNavigate()
-  const { username } = useAuth()
+  const { auth } = useAuth()
 
   const sendBack = (e) => {
     e.preventDefault
@@ -16,7 +16,7 @@ const Dashboard = () => {
     <div className='h-full w-full border-4 border-green-300 flex flex-col items-center'>
       <button onClick={sendBack} className='w-full flex'>{'<= BACK'}</button>
       <div className='h-7/8 w-full flex flex-col'>
-        {username}
+        {auth.username}
         <Outlet />      
       </div>
     </div>
