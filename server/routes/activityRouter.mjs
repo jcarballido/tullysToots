@@ -94,7 +94,7 @@ router.get("/get", async (req, res) => {
 
   try {
     const confirmActiveLink = await queries.checkOwnerLink(ownerId, req.petId);   
-    // console.log('Active link determined as: ', confirmActiveLink)
+    console.log('activityRouter/ get// Active link determined as: ', confirmActiveLink)
     req.activeLink = confirmActiveLink   
   } catch (error) {
     console.log('Error checking link with owner: ', error)
@@ -121,8 +121,10 @@ router.get("/get", async (req, res) => {
       return res.status(400)
     }
   }else{
+    console.log('Initial pet id sent is not linked to owner')
     try {
       const singlePetId = await queries.getSingleActivePetId(ownerId);
+      console.log('activityRouter/ get // singlePetId found:', singlePetId)
       if(!singlePetId) throw new Error('No active links found.')
       const activityArray = await queries.getActivity(
         singlePetId,

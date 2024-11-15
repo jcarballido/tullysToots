@@ -28,15 +28,16 @@ module.exports = {
 				]
 			},
 			{
-				test: /\.(png|jpeg|svg)$/i,
+				test: /\.(png|jpeg|svg|ico)$/i,
 				type:'asset/resource'
 			}]
 	},
 	plugins:[
 		new MiniCssExtractPlugin({filename:"tailwind.css",}), 
 		new HtmlWebpackPlugin({
-			title:'RTWB Boilerplate',
-			template: './src/index.html',
+			title:'Tully\'s Toots',
+			template: './public/index.html',
+			favicon: './public/favicon.png',
 		})
 	]
 }

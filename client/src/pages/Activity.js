@@ -105,8 +105,12 @@ const Activity = () => {
       try{
         const response = await axiosPrivate.get(`/activity/get?data=${encodedParameters}`,{ signal:abortController.signal })
         if(response.status == 204) return console.log('No actively linked pets.')
-        const { activityArray, petIdArray } = response.data 
+        const { activityArray, petIdArray, singlePetId } = response.data 
         // console.log('Activity Array received from serve:', activityArray)
+        if(singlePetId) {
+          localStorage.setItem('referencePetId', JSON.stringify(singlePetId))
+          setReferencePetId(singlePetId)
+        }
         setActivity(activityArray)
         setPetIdArray(petIdArray)
         const localStorageReferencePetId = JSON.parse(localStorage.getItem('referencePetId')) || null
@@ -232,8 +236,7 @@ const Activity = () => {
     <main className='w-full grow flex flex-col justify-start items-center overflow-y-auto gap-8 mt-4'>
       {pendingInvitations ? <button  onClick={( ) => navigate('/acceptInvite')} >You have pending invites!</button>:null}
       <div className='flex gap-2 justify-center items-center text-black font-Fredoka text-2xl bg-accent rounded-2xl border-2 border-accent px-2' onClick={openPetSelectorModal}>
-        <div className='rounded-lg '>{name ? `${name}'s `:''}</div>
-        <div>Log</div>
+        <div className='rounded-lg '>{name ? `${name}'s Log`:''}</div>
       </div>
       {
         referencePetId

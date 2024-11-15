@@ -239,7 +239,7 @@ const getOwnerIdFromEmail = async(email) => {
 const getSingleActivePetId = async( ownerId ) => {
   try{
     const result = await pool.query(sqlText.getSingleActivePetId, [ ownerId ])
-    // console.log('Result from query: ',result)
+    console.log('Result from getSingleActiePetId query: ',result)
     return result.rows[0].pet_id
   }catch(e){
     return null
