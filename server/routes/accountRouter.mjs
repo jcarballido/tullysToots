@@ -107,7 +107,7 @@ router.get('/checkLoginSession', async(req,res, next) => {
     console.log('Check login session route sending a USER to next middleware.')
     return next()
   }
-  return res.status(200).json({accessToken,username})
+  return res.status(200).json({accessToken,username:req.username})
 })
 
 router.post('/sign-up', async(req,res,next) => {
