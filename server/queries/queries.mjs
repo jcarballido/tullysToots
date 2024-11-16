@@ -101,13 +101,19 @@ const addPetOwnerLink = async(petId,ownerId) => {
 
 const addActivity = async(petId, ownerId, timestampUTCString, timezoneOffset, pee, poo) => {
   // console.log('*queries*, petId, ownerId, timestampUTCString, timezoneOffset, pee, poo:',  petId, ownerId, timestampUTCString, timezoneOffset, pee, poo)
-  // console.log('*Queries* timestamp passed in: ', timestampUTCString)
+  console.log('*Queries* timestamp passed in: ', timestampUTCString)
   const recievedDate = new Date(timestampUTCString)
-  console.log('**Queries/addActivity** Received timestamp: ', timestampUTCString)
+  // console.log('**Queries/addActivity** Received timestamp: ', timestampUTCString)
   console.log('Queries/addActivity// timestampReceived converted with Date constructor:', recievedDate)
-  const fullYear = recievedDate.getFullYear()
-  const monthIndex = recievedDate.getMonth()
-  const date = recievedDate.getDate()
+  const machineTimezoneOffset = new Date().getTimezoneOffset()
+  console.log('Machine timezone offset: ', machineTimezoneOffset)
+  const offsetDiff = machineTimezoneOffset - timezoneOffset
+  console.log('Offset difference: ', offsetDiff)
+  const adjustedTime = offsetDiff ? new Date(recievedDate.getTime()-( timezoneOffset * 60 * 1000 )):recievedDate
+  console.log('Adjusted time: ', adjustedTime)
+  const fullYear = adjustedTime.getFullYear()
+  const monthIndex = adjustedTime.getMonth()
+  const date = adjustedTime.getDate()
   console.log('Queries/addActivity// fullYear from recieved date:', fullYear)
   console.log('Queries/addActivity// monthIndex from recieved date:', monthIndex)
   console.log('Queries/addActivity// date from recieved date:', date)
