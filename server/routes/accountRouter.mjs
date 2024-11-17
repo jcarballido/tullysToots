@@ -622,127 +622,127 @@ router.post('/resetPasswordConfirmation', (req,res) => {
   return res.json({message:'Successfully saved new password'})
 })
 // Need to test with front end
-router.get('/invitation', async(req,res) => {
-  // Check if link has been accessed before.
-  const invitationToken = req.query.invitationToken
-  if(!invitationToken) return res.send('ERROR: Invitation token not provided.')
-  const invitationSecret = process.env.INVITATION_SECRET
-  const inviteExists = await queries.getInvitationId(invitationToken)
-  if(!inviteExists) return res.send('This invite does not exist')
-  const mint = await queries.getLastAccessedTimestamp(invitationToken)
-  console.log('Invitation token is mint? ',mint)
-  // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
-  if(!mint) return res.json({error: new Error('Link has been used')})
-  // CHECK IF INVITED USER IS NEW OR REGISTERED
-  const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
-  if(!expectedReceivingOwnerId){
-    // Redirect to sign-UP page along with invitation token
-    return res.redirect(`https://tullystoots.com/sign-up?invitationToken=${invitationToken}`)
-  }else{
-    // Check the client attempting to accept the invite matches with the intended invite recipient
-    const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
-    // Return error: Either expired token or tampered with
-    if(invitationTokenPayload instanceof Error){
-    return res.json({error: new Error('Invalid link')})
-    }
-    console.log('Token is valid; payload: ', invitationTokenPayload)
-  // EXTRACT THE 'RECEIVING OWNER ID'
-  // const receivingOwnerId = payload.receivingOwnerId
-  // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
-    const accessToken = req.headers['authorization']
-    if(!accessToken){
-    // Redirect to sign-IN page along with invitation token
-    return res.redirect(`https://tullystoots.com/sign-in?invitationToken=${invitationToken}`)
-    }
-    const accessTokenSecret = process.env.ACCESS_SECRET
-    const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
-    const clientOwnerId = accessTokenPayload.ownerId
-    if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
-  }
-  // const newPetsIdArray = payload.newPetIdsArray
-  // Check if there's a matching token from the respective sender.
-  // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
-  // console.log('Match result:', match)
-  // If one does not exist, send error
-  // if(!match){
-  //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
-  // }
-  // Check if this token has been used prior.
-  try{
-    const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
-    // if(!result) return res.send('server, line 301 => Error adding timestamp')
-    // Set the content type to text/html
-    // res.setHeader('Content-Type', 'text/html');
-    // // Send the HTML as the response
-    // if(!receivingOwnerId){
-    //   return res.send(newUserHtmlContent)
-    // }else{
-    //   return res.send(exisitingUserHtmlContent)
-    // }
-  }catch(e){
-    console.log('Error setting Invite Link timestamp', e)
-  }
+// router.get('/invitation', async(req,res) => {
+//   // Check if link has been accessed before.
+//   const invitationToken = req.query.invitationToken
+//   if(!invitationToken) return res.send('ERROR: Invitation token not provided.')
+//   const invitationSecret = process.env.INVITATION_SECRET
+//   const inviteExists = await queries.getInvitationId(invitationToken)
+//   if(!inviteExists) return res.send('This invite does not exist')
+//   const mint = await queries.getLastAccessedTimestamp(invitationToken)
+//   console.log('Invitation token is mint? ',mint)
+//   // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
+//   if(!mint) return res.json({error: new Error('Link has been used')})
+//   // CHECK IF INVITED USER IS NEW OR REGISTERED
+//   const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
+//   if(!expectedReceivingOwnerId){
+//     // Redirect to sign-UP page along with invitation token
+//     return res.redirect(`https://tullystoots-1.onrender.com/sign-up?invitationToken=${invitationToken}`)
+//   }else{
+//     // Check the client attempting to accept the invite matches with the intended invite recipient
+//     const invitationTokenPayload = jwt.verify(invitationToken, invitationSecret)
+//     // Return error: Either expired token or tampered with
+//     if(invitationTokenPayload instanceof Error){
+//     return res.json({error: new Error('Invalid link')})
+//     }
+//     console.log('Token is valid; payload: ', invitationTokenPayload)
+//   // EXTRACT THE 'RECEIVING OWNER ID'
+//   // const receivingOwnerId = payload.receivingOwnerId
+//   // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
+//     const accessToken = req.headers['authorization']
+//     if(!accessToken){
+//     // Redirect to sign-IN page along with invitation token
+//     return res.redirect(`https://tullystoots-1.onrender.com/sign-in?invitationToken=${invitationToken}`)
+//     }
+//     const accessTokenSecret = process.env.ACCESS_SECRET
+//     const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+//     const clientOwnerId = accessTokenPayload.ownerId
+//     if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+//   }
+//   // const newPetsIdArray = payload.newPetIdsArray
+//   // Check if there's a matching token from the respective sender.
+//   // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+//   // console.log('Match result:', match)
+//   // If one does not exist, send error
+//   // if(!match){
+//   //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
+//   // }
+//   // Check if this token has been used prior.
+//   try{
+//     const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+//     // if(!result) return res.send('server, line 301 => Error adding timestamp')
+//     // Set the content type to text/html
+//     // res.setHeader('Content-Type', 'text/html');
+//     // // Send the HTML as the response
+//     // if(!receivingOwnerId){
+//     //   return res.send(newUserHtmlContent)
+//     // }else{
+//     //   return res.send(exisitingUserHtmlContent)
+//     // }
+//   }catch(e){
+//     console.log('Error setting Invite Link timestamp', e)
+//   }
 
-  return res.redirect(`https://tullystoots.com/acceptInvite?invitationToken=${invitationToken}`)
-  // Check if link has been accessed before.
-  // const invitationToken = req.query.invitationToken
-  // const invitationSecret = process.env.INVITATION_SECRET
-  // const mint = await queries.getLastAccessedTimestamp(invitationToken)
-  // console.log('Invitation token is mint? ',mint)
-  // // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
-  // if(!mint) return res.json({error: new Error('Link has been used')})
-  // // CHECK IF INVITED USER IS NEW OR REGISTERED
-  // const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
-  // if(!expectedReceivingOwnerId){
-  //   // Redirect to sign-UP page along with invitation token
-  //   return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
-  // }else{
-  //   // Check the client attempting to accept the invite matches with the intended invite recipient
-  //   const payload = jwt.verify(invitationToken, invitationSecret)
-  //   // Return error: Either expired token or tampered with
-  //   if(payload instanceof Error){
-  //     return res.json({error: new Error('Invalid link')})
-  //   }
-  //   console.log('Token is valid; payload: ', payload)
-  // // EXTRACT THE 'RECEIVING OWNER ID'
-  // // const receivingOwnerId = payload.receivingOwnerId
-  // // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
-  //   const accessToken = req.headers['authorization']
-  //   if(!accessToken){
-  //     // Redirect to sign-IN page along with invitation token
-  //     return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
-  //   }
-  //   const accessTokenSecret = process.env.ACCESS_SECRET
-  //   const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
-  //   const clientOwnerId = accessTokenPayload.ownerId
-  //   if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
-  // }
-  // // const newPetsIdArray = payload.newPetIdsArray
-  // // Check if there's a matching token from the respective sender.
-  // // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
-  // // console.log('Match result:', match)
-  // // If one does not exist, send error
-  // // if(!match){
-  // //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
-  // // }
-  // // Check if this token has been used prior.
-  // try{
-  //   const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
-  //   if(!result) return res.send('server, line 301 => Error adding timestamp')
-  //   // Set the content type to text/html
-  //   // res.setHeader('Content-Type', 'text/html');
-  //   // // Send the HTML as the response
-  //   // if(!receivingOwnerId){
-  //   //   return res.send(newUserHtmlContent)
-  //   // }else{
-  //   //   return res.send(exisitingUserHtmlContent)
-  //   // }
-  // }catch(e){
-  //   console.log('Error setting Invite Link timestamp', e)
-  // }
+//   return res.redirect(`https://tullystoots-1.onrender.com/acceptInvite?invitationToken=${invitationToken}`)
+//   // Check if link has been accessed before.
+//   // const invitationToken = req.query.invitationToken
+//   // const invitationSecret = process.env.INVITATION_SECRET
+//   // const mint = await queries.getLastAccessedTimestamp(invitationToken)
+//   // console.log('Invitation token is mint? ',mint)
+//   // // If token has been accessed (i.e., not 'mint'), reject this request by sending error.
+//   // if(!mint) return res.json({error: new Error('Link has been used')})
+//   // // CHECK IF INVITED USER IS NEW OR REGISTERED
+//   // const expectedReceivingOwnerId = await query.getInvitedOwnerIdFromInvite(invitationToken)
+//   // if(!expectedReceivingOwnerId){
+//   //   // Redirect to sign-UP page along with invitation token
+//   //   return res.redirect(`http://localhost:3001/sign-up?invitationToken=${invitationToken}`)
+//   // }else{
+//   //   // Check the client attempting to accept the invite matches with the intended invite recipient
+//   //   const payload = jwt.verify(invitationToken, invitationSecret)
+//   //   // Return error: Either expired token or tampered with
+//   //   if(payload instanceof Error){
+//   //     return res.json({error: new Error('Invalid link')})
+//   //   }
+//   //   console.log('Token is valid; payload: ', payload)
+//   // // EXTRACT THE 'RECEIVING OWNER ID'
+//   // // const receivingOwnerId = payload.receivingOwnerId
+//   // // IF NULL, THE INTENDED RECEPIENT IS A NEW USER AND WILL NEED TO SIGN UP
+//   //   const accessToken = req.headers['authorization']
+//   //   if(!accessToken){
+//   //     // Redirect to sign-IN page along with invitation token
+//   //     return res.redirect(`http://localhost:3001/sign-in?invitationToken=${invitationToken}`)
+//   //   }
+//   //   const accessTokenSecret = process.env.ACCESS_SECRET
+//   //   const accessTokenPayload = jwt.verify(accessToken, accessTokenSecret)
+//   //   const clientOwnerId = accessTokenPayload.ownerId
+//   //   if(clientOwnerId !== expectedReceivingOwnerId) return res.send('Error: The invite does not match your account ID; request a new invitation to the email your account is registered with.')
+//   // }
+//   // // const newPetsIdArray = payload.newPetIdsArray
+//   // // Check if there's a matching token from the respective sender.
+//   // // const match = await queries.compareSavedInvitatonToken(invitationToken,sendingOwnerId) 
+//   // // console.log('Match result:', match)
+//   // // If one does not exist, send error
+//   // // if(!match){
+//   // //   return res.json({error: new Error('Invite is invalid, stored token does not match.')})
+//   // // }
+//   // // Check if this token has been used prior.
+//   // try{
+//   //   const result = await queries.setInvitationAccessedAtTimestamp(invitationToken)
+//   //   if(!result) return res.send('server, line 301 => Error adding timestamp')
+//   //   // Set the content type to text/html
+//   //   // res.setHeader('Content-Type', 'text/html');
+//   //   // // Send the HTML as the response
+//   //   // if(!receivingOwnerId){
+//   //   //   return res.send(newUserHtmlContent)
+//   //   // }else{
+//   //   //   return res.send(exisitingUserHtmlContent)
+//   //   // }
+//   // }catch(e){
+//   //   console.log('Error setting Invite Link timestamp', e)
+//   // }
 
-  // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
-})
+//   // return res.redirect(`http://localhost:3001/acceptInvite?invitationToken=${invitationToken}`)
+// })
 
 router.use(verifyAccessToken)
 
