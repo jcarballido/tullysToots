@@ -6,6 +6,10 @@ import getTimeCharacteristics from '../util/getTimeCharacteristics'
 const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, setTimeModal, dateString, setEditableActivityMap }) => {
   const [ timeString, setTimeString ] = useState('')
 
+  useEffect(() =>{
+    console.log('New record rendered:', record)
+  })
+
   const changeTime = () => {
     setTimeModal( prevTimeModal => {
         return {
@@ -22,7 +26,7 @@ const NewRecord = ({ record, setNewActivity,sendNewActivity, deleteNewActivity, 
     console.log('New record',record)
     const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(record.timestampReceived, record.timestampUTCOffset)
     setTimeString(`${paddedHourString}:${paddedMinutesString} ${meridianString}`)
-  },[record])
+  })
 
   return (
     <div className='w-10/12 shadow-2xl bg-primary-dark flex items-center justify-between rounded-xl p-4'>

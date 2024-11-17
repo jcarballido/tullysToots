@@ -41,10 +41,8 @@ const Activity = () => {
   const [ confirmationModal, setConfirmationModal ] = useState({visible:false, recordId:null})
   const [status,setStatus] = useState({ viewing: true, adding: false, updating: false })
   const [ timeModal, setTimeModal ] = useState({visible:false,new:false, recordId:null,time:''})
-
-  console.log('Activity.js/ activity state:', [])
-
-
+  const [ newActivity, setNewActivity ] = useState([])
+  // console.log('Activity.js/ activity state:', [])
   useEffect( () => {
     // const activePetId = localStorage.getItem('referencePetId')
     // const petIdString = activePetId? activePetId.replace(/^"|"$/g, ''):null
@@ -240,13 +238,13 @@ const Activity = () => {
       </div>
       {
         referencePetId
-        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} confirmationModal={confirmationModal} setConfirmationModal={ setConfirmationModal } deleteExistingActivity={deleteExistingActivity} status={status} setStatus={setStatus} setTimeModal={setTimeModal}/>
-        : <button onClick={openAddPetModal}>Add a new pet!</button>
+        ? <ActivityCarousel dateMap={dateMap} savedActivityMap={savedActivityMap} editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} setActivity={setActivity} referencePetId={referencePetId} referenceDate={referenceDate} setReferenceDate={setReferenceDate} activity={activity} confirmationModal={confirmationModal} setConfirmationModal={ setConfirmationModal } deleteExistingActivity={deleteExistingActivity} status={status} setStatus={setStatus} setTimeModal={setTimeModal} newActivity={newActivity} setNewActivity={setNewActivity}/>
+        : <button onClick={openAddPetModal}  >Add a new pet!</button>
       }
       <PetSelector petIdArray={petIdArray} referencePetId={referencePetId} setReferencePetId={ setReferencePetId } switchPetModal={switchPetModal} setSwitchPetModal={setSwitchPetModal} setAddPetModal={setAddPetModal} addPetModal={addPetModal}/>
       <AddPetModal visible={addPetModal.visible} setAddPetModal={ setAddPetModal } error={addPetError} setAddPetError={setAddPetError} />
       <ConfirmationModal confirmationModal={confirmationModal} setConfirmationModal={setConfirmationModal} deleteExistingActivity={deleteExistingActivity} setStatus={setStatus}/> 
-      <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } />
+      <TimeModal timeModal={ timeModal } setTimeModal={setTimeModal} setEditableActivityMap={ setEditableActivityMap } newActivity={newActivity} setNewActivity={setNewActivity} />
     </main>
   )
 }

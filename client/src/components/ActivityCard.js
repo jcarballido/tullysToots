@@ -18,7 +18,7 @@ import AddingButtons from './AddingButtons'
 import UpdatingButtons from './UpdatingButtons'
 
 
-function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex, current, status, setStatus, confirmationModal }) {
+function ActivityCard({ dateString, activityArray, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, setTimeModal, setConfirmationModal, activity, setCurrentIndex, current, status, setStatus, confirmationModal,newActivity, setNewActivity }) {
   // console.log('Date string:', dateString)
   //console.log('**ActivityCard Rendered** savedActivityMap: ',  savedActivityMap)
   const axiosPrivate = useAxiosPrivate()
@@ -26,7 +26,7 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
   const [ savedRecords, setSavedRecords ] = useState([])
   const [ editableRecords, setEditableRecords ] = useState([])
 
-  const [ newActivity, setNewActivity ] = useState([])
+  // const [ newActivity, setNewActivity ] = useState([])
   const [ updateEnabled, setUpdateEnabled ] = useState(false)
   // const [ timeModalVisible, setTimeModalVisible ] = useState(false)
   // const [ confirmationModalVisibility, setConfirmationModalVisibility ] = useState(false)
@@ -254,16 +254,17 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
       const currentTime = new Date()
       const localTimezoneOffset = currentTime.getTimezoneOffset()
       const { paddedHourString, paddedMinutesString, meridianString } = getTimeCharacteristics(currentTime,localTimezoneOffset)
-      console.log('On ADD, new date to UTC string:', new Date() )
-      console.log('parsed data from new Date:', paddedHourString,' ', paddedMinutesString,' ',meridianString)
-      console.log('Date string passed into handleAdding fn:', dateString)
+      // console.log('On ADD, new date to UTC string:', new Date() )
+      // console.log('parsed data from new Date:', paddedHourString,' ', paddedMinutesString,' ',meridianString)
+      // console.log('Date string passed into handleAdding fn:', dateString)
       const { year, month, date, yDayCapt,tDayCapt,wDayCapt } = getDateCharacteristics(dateString)
+      const referenceDate = `${year}-${month}-${date}`
       // const timestampString = `${fullYear}-${monthIndex+1}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`
       // console.log('ActivityCard, newTimestamp: ', timestampString)
-      console.log('dates captured:', yDayCapt,'+',tDayCapt,'+',wDayCapt)
-      console.log('getDateChar:',`${year}-${month}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
+      // console.log('dates captured:', yDayCapt,'+',tDayCapt,'+',wDayCapt)
+      // console.log('getDateChar:',`${year}-${month}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`)
       // console.log('ActivityCard, newTimestamp: ', newTimestamp)
-      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${year}-${month}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false, timestampUTCOffset:localTimezoneOffset}]
+      return [...prevNewActivity,{newId:(prevNewActivity.length+1), timestampReceived:new Date(`${year}-${month}-${date} ${paddedHourString}:${paddedMinutesString} ${meridianString}`), pee:false, poo: false, timestampUTCOffset:localTimezoneOffset, referenceDate}]
     })
     setStatus({ viewing: false, adding:true, updating:false })
   } 
@@ -378,11 +379,15 @@ function ActivityCard({ dateString, activityArray, savedActivityMap, editableAct
             })
         }
         { newActivity.map( record => {
-          return (
-            <div key={record.newId} className='w-full flex items-center justify-center my-6'>
-              <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} setEditableActivityMap={setEditableActivityMap} />
-            </div>
-          )
+          if(record.referenceDate == dateString){
+            return (
+              <div key={record.newId} className='w-full flex items-center justify-center my-6'>
+                <NewRecord record={record} sendNewActivity={sendNewActivity} setNewActivity={setNewActivity} deleteNewActivity={deleteNewActivity} setTimeModal={setTimeModal} dateString={dateString} setEditableActivityMap={setEditableActivityMap} editableActivityMap={editableActivityMap}/>
+              </div>
+            )
+          }else{
+            return null
+          }
         })}
 
       </div>

@@ -76,7 +76,7 @@ router.get('/checkLoginSession', async(req,res, next) => {
   if(!refreshToken){
     if(decodedInviteToken){
       req.invitationToken = decodedInviteToken
-      req.guest = true
+    req.guest = true
       console.log('Check login session route sending a GUEST to next middleware.')
       return next()
     }
@@ -163,7 +163,7 @@ router.post('/sign-up', async(req,res,next) => {
   const accessSecret = process.env.ACCESS_SECRET
   const accessToken = jwt.sign({ ownerId }, accessSecret, { expiresIn:'15m' })
   //store user in DB
-  res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, secure: process.env.NODE_ENV === 'production', sameSite:'None'})
+  res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true,secure: process.env.NODE_ENV === 'production', sameSite:'None'})
 
   try {
     const updateResult = await queries.updateOwner(refreshToken,ownerId)
@@ -237,7 +237,7 @@ router.post('/sign-in', async(req,res, next) => {
   const refreshToken = jwt.sign({ ownerId }, refreshSecret, { expiresIn: '3d' })
   // Set refresh token cookie
   const refreshTokenMaxAge = 1000 * 60 * 60 * 24 * 3 // ms/s * s/min * min/hr * hrs/day * num. days
-  res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, secure:process.env.NODE_ENV === 'production', sameSite:'None'})
+  res.cookie('jwt',refreshToken,{ maxAge: refreshTokenMaxAge, httpOnly:true,secure:process.env.NODE_ENV === 'production', sameSite:'None'})
   try {
     const result = await queries.setNewRefreshToken(refreshToken,ownerId)      
   } catch (error) {
@@ -1403,7 +1403,7 @@ router.get('/logout', async (req,res) => {
   console.log('Logout request receieved')
   const ownerId = req.ownerId
   console.log(`Logging out owner ID: ${ownerId}`)
-  res.clearCookie('jwt')
+  res.clearCookie('jwt',{ httpOnly:true,secure: process.env.NODE_ENV === 'production', sameSite:'None'})
   // CHORE: Remove refresh token from db
   try {
     await queries.logoutUser(ownerId)

@@ -8,7 +8,7 @@ import ConfirmationModal from './ConfirmationModal.js'
 import leftArrow from '../media/left_arrow.svg' 
 import rightArrow from '../media/right_arrow.svg' 
 
-const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity, status, setStatus, setTimeModal }) => {
+const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setEditableActivityMap, setActivity, referencePetId, referenceDate, setReferenceDate, activity, confirmationModal, setConfirmationModal, deleteExistingActivity, status, setStatus, setTimeModal, newActivity, setNewActivity }) => {
 
   const axiosPrivate = useAxiosPrivate()
   const [ currentIndex, setCurrentIndex ] = useState();
@@ -125,7 +125,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
 
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex+1][0]
-    console.log('nextCArd, activeReferenceDate:', activeReferenceDate)
+    // console.log('nextCArd, activeReferenceDate:', activeReferenceDate)
     setReferenceDate(activeReferenceDate)
     // console.log('activeReferenceDate:', activeReferenceDate)
 
@@ -141,7 +141,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
     // entries = [ [date1,[id1]],[date2,[id2,id3]],... ]
     const activeReferenceDate = entries[currentIndex-1][0]
     // console.log('activeReferenceDate:', activeReferenceDate)
-    console.log('prevCard, activeReferenceDate:', activeReferenceDate)
+    // console.log('prevCard, activeReferenceDate:', activeReferenceDate)
     setReferenceDate(activeReferenceDate)
     localStorage.setItem('referenceDate', JSON.stringify(activeReferenceDate))
     setStatus({ viewing:true, adding:false, updating:false })
@@ -172,7 +172,7 @@ const ActivityCarousel = ({ dateMap, savedActivityMap, editableActivityMap, setE
                 key={dateString}
                 className={`shrink-0 w-full text-black text-[24px] px-4`}
               >
-                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} current={currentIndex == index} status={status} setStatus={setStatus} confirmationModal={confirmationModal}  deleteExistingActivity={deleteExistingActivity} />
+                <ActivityCard dateString={ dateString } activityArray={ activityArray } editableActivityMap={editableActivityMap} setEditableActivityMap={setEditableActivityMap} savedActivityMap={ savedActivityMap } setActivity={ setActivity } referencePetId={referencePetId} setTimeModal={setTimeModal} setConfirmationModal={setConfirmationModal} activity={activity} setCurrentIndex={setCurrentIndex} current={currentIndex == index} status={status} setStatus={setStatus} confirmationModal={confirmationModal}  deleteExistingActivity={deleteExistingActivity} newActivity={newActivity} setNewActivity={setNewActivity}/>
               </div>
             )
           })
